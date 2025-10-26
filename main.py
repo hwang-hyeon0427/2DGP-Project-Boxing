@@ -3,11 +3,13 @@ from boxer import Boxer
 
 
 P1 = {
-
+    "idle":  {"image":"player1/player1_Idle.png", "cols":10, "w":744, "h":711, "scale":0.25},
+    "spawn": {"x": 400, "y": 300, "face": 1},
 }
 
 P2 = {
-
+    "idle":  {"image":"player2/player2_Idle.png", "cols":10, "w":499, "h":489, "scale":0.25},
+    "spawn": {"x": 700, "y": 120, "face": 1}
 }
 
 
