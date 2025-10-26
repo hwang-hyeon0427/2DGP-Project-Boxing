@@ -77,6 +77,7 @@ class Idle:
         self.boxer = boxer
 
     def enter(self, e):
+        self.boxer.use_sheet(self.boxer.cfg['idle'])
         self.boxer.dir = 0
 
     def exit(self, e):
