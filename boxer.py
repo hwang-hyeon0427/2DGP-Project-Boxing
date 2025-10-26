@@ -50,6 +50,9 @@ class WalkBackward:
         self.b.frame = (self.b.frame + 1) % self.b.cols
         self.b.x += self.b.dir * 5
 
+    def draw(self):
+        self.b.draw_current()
+
 class WalkForward:
     def __init__(self, boxer):
         self.b = boxer
