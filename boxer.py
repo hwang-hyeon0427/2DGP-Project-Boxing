@@ -136,8 +136,13 @@ class Boxer:
             self.IDLE,
             {
                 self.IDLE: {
-                    # 상태 전이 규칙 추가 예정
-                }
+                    a_down: self.WALK_BACKWARD,
+                    d_down: self.WALK_FORWARD,
+                    left_down: self.WALK_BACKWARD,
+                    right_down: self.WALK_FORWARD
+                },
+                self.WALK_BACKWARD: {a_up: self.IDLE, left_up: self.IDLE},
+                self.WALK_FORWARD: {d_up: self.IDLE, right_up: self.IDLE}
             }
         )
 
