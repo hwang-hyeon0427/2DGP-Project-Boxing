@@ -57,6 +57,11 @@ class WalkForward:
     def __init__(self, boxer):
         self.b = boxer
 
+    def enter(self, e):
+        sheet = self.b.cfg.get('walk_forward') or self.b.cfg.get('walk') or self.b.cfg.get('idle')
+        self.b.use_sheet(sheet)
+        self.b.dir = 1 if self.b.face == 1 else -1
+
 class Idle:
     def __init__(self, boxer):
         self.boxer = boxer
