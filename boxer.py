@@ -58,3 +58,12 @@ class Boxer:
                 }
             }
         )
+
+    def update(self):
+        self.state_machine.update()
+
+    def draw(self):
+        self.state_machine.draw()
+
+    def handle_event(self, e):
+        self.state_machine.handle_state_event(('INPUT', e))
