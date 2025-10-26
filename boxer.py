@@ -10,7 +10,10 @@ class Idle:
 
     def exit(self, e):
         pass
-    
+
+    def do(self):
+        self.boxer.frame = (self.boxer.frame + 1) % self.boxer.cols
+
 class Boxer:
     _img_cache = {}
 
