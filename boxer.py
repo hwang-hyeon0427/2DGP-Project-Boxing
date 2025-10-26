@@ -154,4 +154,11 @@ class Boxer:
         self.state_machine.draw()
 
     def handle_event(self, e):
+        if hasattr(e, 'type') and e.type in (SDL_KEYDOWN, SDL_KEYUP):
+            if self.controls == 'wasd':
+                if e.key not in (SDLK_a, SDLK_d):
+                    return
+            elif self.controls == 'arrows':
+                if e.key not in (SDLK_LEFT, SDLK_RIGHT):
+                    return
         self.state_machine.handle_state_event(('INPUT', e))
