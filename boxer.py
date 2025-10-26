@@ -34,7 +34,13 @@ def right_down(e):
 def right_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_RIGHT
 
+class WalkBackward:
+    def __init__(self, boxer):
+        self.b = boxer
 
+class WalkForward:
+    def __init__(self, boxer):
+        self.b = boxer
 
 class Idle:
     def __init__(self, boxer):
