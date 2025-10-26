@@ -139,6 +139,13 @@ class Boxer:
             }
         )
 
+    def use_sheet(self, sheet: dict):
+        path = sheet['image']
+        self.image = Boxer._img_cache.setdefault(path, load_image(path))
+        self.cols = sheet['cols']
+        self.frame_w, self.frame_h = sheet['w'], sheet['h']
+        self.scale = sheet.get('scale', 1.0)
+
     def update(self):
         self.state_machine.update()
 
