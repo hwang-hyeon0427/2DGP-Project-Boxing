@@ -129,6 +129,8 @@ class Boxer:
         self.dir = 0
 
         self.IDLE = Idle(self)
+        self.WALK_FORWARD = WalkForward(self)
+        self.WALK_BACKWARD = WalkBackward(self)
 
         self.state_machine = StateMachine(
             self.IDLE,
