@@ -146,6 +146,14 @@ class Boxer:
         self.frame_w, self.frame_h = sheet['w'], sheet['h']
         self.scale = sheet.get('scale', 1.0)
 
+    def draw_current(self):
+        src_x = self.frame * self.frame_w
+        w, h = int(self.frame_w * self.scale), int(self.frame_h * self.scale)
+        if self.face == 1:
+            self.image.clip_draw(src_x, 0, self.frame_w, self.frame_h, self.x, self.y, w, h)
+        else:
+            self.image.clip_composite_draw(src_x, 0, self.frame_w, self.frame_h, 0, 'h', self.x, self.y, w, h)
+
     def update(self):
         self.state_machine.update()
 
