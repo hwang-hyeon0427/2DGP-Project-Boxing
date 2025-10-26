@@ -62,6 +62,10 @@ class WalkForward:
         self.b.use_sheet(sheet)
         self.b.dir = 1 if self.b.face == 1 else -1
 
+    def exit(self, e):
+        self.b.dir = 0
+
+
 class Idle:
     def __init__(self, boxer):
         self.boxer = boxer
