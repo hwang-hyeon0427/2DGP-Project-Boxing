@@ -14,6 +14,23 @@ class Idle:
     def do(self):
         self.boxer.frame = (self.boxer.frame + 1) % self.boxer.cols
 
+    def draw(self):
+        b = self.boxer
+        fw, fh = b.frame_w, b.frame_h
+
+        src_left = b.frame * fw
+        src_bottom = (b.idle_row * fh
+                      if not b.from_top
+                      else (b.rows - 1 - b.idle_row) * fh)
+
+        draw_w = int(fw * b.scale)
+        draw_h = int(fh * b.scale)
+
+        if b.face == 1:
+            b.image.clip_draw(src_left, src_bottom, fw, fh, b.x, b.y, draw_w, draw_h)
+        else:
+            b.image.clip_composite_draw(src_left, src_bottom, fw, fh, 0, 'h', b.x, b.y, draw_w, draw_h)
+
 class Boxer:
     _img_cache = {}
 
