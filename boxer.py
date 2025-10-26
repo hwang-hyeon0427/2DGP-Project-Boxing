@@ -5,7 +5,12 @@ class Idle:
     def __init__(self, boxer):
         self.boxer = boxer
 
+    def enter(self, e):
+        self.boxer.dir = 0
 
+    def exit(self, e):
+        pass
+    
 class Boxer:
     _img_cache = {}
 
