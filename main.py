@@ -2,6 +2,15 @@ from pico2d import *
 from boxer import Boxer
 
 
+P1 = {
+
+}
+
+P2 = {
+
+}
+
+
 def handle_events():
     global running
 
@@ -12,13 +21,20 @@ def handle_events():
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             running = False
         else:
-
+            p1.handle_event(event)
+            p2.handle_event(event)
 
 def reset_world():
     global world
+    global p1, p2
 
     world = []
 
+    p1 = Boxer(P1)
+    p2 = Boxer(P2)
+
+    world.append(p1)
+    world.append(p2)
 
 def update_world():
     for o in world:
