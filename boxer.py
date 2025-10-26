@@ -46,6 +46,10 @@ class WalkBackward:
     def exit(self, e):
         self.b.dir = 0
 
+    def do(self):
+        self.b.frame = (self.b.frame + 1) % self.b.cols
+        self.b.x += self.b.dir * 5
+
 class WalkForward:
     def __init__(self, boxer):
         self.b = boxer
