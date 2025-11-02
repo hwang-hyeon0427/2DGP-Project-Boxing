@@ -2,9 +2,23 @@ from pico2d import *
 from state_machine import StateMachine
 from sdl2 import *
 
+
 # ===================
 # player1 (A / D 키)
 # ===================
+def a_down(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_a
+
+def a_up(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_a
+
+def d_down(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_d
+
+def d_up(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_d
+
+# 플레이어1 (앞손: F, 뒷손: G, 어퍼: H, 가드: SPACE)
 def f_down(e): # 앞손
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_f
 
@@ -29,18 +43,6 @@ def space_down(e): # 가드
 def space_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_SPACE
 
-def a_down(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_a
-
-def a_up(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_a
-
-def d_down(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_d
-
-def d_up(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_d
-
 # ===================
 # player2 (← / → 키)
 # ===================
@@ -56,6 +58,25 @@ def right_down(e):
 
 def right_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_RIGHT
+
+# 플레이어2 ()
+def comma_down(e): # 앞손
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_COMMA
+
+def comma_up(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_COMMA
+
+def period_down(e): # 뒷손
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_PERIOD
+
+def period_up(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_PERIOD
+
+def slash_down(e): # 어퍼
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SLASH
+
+def slash_up(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_SLASH
 
 class FrontRightUppercut:
     def __init__(self, boxer):
@@ -234,13 +255,20 @@ class Boxer:
                     # 플레이어 1 (A/D 키)
                     a_down: self.WALK_BACKWARD,
                     d_down: self.WALK_FORWARD,
+                    f_down: self.FRONT_RIGHT_PUNCH,
+                    g_down: self.FRONT_LEFT_PUNCH,
+                    h_down: self.FRONT_RIGHT_UPPERCUT,
                     # 플레이어 2 (←/→ 키)
                     left_down: self.WALK_FORWARD,
                     right_down: self.WALK_BACKWARD,
-                    # 공격
-                    f_down: self.FRONT_RIGHT_PUNCH,
-                    g_down: self.FRONT_LEFT_PUNCH,
-                    h_down: self.FRONT_RIGHT_UPPERCUT
+                    comma_down: self.FRONT_RIGHT_PUNCH,
+                    period_down: self.FRONT_LEFT_PUNCH,
+                    slash_down: self.FRONT_RIGHT_UPPERCUT,
+                    # 플레이어 2(콤마, 피리어드, 슬래시)
+                    comma_down: self.FRONT_RIGHT_PUNCH,
+                    period_down: self.FRONT_LEFT_PUNCH,
+                    slash_down: self.FRONT_RIGHT_UPPERCUT
+
                 },
                 self.WALK_BACKWARD: {a_up: self.IDLE, right_up: self.IDLE},
                 self.WALK_FORWARD: {d_up: self.IDLE, left_up: self.IDLE}
@@ -276,6 +304,6 @@ class Boxer:
                     return
             elif self.controls == 'arrows':
                 # 플레이어 2: 방향키 이동,
-                if e.key not in (SDLK_LEFT, SDLK_RIGHT):
+                if e.key not in (SDLK_LEFT, SDLK_RIGHT, SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH):
                     return
         self.state_machine.handle_state_event(('INPUT', e))
