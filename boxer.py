@@ -136,7 +136,12 @@ class WalkBackward:
     def enter(self, e):
         sheet = self.b.cfg.get('walk_backward') or self.b.cfg.get('walk') or self.b.cfg.get('idle')
         self.b.use_sheet(sheet)
-        self.b.dir = -1 if self.b.face == 1 else 1
+        if right_down(e):
+            self.b.dir = 1
+        elif left_down(e):
+            self.b.dir = -1
+        else:
+            self.b.dir = -self.b.face
 
     def exit(self, e):
         self.b.dir = 0
@@ -155,7 +160,12 @@ class WalkForward:
     def enter(self, e):
         sheet = self.b.cfg.get('walk_forward') or self.b.cfg.get('walk') or self.b.cfg.get('idle')
         self.b.use_sheet(sheet)
-        self.b.dir = 1 if self.b.face == 1 else -1
+        if left_down(e):
+            self.b.dir = -1
+        elif right_down(e):
+            self.b.dir = 1
+        else:
+            self.b.dir = self.b.face
 
     def exit(self, e):
         self.b.dir = 0
@@ -213,18 +223,27 @@ class Boxer:
         self.IDLE = Idle(self)
         self.WALK_FORWARD = WalkForward(self)
         self.WALK_BACKWARD = WalkBackward(self)
+        self.FRONT_RIGHT_PUNCH = FrontRightPunch(self)
+        self.FRONT_LEFT_PUNCH = FrontLeftPunch(self)
+        self.FRONT_RIGHT_UPPERCUT = FrontRightUppercut(self)
 
         self.state_machine = StateMachine(
             self.IDLE,
             {
                 self.IDLE: {
+                    # 플레이어 1 (A/D 키)
                     a_down: self.WALK_BACKWARD,
                     d_down: self.WALK_FORWARD,
-                    left_down: self.WALK_BACKWARD,
-                    right_down: self.WALK_FORWARD
+                    # 플레이어 2 (←/→ 키)
+                    left_down: self.WALK_FORWARD,
+                    right_down: self.WALK_BACKWARD,
+                    # 공격
+                    f_down: self.FRONT_RIGHT_PUNCH,
+                    g_down: self.FRONT_LEFT_PUNCH,
+                    h_down: self.FRONT_RIGHT_UPPERCUT
                 },
-                self.WALK_BACKWARD: {a_up: self.IDLE, left_up: self.IDLE},
-                self.WALK_FORWARD: {d_up: self.IDLE, right_up: self.IDLE}
+                self.WALK_BACKWARD: {a_up: self.IDLE, right_up: self.IDLE},
+                self.WALK_FORWARD: {d_up: self.IDLE, left_up: self.IDLE}
             }
         )
 
@@ -251,10 +270,12 @@ class Boxer:
 
     def handle_event(self, e):
         if hasattr(e, 'type') and e.type in (SDL_KEYDOWN, SDL_KEYUP):
+            # 플레이어 1: A/D 이동, F/G/H 공격
             if self.controls == 'wasd':
                 if e.key not in (SDLK_a, SDLK_d):
                     return
             elif self.controls == 'arrows':
+                # 플레이어 2: 방향키 이동,
                 if e.key not in (SDLK_LEFT, SDLK_RIGHT):
                     return
         self.state_machine.handle_state_event(('INPUT', e))
