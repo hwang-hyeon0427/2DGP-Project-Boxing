@@ -8,7 +8,9 @@ P1 = {
     "spawn": {"x": 400, "y": 300, "face": 1},
     "walk_backward": {"image":"player1/player1_Walk_Backward.png", "cols": 10, "w":746, "h":713, "scale":0.3},
     "walk_forward":  {"image":"player1/player1_Walk_Forward.png",  "cols": 10, "w":746, "h":713, "scale":0.3},
-
+    "FrontRightPunch": {"image":"player1/player1_FrontRightPunch.png",  "cols": 8, "w":180, "h":561, "scale":0.3},
+    "FrontRightUppercut": {"image":"player1/player1_FrontRightUppercut.png",  "cols": 8, "w":180, "h":561, "scale":0.3},
+    "FrontLeftPunch": {"image":"player1/player1_FrontLeftPunch.png",  "cols": 8, "w":180, "h":561, "scale":0.3}
 }
 
 P2 = {
@@ -17,6 +19,7 @@ P2 = {
     "spawn": {"x": 700, "y": 300, "face": 1},
     "walk_backward": {"image":"player2/player2_Walk_Backward.png", "cols":10, "w": 499, "h":489, "scale":0.5},
     "walk_forward":  {"image":"player2/player2_Walk_Forward.png",  "cols":10, "w": 499, "h":489, "scale":0.5}
+
 }
 
 
