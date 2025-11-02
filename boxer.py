@@ -57,6 +57,78 @@ def right_down(e):
 def right_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_RIGHT
 
+class FrontRightUppercut:
+    def __init__(self, boxer):
+        self.b = boxer
+        self.done = False
+
+    def enter(self, e):
+        sheet = self.b.cfg['FrontRightUppercut']
+        self.b.use_sheet(sheet)
+        self.b.frame = 0
+        self.done = False
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        if not self.done:
+            self.b.frame += 1
+            if self.b.frame >= self.b.cols:
+                self.b.frame = 0
+                self.done = True
+
+    def draw(self):
+        self.b.draw_current()
+
+class FrontRightPunch:
+    def __init__(self, boxer):
+        self.b = boxer
+        self.done = False
+
+    def enter(self, e):
+        sheet = self.b.cfg['FrontRightPunch']
+        self.b.use_sheet(sheet)
+        self.b.frame = 0
+        self.done = False
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        if not self.done:
+            self.b.frame += 1
+            if self.b.frame >= self.b.cols:
+                self.b.frame = 0
+                self.done = True
+
+    def draw(self):
+        self.b.draw_current()
+
+class FrontLeftPunch:
+    def __init__(self, boxer):
+        self.b = boxer
+        self.done = False
+
+    def enter(self, e):
+        sheet = self.b.cfg['FrontLeftPunch']
+        self.b.use_sheet(sheet)
+        self.b.frame = 0
+        self.done = False
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        if not self.done:
+            self.b.frame += 1
+            if self.b.frame >= self.b.cols:
+                self.b.frame = 0
+                self.done = True
+
+    def draw(self):
+        self.b.draw_current()
+
 class WalkBackward:
     def __init__(self, boxer):
         self.b = boxer
