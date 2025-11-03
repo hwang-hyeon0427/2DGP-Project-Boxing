@@ -18,7 +18,10 @@ def d_down(e):
 def d_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_d
 
+# =============================================
 # 플레이어1 (앞손: F, 뒷손: G, 어퍼: H, 가드: SPACE)
+# =============================================
+
 def f_down(e): # 앞손
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_f
 
@@ -59,7 +62,10 @@ def right_down(e):
 def right_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_RIGHT
 
-# 플레이어2 ()
+# ===========================================================
+# 플레이어2 (앞손: 콤마, 뒷손: 피리어드, 앞손 어펴: 슬래시)
+# ===========================================================
+
 def comma_down(e): # 앞손
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_COMMA
 
@@ -108,29 +114,41 @@ class FrontRightPunch:
 
 class BackLeftPunch:
     def __init__(self, boxer):
-        self.b = boxer
-        self.done = False
+        self.b = boxer             # Boxer 인스턴스 참조
+        self.done = False         # 애니메이션 완료여부
 
     def enter(self, e):
+        # 상태에 집입할 때 실행되는 함수
+        # e :  상태 전환의 원인이 된 이벤트
+
+        # 'back_left_punch' 시트가 설정에 있으면 사용, 없으면 'idle' 시트 사용
         if 'back_left_punch' in self.b.cfg:
             sheet = self.b.cfg['back_left_punch']
         else:
             sheet = self.b.cfg['idle']
-        self.b.use_sheet(sheet)
-        self.b.frame = 0
-        self.done = False
+        self.b.use_sheet(sheet)             # 선택된 시트를 boxer 객체에 적용
+        self.b.frame = 0                    # 프레임 인덱스 0으로 초기화
+        self.done = False                   # 애니메이션 완료여부 초기화
 
     def exit(self, e):
+        # 상태에서 빠져나갈 때 호출됨 (Exit action)
+        # 현재는 특별한 정리 작업이 필요 없어서 pass 처리
         pass
 
     def do(self):
+        # 상태에 머무르는 동안 매 프레임마다 반복 실행 (Do activity)
         if not self.done:
+            # 1️⃣ 다음 프레임으로 이동
             self.b.frame += 1
+            # 마지막 프레임까지 도달하면 애니메이션 종료
             if self.b.frame >= self.b.cols:
                 self.done = True
+                # 애니메이션 종료 이벤트를 상태 머신에 전달
                 self.b.state_machine.handle_state_event(('ANIMATION_END', None))
 
     def draw(self):
+        # 현재 프레임을 실제로 화면에 그리는 함수
+        # Boxer 클래스의 draw_current()는 현재 시트, 프레임, 방향(face)에 따라 이미지 클리핑을 수행함
         self.b.draw_current()
 
 class FrontRightUppercut:
@@ -286,26 +304,12 @@ class Boxer:
             }
         )
 
-    def use_sheet(self, sheet):
-        try:
-            self.image = load_image(sheet['image'])
-            self.cols = sheet['cols']
-            self.frame_w = sheet['w']
-            self.frame_h = sheet['h']
-            self.scale = sheet['scale']
-        except Exception as e:
-            # 이미지 로드 실패시 idle 이미지 사용
-            print(f"Warning: Failed to load {sheet.get('image', 'unknown')}: {e}")
-            idle_sheet = self.cfg['idle']
-            try:
-                self.image = load_image(idle_sheet['image'])
-                self.cols = idle_sheet['cols']
-                self.frame_w = idle_sheet['w']
-                self.frame_h = idle_sheet['h']
-                self.scale = idle_sheet['scale']
-            except Exception as e2:
-                print(f"Error: Failed to load idle image: {e2}")
-                self.image = None
+    def use_sheet(self, sheet: dict):
+        path = sheet['image']
+        self.image = Boxer._img_cache.setdefault(path, load_image(path))
+        self.cols = sheet['cols']
+        self.frame_w, self.frame_h = sheet['w'], sheet['h']
+        self.scale = sheet.get('scale', 1.0)
 
     def draw_current(self):
         if self.image is None:
