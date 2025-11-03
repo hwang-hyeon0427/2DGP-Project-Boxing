@@ -1,4 +1,4 @@
-from boxer import left_down, right_down
+from key_events import left_down, right_down
 
 
 class WalkForward:
