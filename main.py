@@ -6,9 +6,10 @@ P1 = {
     "idle":  {"image":"player1/player1_Idle.png", "cols":10, "w":499, "h":489, "scale":0.5},
     "spawn": {"x": 100, "y": 300, "face": 1},
     "walk_backward": {"image":"player1/player1_Walk_Backward.png", "cols":10, "w": 499, "h":489, "scale":0.5},
-    "walk_forward":  {"image":"player1/player1_Walk_Forward.png",  "cols":10, "w": 499, "h":489, "scale":0.5}
-
-
+    "walk_forward":  {"image":"player1/player1_Walk_Forward.png",  "cols":10, "w": 499, "h":489, "scale":0.5},
+    "front_hand": {"image":"player1/player1_FrontHand.png",  "cols":6, "w":499, "h":489, "scale":0.5},
+    "uppercut": {"image":"player1/player1_Uppercut.png",  "cols":7, "w":499, "h":489, "scale":0.5},
+    "rear_hand": {"image":"player1/player1_RearHand.png",  "cols":6, "w":499, "h":489, "scale":0.5}
 }
 
 P2 = {
