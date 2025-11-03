@@ -9,15 +9,15 @@ from walk_backward import WalkBackward
 from walk_forward import WalkForward
 
 
-class FrontRightPunch:
+class FrontHand:
     def __init__(self, boxer):
         self.b = boxer
         self.done = False
 
     def enter(self, e):
         # 설정에 키가 없으면 idle 사용
-        if 'front_right_punch' in self.b.cfg:
-            sheet = self.b.cfg['front_right_punch']
+        if 'front_hand' in self.b.cfg:
+            sheet = self.b.cfg['front_hand']
         else:
             sheet = self.b.cfg['idle']
         self.b.use_sheet(sheet)
@@ -37,7 +37,7 @@ class FrontRightPunch:
     def draw(self):
         self.b.draw_current()
 
-class BackLeftPunch:
+class RearHand:
     def __init__(self, boxer):
         self.b = boxer             # Boxer 인스턴스 참조
         self.done = False         # 애니메이션 완료여부
@@ -46,9 +46,9 @@ class BackLeftPunch:
         # 상태에 집입할 때 실행되는 함수
         # e :  상태 전환의 원인이 된 이벤트
 
-        # 'back_left_punch' 시트가 설정에 있으면 사용, 없으면 'idle' 시트 사용
-        if 'back_left_punch' in self.b.cfg:
-            sheet = self.b.cfg['back_left_punch']
+        # 'rear_hand' 시트가 설정에 있으면 사용, 없으면 'idle' 시트 사용
+        if 'rear_hand' in self.b.cfg:
+            sheet = self.b.cfg['rear_hand']
         else:
             sheet = self.b.cfg['idle']
         self.b.use_sheet(sheet)             # 선택된 시트를 boxer 객체에 적용
@@ -76,14 +76,14 @@ class BackLeftPunch:
         # Boxer 클래스의 draw_current()는 현재 시트, 프레임, 방향(face)에 따라 이미지 클리핑을 수행함
         self.b.draw_current()
 
-class FrontRightUppercut:
+class Uppercut:
     def __init__(self, boxer):
         self.b = boxer
         self.done = False
 
     def enter(self, e):
-        if 'front_right_uppercut' in self.b.cfg:
-            sheet = self.b.cfg['front_right_uppercut']
+        if 'uppercut' in self.b.cfg:
+            sheet = self.b.cfg['uppercut']
         else:
             sheet = self.b.cfg['idle']
         self.b.use_sheet(sheet)
@@ -136,9 +136,9 @@ class Boxer:
         self.IDLE = Idle(self)
         self.WALK_FORWARD = WalkForward(self)
         self.WALK_BACKWARD = WalkBackward(self)
-        self.FRONT_RIGHT_PUNCH = FrontRightPunch(self)
-        self.BACK_LEFT_PUNCH = BackLeftPunch(self)
-        self.FRONT_RIGHT_UPPERCUT = FrontRightUppercut(self)
+        self.FRONT_HAND = FrontHand(self)
+        self.REAR_HAND = RearHand(self)
+        self.UPPERCUT = Uppercut(self)
 
         self.state_machine = StateMachine(
             self.IDLE,
@@ -151,17 +151,17 @@ class Boxer:
                     left_down: self.WALK_FORWARD,
                     right_down: self.WALK_BACKWARD,
                     # 플레이어 2(콤마, 피리어드, 슬래시)
-                    comma_down: self.FRONT_RIGHT_PUNCH,
-                    period_down: self.BACK_LEFT_PUNCH,
-                    slash_down: self.FRONT_RIGHT_UPPERCUT
+                    comma_down: self.FRONT_HAND,
+                    period_down: self.REAR_HAND,
+                    slash_down: self.UPPERCUT
 
                 },
                 self.WALK_BACKWARD: {a_up: self.IDLE, right_up: self.IDLE},
                 self.WALK_FORWARD: {d_up: self.IDLE, left_up: self.IDLE},
                 # 공격 상태에서 IDLE로 전환
-                self.FRONT_RIGHT_PUNCH: {animation_end: self.IDLE},
-                self.BACK_LEFT_PUNCH: {animation_end: self.IDLE},
-                self.FRONT_RIGHT_UPPERCUT: {animation_end: self.IDLE}
+                self.FRONT_HAND: {animation_end: self.IDLE},
+                self.REAR_HAND: {animation_end: self.IDLE},
+                self.UPPERCUT: {animation_end: self.IDLE}
             }
         )
 

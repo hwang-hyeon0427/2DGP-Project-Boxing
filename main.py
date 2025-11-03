@@ -17,9 +17,9 @@ P2 = {
     "spawn": {"x": 700, "y": 300, "face": 1},
     "walk_backward": {"image":"player2/player2_Walk_Backward.png", "cols": 10, "w":746, "h":713, "scale":0.3},
     "walk_forward":  {"image":"player2/player2_Walk_Forward.png",  "cols": 10, "w":746, "h":713, "scale":0.3},
-    "front_right_punch": {"image":"player2/player2_FrontHand.png",  "cols": 8, "w":744, "h":713, "scale":0.3},
-    "front_right_uppercut": {"image":"player2/player2_Uppercut.png",  "cols": 8, "w":744, "h":713, "scale":0.3},
-    "back_left_punch": {"image":"player2/player2_RearHand.png",  "cols": 8, "w":744, "h":713, "scale":0.3}
+    "front_hand": {"image":"player2/player2_FrontHand.png",  "cols": 8, "w":744, "h":713, "scale":0.3},
+    "uppercut": {"image":"player2/player2_Uppercut.png",  "cols": 8, "w":744, "h":713, "scale":0.3},
+    "rear_hand": {"image":"player2/player2_RearHand.png",  "cols": 8, "w":744, "h":713, "scale":0.3}
 }
 
 def handle_events():
