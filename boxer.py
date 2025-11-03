@@ -78,37 +78,17 @@ def slash_down(e): # 어퍼
 def slash_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_SLASH
 
-class FrontRightUppercut:
-    def __init__(self, boxer):
-        self.b = boxer
-        self.done = False
-
-    def enter(self, e):
-        sheet = self.b.cfg['FrontRightUppercut']
-        self.b.use_sheet(sheet)
-        self.b.frame = 0
-        self.done = False
-
-    def exit(self, e):
-        pass
-
-    def do(self):
-        if not self.done:
-            self.b.frame += 1
-            if self.b.frame >= self.b.cols:
-                self.b.frame = 0
-                self.done = True
-
-    def draw(self):
-        self.b.draw_current()
-
 class FrontRightPunch:
     def __init__(self, boxer):
         self.b = boxer
         self.done = False
 
     def enter(self, e):
-        sheet = self.b.cfg['FrontRightPunch']
+        # 설정에 키가 없으면 idle 사용
+        if 'front_right_punch' in self.b.cfg:
+            sheet = self.b.cfg['front_right_punch']
+        else:
+            sheet = self.b.cfg['idle']
         self.b.use_sheet(sheet)
         self.b.frame = 0
         self.done = False
@@ -120,19 +100,22 @@ class FrontRightPunch:
         if not self.done:
             self.b.frame += 1
             if self.b.frame >= self.b.cols:
-                self.b.frame = 0
                 self.done = True
+                self.b.state_machine.handle_state_event(('ANIMATION_END', None))
 
     def draw(self):
         self.b.draw_current()
 
-class FrontLeftPunch:
+class BackLeftPunch:
     def __init__(self, boxer):
         self.b = boxer
         self.done = False
 
     def enter(self, e):
-        sheet = self.b.cfg['FrontLeftPunch']
+        if 'back_left_punch' in self.b.cfg:
+            sheet = self.b.cfg['back_left_punch']
+        else:
+            sheet = self.b.cfg['idle']
         self.b.use_sheet(sheet)
         self.b.frame = 0
         self.done = False
@@ -144,8 +127,35 @@ class FrontLeftPunch:
         if not self.done:
             self.b.frame += 1
             if self.b.frame >= self.b.cols:
-                self.b.frame = 0
                 self.done = True
+                self.b.state_machine.handle_state_event(('ANIMATION_END', None))
+
+    def draw(self):
+        self.b.draw_current()
+
+class FrontRightUppercut:
+    def __init__(self, boxer):
+        self.b = boxer
+        self.done = False
+
+    def enter(self, e):
+        if 'front_right_uppercut' in self.b.cfg:
+            sheet = self.b.cfg['front_right_uppercut']
+        else:
+            sheet = self.b.cfg['idle']
+        self.b.use_sheet(sheet)
+        self.b.frame = 0
+        self.done = False
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        if not self.done:
+            self.b.frame += 1
+            if self.b.frame >= self.b.cols:
+                self.done = True
+                self.b.state_machine.handle_state_event(('ANIMATION_END', None))
 
     def draw(self):
         self.b.draw_current()
@@ -215,6 +225,9 @@ class Idle:
     def draw(self):
         self.boxer.draw_current()
 
+def animation_end(e):
+    return e[0] == 'ANIMATION_END'
+
 class Boxer:
     _img_cache = {}
 
@@ -245,7 +258,7 @@ class Boxer:
         self.WALK_FORWARD = WalkForward(self)
         self.WALK_BACKWARD = WalkBackward(self)
         self.FRONT_RIGHT_PUNCH = FrontRightPunch(self)
-        self.FRONT_LEFT_PUNCH = FrontLeftPunch(self)
+        self.BACK_LEFT_PUNCH = BackLeftPunch(self)
         self.FRONT_RIGHT_UPPERCUT = FrontRightUppercut(self)
 
         self.state_machine = StateMachine(
@@ -255,34 +268,48 @@ class Boxer:
                     # 플레이어 1 (A/D 키)
                     a_down: self.WALK_BACKWARD,
                     d_down: self.WALK_FORWARD,
-                    f_down: self.FRONT_RIGHT_PUNCH,
-                    g_down: self.FRONT_LEFT_PUNCH,
-                    h_down: self.FRONT_RIGHT_UPPERCUT,
                     # 플레이어 2 (←/→ 키)
                     left_down: self.WALK_FORWARD,
                     right_down: self.WALK_BACKWARD,
-                    comma_down: self.FRONT_RIGHT_PUNCH,
-                    period_down: self.FRONT_LEFT_PUNCH,
-                    slash_down: self.FRONT_RIGHT_UPPERCUT,
                     # 플레이어 2(콤마, 피리어드, 슬래시)
                     comma_down: self.FRONT_RIGHT_PUNCH,
-                    period_down: self.FRONT_LEFT_PUNCH,
+                    period_down: self.BACK_LEFT_PUNCH,
                     slash_down: self.FRONT_RIGHT_UPPERCUT
 
                 },
                 self.WALK_BACKWARD: {a_up: self.IDLE, right_up: self.IDLE},
-                self.WALK_FORWARD: {d_up: self.IDLE, left_up: self.IDLE}
+                self.WALK_FORWARD: {d_up: self.IDLE, left_up: self.IDLE},
+                # 공격 상태에서 IDLE로 전환
+                self.FRONT_RIGHT_PUNCH: {animation_end: self.IDLE},
+                self.BACK_LEFT_PUNCH: {animation_end: self.IDLE},
+                self.FRONT_RIGHT_UPPERCUT: {animation_end: self.IDLE}
             }
         )
 
-    def use_sheet(self, sheet: dict):
-        path = sheet['image']
-        self.image = Boxer._img_cache.setdefault(path, load_image(path))
-        self.cols = sheet['cols']
-        self.frame_w, self.frame_h = sheet['w'], sheet['h']
-        self.scale = sheet.get('scale', 1.0)
+    def use_sheet(self, sheet):
+        try:
+            self.image = load_image(sheet['image'])
+            self.cols = sheet['cols']
+            self.frame_w = sheet['w']
+            self.frame_h = sheet['h']
+            self.scale = sheet['scale']
+        except Exception as e:
+            # 이미지 로드 실패시 idle 이미지 사용
+            print(f"Warning: Failed to load {sheet.get('image', 'unknown')}: {e}")
+            idle_sheet = self.cfg['idle']
+            try:
+                self.image = load_image(idle_sheet['image'])
+                self.cols = idle_sheet['cols']
+                self.frame_w = idle_sheet['w']
+                self.frame_h = idle_sheet['h']
+                self.scale = idle_sheet['scale']
+            except Exception as e2:
+                print(f"Error: Failed to load idle image: {e2}")
+                self.image = None
 
     def draw_current(self):
+        if self.image is None:
+            return
         src_x = self.frame * self.frame_w
         w, h = int(self.frame_w * self.scale), int(self.frame_h * self.scale)
         if self.face == 1:
