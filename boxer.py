@@ -1,6 +1,11 @@
 from pico2d import *
+
+from idle import Idle
 from state_machine import StateMachine
 from sdl2 import *
+
+from walk_backward import WalkBackward
+from walk_forward import WalkForward
 
 
 # ===================
@@ -178,70 +183,6 @@ class FrontRightUppercut:
     def draw(self):
         self.b.draw_current()
 
-class WalkBackward:
-    def __init__(self, boxer):
-        self.b = boxer
-
-    def enter(self, e):
-        sheet = self.b.cfg.get('walk_backward') or self.b.cfg.get('walk') or self.b.cfg.get('idle')
-        self.b.use_sheet(sheet)
-        if right_down(e):
-            self.b.dir = 1
-        elif left_down(e):
-            self.b.dir = -1
-        else:
-            self.b.dir = -self.b.face
-
-    def exit(self, e):
-        self.b.dir = 0
-
-    def do(self):
-        self.b.frame = (self.b.frame + 1) % self.b.cols
-        self.b.x += self.b.dir * 5
-
-    def draw(self):
-        self.b.draw_current()
-
-class WalkForward:
-    def __init__(self, boxer):
-        self.b = boxer
-
-    def enter(self, e):
-        sheet = self.b.cfg.get('walk_forward') or self.b.cfg.get('walk') or self.b.cfg.get('idle')
-        self.b.use_sheet(sheet)
-        if left_down(e):
-            self.b.dir = -1
-        elif right_down(e):
-            self.b.dir = 1
-        else:
-            self.b.dir = self.b.face
-
-    def exit(self, e):
-        self.b.dir = 0
-
-    def do(self):
-        self.b.frame = (self.b.frame + 1) % self.b.cols
-        self.b.x += self.b.dir * 5
-
-    def draw(self):
-        self.b.draw_current()
-
-class Idle:
-    def __init__(self, boxer):
-        self.boxer = boxer
-
-    def enter(self, e):
-        self.boxer.use_sheet(self.boxer.cfg['idle'])
-        self.boxer.dir = 0
-
-    def exit(self, e):
-        pass
-
-    def do(self):
-        self.boxer.frame = (self.boxer.frame + 1) % self.boxer.cols
-
-    def draw(self):
-        self.boxer.draw_current()
 
 def animation_end(e):
     return e[0] == 'ANIMATION_END'
