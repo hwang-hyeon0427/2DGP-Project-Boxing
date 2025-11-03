@@ -1,6 +1,4 @@
-from sdl2 import SDL_KEYDOWN, SDLK_a, SDL_KEYUP, SDLK_d, SDLK_f, SDLK_g, SDLK_h, SDLK_SPACE, SDLK_LEFT, SDLK_RIGHT, \
-    SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH
-
+from sdl2 import*
 # ===================
 # player1 (A / D 키)
 # ===================
@@ -42,6 +40,10 @@ def space_down(e): # 가드
 
 def space_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_SPACE
+
+
+
+
 
 # ===================
 # player2 (← / → 키)
