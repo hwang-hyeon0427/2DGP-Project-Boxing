@@ -27,41 +27,33 @@ P2 = {
 }
 
 def handle_events():
-    global running
-
     event_list = get_events()
     for event in event_list:
         if event.type == SDL_QUIT:
-            running = False
+            game_framework.quit()
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
-            running = False
+            game_framework.quit()
         else:
             p1.handle_event(event)
             p2.handle_event(event)
 
-def reset_world():
-    global world
+def init():
     global p1, p2
-
-    world = []
 
     p1 = Boxer(P1)
     p2 = Boxer(P2)
 
-    world.append(p1)
-    world.append(p2)
+    game_world.add_object(p1, 1)
+    game_world.add_object(p2, 1)
 
-def update_world():
-    for o in world:
-        o.update()
-    pass
+def update():
+    game_world.update()
 
-def render_world():
+def finish():
+    game_world.clear()
+
+def draw():
     clear_canvas()
-    for o in world:
-        o.draw()
+    game_world.render()
     update_canvas()
-
-running = True
-
 
