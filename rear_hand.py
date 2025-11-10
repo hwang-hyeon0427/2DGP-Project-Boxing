@@ -17,8 +17,6 @@ class RearHand:
         self.done = False                   # 애니메이션 완료여부 초기화
 
     def exit(self, e):
-        # 상태에서 빠져나갈 때 호출됨 (Exit action)
-        # 현재는 특별한 정리 작업이 필요 없어서 pass 처리
         pass
 
     def do(self):
