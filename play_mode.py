@@ -1,5 +1,8 @@
 from pico2d import *
 from boxer import Boxer
+import game_framework
+import game_world
+
 
 P1 = {
     "controls": "wasd",
@@ -60,16 +63,5 @@ def render_world():
     update_canvas()
 
 running = True
-
-open_canvas()
-reset_world()
-# game loop
-while running:
-    handle_events()
-    update_world()
-    render_world()
-    delay(0.01)
-
-close_canvas()
 
 
