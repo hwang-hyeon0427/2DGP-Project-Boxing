@@ -124,5 +124,8 @@ class Boxer:
         if now - self.last_hit_time < self.hit_cool:
             return
 
-        
+        if group == 'boxer:boxer':
+            self.hp -= 5
+            self.last_hit_time = now
+            print(f"Boxer hit! HP: {self.hp}")
 
