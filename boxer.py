@@ -101,6 +101,7 @@ class Boxer:
 
     def draw(self):
         self.state_machine.draw()
+        draw_rectangle(*self.get_bb())
 
     def handle_event(self, e):
         if hasattr(e, 'type') and e.type in (SDL_KEYDOWN, SDL_KEYUP):
