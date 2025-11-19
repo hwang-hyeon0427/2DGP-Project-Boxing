@@ -142,6 +142,8 @@ class Boxer:
         bottom = self.y - h
         top = self.y + h + attack_expand_y
 
+        return left, bottom, right, top
+
     def handle_collision(self, group, other):
         now = get_time()
         if now - self.last_hit_time < self.hit_cool:
