@@ -19,6 +19,9 @@ class Boxer:
     def __init__(self, cfg: dict):
         self.cfg = cfg
         self.hits = 0
+        self.hp = 100
+        self.hit_cool = 0.3
+        self.last_hit_time = 0.0 #
 
         spawn = cfg.get('spawn', {})
         self.x = spawn.get('x', 400)
@@ -118,3 +121,4 @@ class Boxer:
 
     def handle_collision(self, group, other):
         pass
+
