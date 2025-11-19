@@ -111,3 +111,6 @@ class Boxer:
                 if e.key not in (SDLK_LEFT, SDLK_RIGHT, SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH):
                     return
         self.state_machine.handle_state_event(('INPUT', e))
+
+    def get_bb(self):
+        pass
