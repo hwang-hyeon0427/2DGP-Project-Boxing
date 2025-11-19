@@ -5,9 +5,7 @@ from key_events import a_down, a_up, d_down, d_up, left_down, left_up, right_dow
 from state_machine import StateMachine
 
 from idle import Idle
-from upper import Uppercut
-from front_hand import FrontHand
-from rear_hand import RearHand
+
 from walk_backward import WalkBackward
 from walk_forward import WalkForward
 
