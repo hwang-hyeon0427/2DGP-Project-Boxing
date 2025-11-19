@@ -129,8 +129,18 @@ class Boxer:
         attack_expand_y = 0
 
         if cur in (self.FRONT_HAND, self.REAR_HAND, self.UPPERCUT):
-            attack_expand_x = w * 0.5  
+            attack_expand_x = w * 0.5
             attack_expand_y = h * 0.2
+
+        if self.face == 1:
+            left = self.x - w
+            right = self.x + w + attack_expand_x
+        else:
+            left = self.x - w - attack_expand_x
+            right = self.x + w
+
+        bottom = self.y - h
+        top = self.y + h + attack_expand_y
 
     def handle_collision(self, group, other):
         now = get_time()
