@@ -20,6 +20,7 @@ class Boxer:
 
     def __init__(self, cfg: dict):
         self.cfg = cfg
+        self.hits = 0
 
         spawn = cfg.get('spawn', {})
         self.x = spawn.get('x', 400)
