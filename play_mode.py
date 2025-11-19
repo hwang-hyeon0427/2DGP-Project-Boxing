@@ -59,3 +59,5 @@ def draw():
     game_world.render()
     update_canvas()
 
+def pause(): pass
+def resume(): pass
