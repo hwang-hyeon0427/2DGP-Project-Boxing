@@ -27,3 +27,5 @@ def collide(a, b):
     pass
 
 collision_pairs = {}
+def add_collision_pair(group, a, b):
+    pass
