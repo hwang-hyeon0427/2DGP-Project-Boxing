@@ -125,6 +125,13 @@ class Boxer:
 
         cur = self.state_machine.cur_state
 
+        attack_expand_x = 0
+        attack_expand_y = 0
+
+        if cur in (self.FRONT_HAND, self.REAR_HAND, self.UPPERCUT):
+            attack_expand_x = w * 0.5  
+            attack_expand_y = h * 0.2
+
     def handle_collision(self, group, other):
         now = get_time()
         if now - self.last_hit_time < self.hit_cool:
