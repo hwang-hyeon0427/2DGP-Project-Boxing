@@ -120,6 +120,12 @@ class Boxer:
         w_ratio = bb_cfg.get('w', 0.25)
         h_ratio = bb_cfg.get('h', 0.35)
 
+        bb_cfg = self.cfg.get('bb', {})
+        w_ratio = bb_cfg.get('w', 0.25)
+        h_ratio = bb_cfg.get('h', 0.35)
+        offset_x = bb_cfg.get('x_offset', 0) * self.scale
+        offset_y = bb_cfg.get('y_offset', 0) * self.scale
+
         w = self.frame_w * self.scale * w_ratio
         h = self.frame_h * self.scale * h_ratio
 
