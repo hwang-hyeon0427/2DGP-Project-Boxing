@@ -112,7 +112,9 @@ class Boxer:
         self.state_machine.handle_state_event(('INPUT', e))
 
     def get_bb(self):
-        pass
+        w = self.frame_w * self.scale * 0.5
+        h = self.frame_h * self.scale * 0.6
+        return self.x - w, self.y - h, self.x + w, self.y + h
 
     def handle_collision(self, group, other):
         pass
