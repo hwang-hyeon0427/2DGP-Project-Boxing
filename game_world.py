@@ -1,9 +1,9 @@
 world = [ [] for _ in range(4) ] # layers for game objects
 
-def add_object(o, depth):
+def add_object(o, depth = 0):
     world[depth].append(o)
 
-def add_objects(ol, depth):
+def add_objects(ol, depth = 0):
     world[depth] += ol
 
 def update():
