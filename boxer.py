@@ -120,6 +120,9 @@ class Boxer:
         w_ratio = bb_cfg.get('w', 0.25)
         h_ratio = bb_cfg.get('h', 0.35)
 
+        w = self.frame_w * self.scale * w_ratio
+        h = self.frame_h * self.scale * h_ratio
+
     def handle_collision(self, group, other):
         now = get_time()
         if now - self.last_hit_time < self.hit_cool:
