@@ -114,3 +114,6 @@ class Boxer:
 
     def get_bb(self):
         pass
+
+    def handle_collision(self, group, other):
+        pass
