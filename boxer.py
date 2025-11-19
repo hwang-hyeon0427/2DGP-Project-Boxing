@@ -123,6 +123,8 @@ class Boxer:
         w = self.frame_w * self.scale * w_ratio
         h = self.frame_h * self.scale * h_ratio
 
+        cur = self.state_machine.cur_state
+
     def handle_collision(self, group, other):
         now = get_time()
         if now - self.last_hit_time < self.hit_cool:
