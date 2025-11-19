@@ -21,7 +21,7 @@ class Boxer:
         self.hits = 0
         self.hp = 100
         self.hit_cool = 0.3
-        self.last_hit_time = 0.0 #
+        self.last_hit_time = 0.0
 
         spawn = cfg.get('spawn', {})
         self.x = spawn.get('x', 400)
@@ -120,5 +120,9 @@ class Boxer:
         return self.x - w, self.y - h, self.x + w, self.y + h
 
     def handle_collision(self, group, other):
-        pass
+        now = get_time()
+        if now - self.last_hit_time < self.hit_cool:
+            return
+
+        
 
