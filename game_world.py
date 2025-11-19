@@ -30,6 +30,8 @@ def remove_collision_object(o):
             return
 
 def clear():
+    global world
+
     for layer in world:
         layer.clear()
 
