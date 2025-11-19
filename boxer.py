@@ -138,6 +138,9 @@ class Boxer:
             attack_expand_x = w * 0.5
             attack_expand_y = h * 0.2
 
+        center_x = self.x + offset_x
+        center_y = self.y + offset_y
+
         if self.face == 1:
             left = self.x - w
             right = self.x + w + attack_expand_x
