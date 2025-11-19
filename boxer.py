@@ -137,6 +137,9 @@ class Boxer:
         if cur in (self.FRONT_HAND, self.REAR_HAND, self.UPPERCUT):
             attack_expand_x = w * 0.5
             attack_expand_y = h * 0.2
+        else:
+            attack_expand_x = 0
+            attack_expand_y = 0
 
         center_x = self.x + offset_x
         center_y = self.y + offset_y
