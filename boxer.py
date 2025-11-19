@@ -5,7 +5,7 @@ from key_events import a_down, a_up, d_down, d_up, left_down, left_up, right_dow
 from state_machine import StateMachine
 
 from idle import Idle
-
+from attack_state import AttackState
 from walk_backward import WalkBackward
 from walk_forward import WalkForward
 
@@ -43,9 +43,9 @@ class Boxer:
         self.IDLE = Idle(self)
         self.WALK_FORWARD = WalkForward(self)
         self.WALK_BACKWARD = WalkBackward(self)
-        self.FRONT_HAND = FrontHand(self)
-        self.REAR_HAND = RearHand(self)
-        self.UPPERCUT = Uppercut(self)
+        self.FRONT_HAND = AttackState(self, 'front_hand')
+        self.REAR_HAND = AttackState(self, 'rear_hand')
+        self.UPPERCUT = AttackState(self, 'uppercut')
 
         self.state_machine = StateMachine(
             self.IDLE,
