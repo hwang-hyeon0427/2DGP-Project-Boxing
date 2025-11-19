@@ -25,3 +25,5 @@ def clear():
 
 def collide(a, b):
     pass
+
+collision_pairs = {}
