@@ -116,9 +116,9 @@ class Boxer:
         self.state_machine.handle_state_event(('INPUT', e))
 
     def get_bb(self):
-        w = self.frame_w * self.scale * 0.5
-        h = self.frame_h * self.scale * 0.6
-        return self.x - w, self.y - h, self.x + w, self.y + h
+        bb_cfg = self.cfg.get('bb', {})
+        w_ratio = bb_cfg.get('w', 0.25)
+        h_ratio = bb_cfg.get('h', 0.35)
 
     def handle_collision(self, group, other):
         now = get_time()
