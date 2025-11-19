@@ -3,7 +3,6 @@ from boxer import Boxer
 import game_framework
 import game_world
 
-
 P1 = {
     "controls": "wasd",
     "idle":  {"image":"player1/player1_Idle.png", "cols":10, "w":499, "h":489, "scale":0.5},
@@ -41,10 +40,12 @@ def init():
     global p1, p2
 
     p1 = Boxer(P1)
-    p2 = Boxer(P2)
-
     game_world.add_object(p1, 1)
+
+    p2 = Boxer(P2)
     game_world.add_object(p2, 1)
+
+    game_world.add_collision_pair('boxer:boxer', p1, p2)
 
 def update():
     game_world.update()
