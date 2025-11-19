@@ -22,3 +22,6 @@ def remove_collision_object(o):
 def clear():
     for layer in world:
         layer.clear()
+
+def collide(a, b):
+    pass
