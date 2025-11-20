@@ -7,7 +7,6 @@ class HPBar:
         self.y = y
         self.width = width
         self.height = height
-        self.boxer.max_hp = 100
 
     def update(self):
         pass
