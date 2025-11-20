@@ -13,7 +13,7 @@ class Map:
 
 
     def get_bb(self):
-        pass
+        return 0, 60, 800, 540
 
     def handle_collision(self, group, other):
         pass
