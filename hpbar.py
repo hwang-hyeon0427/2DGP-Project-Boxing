@@ -13,7 +13,16 @@ class HPBar:
 
     def draw(self):
         ratio = max(self.boxer.hp / self.boxer.max_hp, 0)
-        draw_rectangle(self.x - self.width//2, self.y - self.height//2, self.x + self.width//2, self.y + self.height//2)
 
-        life_width = int(self.width * ratio)
-        draw_rectangle(self.x - self.width//2, self.y - self.height//2, self.x + self.width//2, self.y + self.height//2)
+        half_w = self.width / 2
+        half_h = self.height / 2
+
+        left = self.x - half_w
+        right = self.x + half_w
+        bottom = self.y - half_h
+        top = self.y + half_h
+
+        draw_rectangle(left, top, right, bottom)
+
+        hp_right = left + half_w * ratio
+        draw_rectangle(left, bottom, hp_right, top)
