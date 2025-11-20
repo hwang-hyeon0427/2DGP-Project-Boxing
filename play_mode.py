@@ -47,10 +47,10 @@ def handle_events():
             p2.handle_event(event)
 
 def init():
-    global p1, p2
+    global p1, p2, map
 
-    ring = Map()
-    game_world.add_object(ring, 0)
+    map = Map()
+    game_world.add_object(map, 0)
 
     p1 = Boxer(P1)
     game_world.add_object(p1, 1)
@@ -69,6 +69,10 @@ def init():
 
 def update():
     game_world.update()
+
+    limit_boxer_in_map(p1)
+    limit_boxer_in_map(p2)
+
     game_world.handle_collisions()
 
 def finish():
@@ -81,3 +85,8 @@ def draw():
 
 def pause(): pass
 def resume(): pass
+
+def limit_boxer_in_map(boxer):
+    l, b, r, t = map.get_bb()
+    boxer.x = clamp(l + 40, boxer.x, r - 40)
+    boxer.y = clamp(b + 40, boxer.y, t - 40)
