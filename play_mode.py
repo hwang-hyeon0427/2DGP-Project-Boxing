@@ -3,6 +3,7 @@ from boxer import Boxer
 import game_framework
 import game_world
 from hpbar import HPBar
+from map import Map
 
 P1 = {
     "controls": "wasd",
@@ -48,6 +49,9 @@ def handle_events():
 def init():
     global p1, p2
 
+    map = Map()
+    game_world.add_object(map, 0)
+    
     p1 = Boxer(P1)
     game_world.add_object(p1, 1)
 
