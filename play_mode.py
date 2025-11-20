@@ -2,6 +2,7 @@ from pico2d import *
 from boxer import Boxer
 import game_framework
 import game_world
+from hpbar import HPBar
 
 P1 = {
     "controls": "wasd",
@@ -52,6 +53,12 @@ def init():
 
     p2 = Boxer(P2)
     game_world.add_object(p2, 1)
+
+    hp_bar1 = HPBar(p1, 200, 550)
+    game_world.add_object(hp_bar1,2)
+
+    hp_bar2 = HPBar(p2, 600, 550)
+    game_world.add_object(hp_bar2,2)
 
 
     game_world.add_collision_pair('boxer:boxer', p1, p2)
