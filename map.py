@@ -8,7 +8,8 @@ class Map:
         pass
 
     def draw(self):
-        
+        self.image.draw(800, 300)
+        draw_rectangle(*self.get_bb())
 
 
     def get_bb(self):
