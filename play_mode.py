@@ -49,9 +49,9 @@ def handle_events():
 def init():
     global p1, p2
 
-    map = Map()
-    game_world.add_object(map, 0)
-    
+    ring = Map()
+    game_world.add_object(ring, 0)
+
     p1 = Boxer(P1)
     game_world.add_object(p1, 1)
 
