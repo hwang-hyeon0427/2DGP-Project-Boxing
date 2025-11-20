@@ -8,6 +8,7 @@ from idle import Idle
 from attack_state import AttackState
 from walk_backward import WalkBackward
 from walk_forward import WalkForward
+import play_mode
 
 
 def animation_end(e):
@@ -101,6 +102,10 @@ class Boxer:
 
     def update(self):
         self.state_machine.update()
+        
+        l, b, r, t = play_mode.ring.get_bb()
+        self.x = clamp(l + 40, self.x, r - 40)
+        self.y = clamp(b + 40, self.y, t - 40)
 
     def draw(self):
         self.state_machine.draw()
