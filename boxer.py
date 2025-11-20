@@ -23,6 +23,9 @@ class Boxer:
         self.hit_cool = 0.3
         self.last_hit_time = 0.0
 
+        self.max_hp = self.cgf.get("max_hp", 100)
+        self.hp = self.max_hp
+
         spawn = cfg.get('spawn', {})
         self.x = spawn.get('x', 400)
         self.y = spawn.get('y', 90)
