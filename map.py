@@ -22,7 +22,7 @@ class Map:
         pass
 
     def draw(self):
-
+        self.image.clip_draw(self.col * Map.FRAME_W, self.row * Map.FRAME_H, Map.FRAME_W, Map.FRAME_H, 400, 300, 800, 600)
 
     def get_bb(self):
         return 0, 60, 800, 540
