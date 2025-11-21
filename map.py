@@ -2,30 +2,31 @@ from pico2d import *
 import random
 
 class Map:
-    FRAME_W = 320
-    FRAME_H = 173
-    COLS = 4
-    ROWS = 4
+    FRAME_W = 317
+    FRAME_H = 128
+    TOTAL_FRAMES = 4
 
-    def __init__(self, index=None):
-        self.image = load_image('background/Boxing_Rings.png')
+    def __init__(self):
+        bg_list = [
+            'background/Boxing_Ring_Blue.png',
+            'background/Boxing_Ring_Green.png'
+        ]
+        self.image = load_image(random.choice(bg_list))
 
-        if index is None:
-            index = random.randint(0, Map.COLS * Map.ROWS - 1)
-
-        self.index = index
-
-        self.col = index % Map.COLS
-        self.row = Map.ROWS - 1 - (index // Map.COLS)
+        self.frame = 0.0
+        self.frame_speed = 0.2
 
     def update(self):
-        pass
+        self.frame = (self.frame + self.frame_speed) % Map.TOTAL_FRAMES
 
     def draw(self):
-        self.image.clip_draw(self.col * Map.FRAME_W, self.row * Map.FRAME_H, Map.FRAME_W, Map.FRAME_H, 400, 300, 800, 600)
+        src_x = int(self.frame) * Map.FRAME_W
+
+        w, h = get_canvas_width(), get_canvas_height()
+        self.image.clip_draw(src_x, 0, Map.FRAME_W, Map.FRAME_H, w // 2, h // 2, w, h)
 
     def get_bb(self):
-        return 0, 60, 800, 540
+        return 0, 0, get_canvas_width(), get_canvas_height()
 
     def handle_collision(self, group, other):
         pass
