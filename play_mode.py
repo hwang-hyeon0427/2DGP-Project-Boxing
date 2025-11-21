@@ -1,4 +1,6 @@
 from pico2d import *
+
+import title_mode
 from boxer import Boxer
 import game_framework
 import game_world
@@ -41,7 +43,7 @@ def handle_events():
         if event.type == SDL_QUIT:
             game_framework.quit()
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
-            game_framework.quit()
+            game_framework.change_mode(title_mode)
         else:
             p1.handle_event(event)
             p2.handle_event(event)
