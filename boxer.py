@@ -122,10 +122,6 @@ class Boxer:
         bb_cfg = self.cfg.get('bb', {})
         w_ratio = bb_cfg.get('w', 0.25)
         h_ratio = bb_cfg.get('h', 0.35)
-
-        bb_cfg = self.cfg.get('bb', {})
-        w_ratio = bb_cfg.get('w', 0.25)
-        h_ratio = bb_cfg.get('h', 0.35)
         offset_x = bb_cfg.get('x_offset', 0) * self.scale
         offset_y = bb_cfg.get('y_offset', 0) * self.scale
 
@@ -168,4 +164,3 @@ class Boxer:
             self.hp -= 5
             self.last_hit_time = now
             print(f"Boxer hit! HP: {self.hp}")
-
