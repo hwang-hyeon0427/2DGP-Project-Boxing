@@ -9,12 +9,14 @@ class Map:
     def __init__(self):
         bg_list = [
             'background/Boxing_Ring_Blue.png',
-            'background/Boxing_Ring_Green.png'
+            'background/Boxing_Ring_Green.png',
+            'background/Boxing_Ring_Orange.png',
+            'background/Boxing_Ring_Purple.png'
         ]
         self.image = load_image(random.choice(bg_list))
 
         self.frame = 0.0
-        self.frame_speed = 0.2
+        self.frame_speed = 250.0
 
     def update(self):
         self.frame = (self.frame + self.frame_speed) % Map.TOTAL_FRAMES
