@@ -119,39 +119,24 @@ class Boxer:
         self.state_machine.handle_state_event(('INPUT', e))
 
     def get_bb(self):
-        bb_cfg = self.cfg.get('bb', {})
-        w_ratio = bb_cfg.get('w', 0.25)
-        h_ratio = bb_cfg.get('h', 0.35)
-        offset_x = bb_cfg.get('x_offset', 0) * self.scale
-        offset_y = bb_cfg.get('y_offset', 0) * self.scale
+        bb_cfg = self.cfg["bb"]
 
-        w = self.frame_w * self.scale * w_ratio
-        h = self.frame_h * self.scale * h_ratio
+        # 한 프레임 이미지의 실제 픽셀 크기
+        frame_w = self.frame_w * self.scale # 화면에 실제로 그려지는 프레임의 너비 = 원본 프레임 너비 * 확대/축소 비율
+        frame_h = self.frame_h * self.scale # 화면에 실제로 그려지는 프레임의 높이 = 원본 프레임 높이 * 확대/축소 비율
 
-        cur = self.state_machine.cur_state
+        # 비율 기반 실제 박스 크기
+        bb_w = frame_w * bb_cfg["w"] # 충돌 박스의 실제 너비 = 실제 프레임 너비 * 박스 너비 비율(0~1 사이)
+        bb_h = frame_h * bb_cfg["h"]
 
-        attack_expand_x = 0
-        attack_expand_y = 0
+        # 오프셋
+        x_offset = bb_cfg["x_offset"] # 캐릭터의 중심(self.x)에서 충돌 박스를 좌우로 얼마나 이동시킬지 결정
+        y_offset = bb_cfg["y_offset"]
 
-        if cur in (self.FRONT_HAND, self.REAR_HAND, self.UPPERCUT):
-            attack_expand_x = w * 0.5
-            attack_expand_y = h * 0.2
-        else:
-            attack_expand_x = 0
-            attack_expand_y = 0
-
-        center_x = self.x + offset_x
-        center_y = self.y + offset_y
-
-        if self.face == 1:
-            left = self.x - w
-            right = self.x + w + attack_expand_x
-        else:
-            left = self.x - w - attack_expand_x
-            right = self.x + w
-
-        bottom = self.y - h
-        top = self.y + h + attack_expand_y
+        left = self.x - bb_w / 2 + x_offset
+        right = self.x + bb_w / 2 + x_offset
+        bottom = self.y - bb_h / 2 + y_offset
+        top = self.y + bb_h / 2 + y_offset
 
         return left, bottom, right, top
 
