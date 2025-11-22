@@ -5,7 +5,7 @@ from boxer import Boxer
 import game_framework
 import game_world
 from hpbar import HPBar
-from map import Map
+from boxing_ring import BoxingRing
 
 P1 = {
     "controls": "wasd",
@@ -49,10 +49,10 @@ def handle_events():
             p2.handle_event(event)
 
 def init():
-    global p1, p2, map
+    global p1, p2, boxing_ring
 
-    map = Map()
-    game_world.add_object(map, 0)
+    boxing_ring = BoxingRing()
+    game_world.add_object(boxing_ring, 0)
 
     p1 = Boxer(P1)
     game_world.add_object(p1, 1)
@@ -72,8 +72,8 @@ def init():
 def update():
     game_world.update()
 
-    limit_boxer_in_map(p1)
-    limit_boxer_in_map(p2)
+    limit_boxer_in_boxing_ring(p1)
+    limit_boxer_in_boxing_ring(p2)
 
     game_world.handle_collisions()
 
@@ -88,7 +88,7 @@ def draw():
 def pause(): pass
 def resume(): pass
 
-def limit_boxer_in_map(boxer):
-    l, b, r, t = map.get_bb()
+def limit_boxer_in_boxing_ring(boxer):
+    l, b, r, t = boxing_ring.get_bb()
     boxer.x = clamp(l + 40, boxer.x, r - 40)
     boxer.y = clamp(b + 40, boxer.y, t - 40)
