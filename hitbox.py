@@ -11,11 +11,11 @@ class HitBox:
 
 
     def draw(self):
-        if get_time() > self.end_time:
-            game_world.remove_object(self)
+
 
     def update(self):
-        pass
+        if get_time() > self.end_time:
+            game_world.remove_object(self)
 
     def get_bb(self):
         return 0, 0, 0, 0
