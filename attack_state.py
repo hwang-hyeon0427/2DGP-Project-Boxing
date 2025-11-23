@@ -10,6 +10,8 @@ class AttackState:
         self.b.frame = 0
         self.done = False
 
+        self.b.spawn_hitbox()
+
     def exit(self, e):
         pass
 
