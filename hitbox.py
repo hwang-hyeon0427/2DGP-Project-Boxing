@@ -11,7 +11,7 @@ class HitBox:
 
 
     def draw(self):
-
+        draw_rectangle(* self.get_bb())
 
     def update(self):
         if get_time() > self.end_time:
