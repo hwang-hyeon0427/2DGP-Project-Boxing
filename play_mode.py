@@ -67,8 +67,9 @@ def init():
     game_world.add_object(hp1, 2)
     game_world.add_object(hp2, 2)
 
+    game_world.add_collision_pair('p1:p2', p1, p2)
+    game_world.add_collision_pair('p2:p1', p2, p1)
 
-    game_world.add_collision_pair('boxer:boxer', p1, p2)
 
 def update():
     game_world.update()
