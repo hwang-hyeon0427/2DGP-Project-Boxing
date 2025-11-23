@@ -1,19 +1,19 @@
 class AttackState:
-    def __init__(self, boxer, key):
+    def __init__(self, boxer, attack_type):
         self.b = boxer
-        self.key = key      # ex) 'front_hand', 'rear_hand', 'uppercut'
-        self.done = False
+        self.type = attack_type
 
     def enter(self, e):
-        sheet = self.b.cfg.get(self.key, self.b.cfg['idle'])
+        sheet = self.b.cfg.[self.type]
         self.b.use_sheet(sheet)
         self.b.frame = 0
-        self.done = False
 
-        self.b.spawn_hitbox()
+        self.b.is_attacking = True
+        self.b.current_attack_type = self.type
 
     def exit(self, e):
-        pass
+        self.b.is_attacking = False
+        self.b.current_attack_type = None
 
     def do(self):
         if not self.done:
