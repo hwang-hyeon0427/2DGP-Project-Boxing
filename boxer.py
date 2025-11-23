@@ -147,12 +147,7 @@ class Boxer:
         if now - self.last_hit_time < self.hit_cool:
             return
 
-        if group == 'p1_hit:p2' and self is p2:
-            self.hp -= 5
-            self.last_hit_time = now
-            print("P2 HIT! HP:", self.hp)
-
-        elif group == 'p2_hit:p1' and self is p1:
-            self.hp -= 5
-            self.last_hit_time = now
-            print("P1 HIT! HP:", self.hp)
+        if group == 'atk:hit' and other is self.opponent:
+            self.opponent.hp -= 5
+            self.opponent.last_hit_time = now
+            print("HIT!", self.opponent, self.opponent.hp)
