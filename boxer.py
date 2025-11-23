@@ -22,6 +22,7 @@ class Boxer:
         self.hits = 0
         self.max_hp = int(cfg.get('max_hp', 100))  # 값 복사
         self.hp = self.max_hp  # hp는 무조건 새로 생성
+        self.opponent = None
 
         self.hit_cool = 0.3
         self.last_hit_time = 0.0
