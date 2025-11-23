@@ -4,6 +4,7 @@ from key_events import a_down, a_up, d_down, d_up, left_down, left_up, right_dow
     slash_down, f_down, g_down, h_down
 from state_machine import StateMachine
 
+
 from idle import Idle
 from attack_state import AttackState
 from walk_backward import WalkBackward
@@ -145,7 +146,12 @@ class Boxer:
         if now - self.last_hit_time < self.hit_cool:
             return
 
-        if group == 'boxer:boxer':
+        if group == 'p1_hit:p2' and self is p2:
             self.hp -= 5
             self.last_hit_time = now
-            print(f"Boxer hit! HP: {self.hp}")
+            print("P2 HIT! HP:", self.hp)
+
+        elif group == 'p2_hit:p1' and self is p1:
+            self.hp -= 5
+            self.last_hit_time = now
+            print("P1 HIT! HP:", self.hp)
