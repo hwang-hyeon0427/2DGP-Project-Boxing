@@ -1,5 +1,5 @@
 from pico2d import *
-
+import game_world
 class HitBox:
     def __init__(self, owner, offset_x, offset_y, w, h, duration):
         self.owner = owner
@@ -11,7 +11,8 @@ class HitBox:
 
 
     def draw(self):
-        pass
+        if get_time() > self.end_time:
+            game_world.remove_object(self)
 
     def update(self):
         pass
