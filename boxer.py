@@ -19,12 +19,12 @@ class Boxer:
     def __init__(self, cfg: dict):
         self.cfg = cfg
         self.hits = 0
-        self.hp = 100
+        self.max_hp = int(cfg.get('max_hp', 100))  # 값 복사
+        self.hp = self.max_hp  # hp는 무조건 새로 생성
+
         self.hit_cool = 0.3
         self.last_hit_time = 0.0
 
-        self.max_hp = self.cfg.get("max_hp", 100)
-        self.hp = self.max_hp
 
         spawn = cfg.get('spawn', {})
         self.x = spawn.get('x', 400)
