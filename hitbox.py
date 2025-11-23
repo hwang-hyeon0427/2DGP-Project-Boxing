@@ -5,8 +5,8 @@ class HitBox:
         self.owner = owner
         self.offset_x = offset_x
         self.offset_y = offset_y
-        self.width = w
-        self.height = h
+        self.w = w
+        self.h = h
         self.end_time = get_time() + duration
 
 
@@ -18,7 +18,9 @@ class HitBox:
             game_world.remove_object(self)
 
     def get_bb(self):
-        return 0, 0, 0, 0
+        x = self.owner.x + self.offset_x
+        y = self.owner.y + self.offset_y
+        return x - self.w/2, y - self.h/2, x + self.w/2, y + self.h/2
 
     def handle_collision(self, other, group):
         pass
