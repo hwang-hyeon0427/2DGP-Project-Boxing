@@ -62,6 +62,9 @@ def init():
     p2 = Boxer(P2)
     game_world.add_object(p2, 1)
 
+    p1.opponent = p2
+    p2.opponent = p1
+
     # UI 레이어(보통 depth=2)
     hp1 = HPBar(p1, x=300, y=550)
     hp2 = HPBar(p2, x=1000, y=550)
