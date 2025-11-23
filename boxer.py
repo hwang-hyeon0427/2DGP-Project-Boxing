@@ -142,6 +142,18 @@ class Boxer:
 
         return left, bottom, right, top
 
+    def spawn_hitbox(self):
+        from hitbox import HitBox
+        import game_world
+
+        x_offset = 60 if self.face == 1 else -60
+
+        hitbox = HitBox(self, x_offset, 0, 60, 50, 0.12)
+        game_world.add_object(hitbox, 1)
+
+        # 공격자(self) → 피격자(self.opponent)
+        game_world.add_collision_pair('atk:hit', hitbox, self.opponent)
+
     def handle_collision(self, group, other):
         now = get_time()
         if now - self.last_hit_time < self.hit_cool:
