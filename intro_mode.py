@@ -4,18 +4,26 @@ import title_mode
 
 image= None
 
-frame = 0.0
-FRAME_COUNT = 8
-FRAME_ROWS = 3
-TARGET_ROW = 1
+FRAME_W = 279
+FRAME_H = 245
+ANIMATION_SPEED = 6.0
 
-ANIMATION_SPEED = 10.0
-
-FRAME_W = 2237 // FRAME_COUNT
-FRAME_H = 737 // FRAME_ROWS
+frame_index = 0
 
 logo_start_time = 0
 
+FRAME_SEQUENCE = []
+
+for i in range(8):
+    FRAME_SEQUENCE.append((i, 0))
+
+for i in range(8):
+    FRAME_SEQUENCE.append((i, 1))
+
+for i in range(6):
+    FRAME_SEQUENCE.append((i, 2))
+
+TOTAL_FRAMES = len(FRAME_SEQUENCE)
 
 def init():
     global image, logo_start_time, frame
@@ -32,7 +40,7 @@ def update():
     frame += ANIMATION_SPEED * game_framework.frame_time
 
     if frame >= FRAME_COUNT:
-        game_framework.chage_mode(title_mode)
+        game_framework.change_mode(title_mode)
 
 def draw():
     clear_canvas()
