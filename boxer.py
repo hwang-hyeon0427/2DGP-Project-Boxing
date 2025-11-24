@@ -17,6 +17,9 @@ def animation_end(e):
 
 class Boxer:
     _img_cache = {}
+    TIME_PER_ACTION = 0.5
+    ACTION_PER_TIME = 1.0 / TIME_PER_ACTION
+    FRAMES_PER_ACTION = 8
 
     def __init__(self, cfg: dict):
         self.cfg = cfg
@@ -27,7 +30,6 @@ class Boxer:
 
         self.hit_cool = 0.3
         self.last_hit_time = 0.0
-
 
         spawn = cfg.get('spawn', {})
         self.x = spawn.get('x', 400)
@@ -76,12 +78,41 @@ class Boxer:
                     slash_down: self.UPPERCUT
 
                 },
-                self.WALK_BACKWARD: {a_up: self.IDLE, right_up: self.IDLE},
-                self.WALK_FORWARD: {d_up: self.IDLE, left_up: self.IDLE},
+                self.WALK_BACKWARD: {a_up: self.IDLE, right_up: self.IDLE,
+                                     f_down: self.FRONT_HAND,
+                                     g_down: self.REAR_HAND,
+                                     h_down: self.UPPERCUT,
+                                     comma_down: self.FRONT_HAND,
+                                     period_down: self.REAR_HAND,
+                                     slash_down: self.UPPERCUT
+                                     },
+                self.WALK_FORWARD: {d_up: self.IDLE, left_up: self.IDLE,
+                                    f_down: self.FRONT_HAND,
+                                    g_down: self.REAR_HAND,
+                                    h_down: self.UPPERCUT,
+                                    comma_down: self.FRONT_HAND,
+                                    period_down: self.REAR_HAND,
+                                    slash_down: self.UPPERCUT
+                                    },
                 # 공격 상태에서 IDLE로 전환
-                self.FRONT_HAND: {animation_end: self.IDLE},
-                self.REAR_HAND: {animation_end: self.IDLE},
-                self.UPPERCUT: {animation_end: self.IDLE}
+                self.FRONT_HAND: {animation_end: self.IDLE,
+                                  a_down: self.WALK_BACKWARD,
+                                  d_down: self.WALK_FORWARD,
+                                  left_down: self.WALK_FORWARD,
+                                  right_down: self.WALK_BACKWARD
+                                  },
+                self.REAR_HAND: {animation_end: self.IDLE,
+                                 a_down: self.WALK_BACKWARD,
+                                 d_down: self.WALK_FORWARD,
+                                 left_down: self.WALK_FORWARD,
+                                 right_down: self.WALK_BACKWARD
+                                 },
+                self.UPPERCUT: {animation_end: self.IDLE,
+                                a_down: self.WALK_BACKWARD,
+                                d_down: self.WALK_FORWARD,
+                                left_down: self.WALK_FORWARD,
+                                right_down: self.WALK_BACKWARD
+                                }
             }
         )
 
@@ -95,12 +126,18 @@ class Boxer:
     def draw_current(self):
         if self.image is None:
             return
-        src_x = self.frame * self.frame_w
+
+        # ⚠ frame이 float이므로 반드시 정수로 변환
+        frame_index = int(self.frame)
+
+        src_x = frame_index * self.frame_w
         w, h = int(self.frame_w * self.scale), int(self.frame_h * self.scale)
+
         if self.face == 1:
             self.image.clip_draw(src_x, 0, self.frame_w, self.frame_h, self.x, self.y, w, h)
         else:
-            self.image.clip_composite_draw(src_x, 0, self.frame_w, self.frame_h, 0, 'h', self.x, self.y, w, h)
+            self.image.clip_composite_draw(src_x, 0, self.frame_w, self.frame_h, 0, 'h',
+                                           self.x, self.y, w, h)
 
     def update(self):
         self.last_x, self.last_y = self.x, self.y
@@ -150,9 +187,6 @@ class Boxer:
             return
 
         # 🔥 캐릭터별 히트박스 데이터
-        #  - 'wasd'  : P1 (controls == 'wasd')
-        #  - 'arrows': P2 (controls == 'arrows')
-        #  숫자들은 예시이니까 나중에 PNG 보고 너가 조절하면 됨!
         HITBOX_DATA = {
             'wasd': {  # P1용
                 'front_hand': {
@@ -162,7 +196,7 @@ class Boxer:
                     3: (92, 15, 70, 42)
                 },
                 'uppercut': {
-                    4: (40, 80, 55, 85)
+                    4: (150, 80, 55, 85)
                 }
             },
             'arrows': {  # P2용
@@ -185,7 +219,7 @@ class Boxer:
         if char_key not in HITBOX_DATA:
             return
 
-        char_data = HITBOX_DATA[char_key]
+        char_data = HITBOX_DATA[char_key] # 공격 타입별 데이터
 
         # 현재 공격 타입에 대한 데이터가 없으면 종료
         if attack_type not in char_data:
@@ -206,20 +240,20 @@ class Boxer:
             self,      # owner
             0, 0,      # 기본 오프셋(프레임별 히트박스가 우선 적용됨)
             0, 0,      # 기본 크기(프레임별 히트박스가 적용됨)
-            0.15,      # 히트박스 지속시간
+            1.0,      # 히트박스 지속시간
             frame_offsets=frame_offsets
         )
 
         # 게임 월드 등록 + 충돌 그룹 등록
         game_world.add_object(hitbox, 1)
-        game_world.add_collision_pair('atk:hit', hitbox, self.opponent)
+        game_world.add_collision_pair('atk:hit', hitbox, self.opponent) # 히트박스 vs 상대방
 
     def handle_collision(self, group, other):
         now = get_time()
 
-        if group == 'body:block' and other is self.opponent:
-            l1, b1, r1, t1 = self.get_bb()
-            l2, b2, r2, t2 = other.get_bb()
+        if group == 'body:block' and other is self.opponent: # 몸통끼리 충돌
+            l1, b1, r1, t1 = self.get_bb() # 자신의 바운딩 박스
+            l2, b2, r2, t2 = other.get_bb() # 상대방의 바운딩 박스
 
             # 겹친 정도(overlap)를 계산
             overlap = min(r1 - l2, r2 - l1)
