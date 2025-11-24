@@ -6,7 +6,7 @@ class HPBar:
         self.x = x
         self.y = y
 
-        self.image = load_image('health-bar.png')
+        self.image = load_image('health/health-bar.png')
 
         self.frame_count = 6 # 0~5 프레임
         self.frame_w = self.image.w # 가로 전체 크기에서 프레임 수로 나눈 값
