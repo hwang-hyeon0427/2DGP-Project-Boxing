@@ -26,9 +26,9 @@ for i in range(6):
 TOTAL_FRAMES = len(FRAME_SEQUENCE)
 
 def init():
-    global image, logo_start_time, frame
+    global image, logo_start_time, frame_index
     image = load_image('image/intro.png')
-    frame = 0.0
+    frame_index = 0
     logo_start_time = get_time()
 
 def finish():
