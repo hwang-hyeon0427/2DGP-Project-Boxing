@@ -2,13 +2,15 @@ from pico2d import *
 import game_world
 
 class HitBox:
-    def __init__(self, owner, offset_x, offset_y, w, h, duration):
+    def __init__(self, owner, offset_x, offset_y, w, h, duration, frame_offsets = None):
         self.owner = owner          # 히트박스를 만든 주체(공격자)
         self.offset_x = offset_x    # x 오프셋(얼굴 방향 따라 +/-)
         self.offset_y = offset_y    # y 오프셋
         self.w = w                  # 히트박스 너비
         self.h = h                  # 히트박스 높이
         self.end_time = get_time() + duration  # 일정 시간 지나면 제거됨
+
+        self.frame_offsets = frame_offsets # {frame_index: (offset_x, offset_y, w, h)}
 
     def draw(self):
         # 디버그용 바운딩박스
