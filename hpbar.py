@@ -1,28 +1,36 @@
-from pico2d import draw_rectangle, draw_line
+from pico2d import *
 
 class HPBar:
-    def __init__(self, boxer, x, y, width = 120, height = 10):
+    def __init__(self, boxer, x, y):
         self.boxer = boxer
         self.x = x
         self.y = y
-        self.width = width
-        self.height = height
+
+        self.image = load_image('health-bar.png')
+
+        self.frame_count = 6 # 0~5 프레임
+        self.frame_w = self.image.w # 가로 전체 크기에서 프레임 수로 나눈 값
+        self.frame_h = self.image.h // self.frame_count
+
+        self.scale = 0.5
+
+    def draw(self):
+        ratio = self.boxer.hp / self.boxer.max_hp #
+
+        # 체력비율 → 0~5 프레임 자동 변환
+        frame = int(ratio * (self.frame_count - 1)) #
+
+        # 안전장치
+        frame = max(0, min(frame, self.frame_count - 1))
+
+        # PNG는 위=0 프레임 아래=5 프레임
+        bottom = frame * self.frame_h
+
+        self.image.clip_draw(
+            0, bottom,
+            self.frame_w, self.frame_h,
+            self.x, self.y, self.frame_w * self.scale, self.frame_h * self.scale
+        )
 
     def update(self):
         pass
-
-    def draw(self):
-        ratio = max(self.boxer.hp / self.boxer.max_hp, 0)
-
-        half_w = self.width / 2
-        half_h = self.height / 2
-
-        left = self.x - half_w
-        right = self.x + half_w
-        bottom = self.y - half_h
-        top = self.y + half_h
-
-        draw_rectangle(left, top, right, bottom)
-
-        hp_right = left + half_w * ratio
-        draw_rectangle(left, bottom, hp_right, top)
