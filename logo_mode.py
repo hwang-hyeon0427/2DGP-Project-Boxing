@@ -4,11 +4,13 @@ import title_mode
 
 image = None
 logo_stop_time = 0
+w, h = 0, 0
 
 def init():
-    global image, logo_stop_time
+    global image, logo_stop_time, w, h
     image = load_image('tuk_credit.png')
     logo_stop_time = get_time()
+    w, h = image.w, image.h
 
 
 def finish():
@@ -21,7 +23,8 @@ def update():
 
 def draw():
     clear_canvas()
-    image.draw(400, 300)
+    scale = 1.5
+    image.draw(317*4//2, 128*6//2, w * scale, h * scale)
     update_canvas()
 
 def handle_events():
