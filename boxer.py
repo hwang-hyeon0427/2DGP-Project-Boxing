@@ -145,31 +145,53 @@ class Boxer:
         return left, bottom, right, top
 
     def spawn_hitbox(self):
-        # 오른쪽 / 왼쪽 방향에 따라 공격 거리 변경
-        x_offset = 80 if self.face == 1 else -80
+        # 현재 어떤 공격 상태인지 가져오기
+        attack_type = self.current_attack_type
+        if attack_type is None:
+            return
 
-        # 공격을 위한 히트박스 생성
-        hitbox = HitBox(
-            self,  # owner → 이 히트박스를 만든 캐릭터(Boxer 인스턴스)
-            0, 0,  # 기본 오프셋 offset_x, offset_y (지금은 프레임별 히트박스를 사용하므로 0으로 둬도 됨)
-            0, 0,  # 기본 히트박스 크기 w, h (이 역시 프레임별 값이 적용되므로 0으로 둬도 됨)
-            0.15,  # duration → 히트박스가 존재할 시간(초). 0.15초 후 자동 삭제됨.
-
-            # 🔥 frame_offsets: 특정 프레임에서 히트박스가 어떻게 생겨야 하는지를 정의하는 딕셔너리
-            # key = 공격 애니메이션 프레임 번호(self.frame)
-            # value = (offset_x, offset_y, width, height)
-            frame_offsets={
+        # 공격별 히트박스 데이터 (프레임 → (ox, oy, w, h))
+        HITBOX_DATA = {
+            'front_hand': {
                 2: (80, 20, 70, 40)
-                # → 공격 애니메이션의 2번 프레임에서
-                #    owner.x + 80, owner.y + 20 위치에
-                #    가로 70, 세로 40 크기의 히트박스를 생성하라는 의미
+            },
+            'rear_hand': {
+                3: (95, 15, 75, 45)
+            },
+            'uppercut': {
+                4: (40, 75, 50, 80)
             }
+        }
+
+        # 공격 데이터가 없으면 생성 안 함
+        if attack_type not in HITBOX_DATA:
+            return
+
+        # 프레임별 히트박스 데이터 가져오기
+        raw_offsets = HITBOX_DATA[attack_type]
+
+        # 좌우 반전 적용(facing 처리)
+        frame_offsets = {}
+        for frame, (ox, oy, w, h) in raw_offsets.items():
+            if self.face == 1:
+                frame_offsets[frame] = (ox, oy, w, h)
+            else:
+                # 왼쪽을 향할 때 반전
+                frame_offsets[frame] = (-ox, oy, w, h)
+
+        # 히트박스 생성
+        hitbox = HitBox(
+            self,  # owner
+            0, 0,  # 기본 오프셋(프레임별 히트박스가 우선 적용됨)
+            0, 0,  # 기본 크기(프레임별 히트박스가 적용됨)
+            0.15,  # 히트박스 지속시간
+            frame_offsets=frame_offsets
         )
 
-        # 게임월드 등록
+        # 월드에 추가
         game_world.add_object(hitbox, 1)
 
-        # 상대방과 충돌 그룹 생성
+        # 상대와 충돌 그룹 연결
         game_world.add_collision_pair('atk:hit', hitbox, self.opponent)
 
     def handle_collision(self, group, other):
