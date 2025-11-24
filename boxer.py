@@ -161,7 +161,24 @@ class Boxer:
         now = get_time()
 
         if group == 'body:block' and other is self.opponent:
-            self.x, self.y = self.last_x, self.last_y
+            l1, b1, r1, t1 = self.get_bb()
+            l2, b2, r2, t2 = other.get_bb()
+
+            # 겹친 정도(overlap)를 계산
+            overlap = min(r1 - l2, r2 - l1)
+
+            if overlap > 0:
+                # 자기 기준으로 반씩 밀기
+                push_amount = overlap / 2
+
+                # 자신의 얼굴 방향 기준이 아니라 두 플레이어의 위치 관계로 밀기
+                if self.x < other.x:
+                    self.x -= push_amount
+                    other.x += push_amount
+                else:
+                    self.x += push_amount
+                    other.x -= push_amount
+
             return
 
         if now - self.last_hit_time < self.hit_cool:
