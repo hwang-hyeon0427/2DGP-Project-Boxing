@@ -24,10 +24,15 @@ def init():
     logo_start_time = get_time()
 
 def finish():
-    pass
+    global image
+    del image
 
 def update():
-    pass
+    global frame
+    frame += ANIMATION_SPEED * game_framework.frame_time
+
+    if frame >= FRAME_COUNT:
+        game_framework.chage_mode(title_mode)
 
 def draw():
     pass
