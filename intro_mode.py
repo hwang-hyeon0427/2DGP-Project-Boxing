@@ -44,14 +44,16 @@ def update():
 
 def draw():
     clear_canvas()
-
-    current_frame = int(frame)
-    src_x = current_frame * FRAME_W
-    src_y = (FRAME_ROWS - 1 - TARGET_ROW) * FRAME_H
-
     w, h = get_canvas_width(), get_canvas_height()
 
-    image.clip_draw(src_x, src_y, FRAME_W, FRAME_H, w // 2, h // 2, FRAME_W * 2, FRAME_H * 2)
+    idx = int(frame_index)
+    frame_x, frame_row = FRAME_SEQUENCE[idx]
+    
+    src_x = frame_x * FRAME_W
+    src_y = (2 - frame_row) * FRAME_H
+
+
+    image.clip_draw(src_x, src_y, FRAME_W, FRAME_H, w // 2, h // 2, FRAME_W * 3, FRAME_H * 3)
 
     update_canvas()
 
