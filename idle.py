@@ -1,3 +1,5 @@
+import game_framework
+
 class Idle:
     def __init__(self, boxer):
         self.boxer = boxer
@@ -10,7 +12,16 @@ class Idle:
         pass
 
     def do(self):
-        self.boxer.frame = (self.boxer.frame + 1) % self.boxer.cols
+        # FPS 독립 애니메이션 (시간 기반)
+        self.boxer.frame += (
+            self.boxer.FRAMES_PER_ACTION *
+            self.boxer.ACTION_PER_TIME *
+            game_framework.frame_time
+        )
+
+        # 넘치면 0으로 순환
+        if self.boxer.frame >= self.boxer.cols:
+            self.boxer.frame = 0
 
     def draw(self):
         self.boxer.draw_current()
