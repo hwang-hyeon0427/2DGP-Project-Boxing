@@ -103,6 +103,7 @@ class Boxer:
             self.image.clip_composite_draw(src_x, 0, self.frame_w, self.frame_h, 0, 'h', self.x, self.y, w, h)
 
     def update(self):
+        self.last_x, self.last_y = self.x, self.y
         self.state_machine.update()
 
     def draw(self):
@@ -158,6 +159,10 @@ class Boxer:
 
     def handle_collision(self, group, other):
         now = get_time()
+
+        if group == 'body:block' and other is self.opponent:
+            self.x, self.y = self.last_x, self.last_y
+            return
 
         if now - self.last_hit_time < self.hit_cool:
             return
