@@ -145,41 +145,63 @@ class Boxer:
         return left, bottom, right, top
 
     def spawn_hitbox(self):
-        # 현재 어떤 공격 상태인지 가져오기
         attack_type = self.current_attack_type
         if attack_type is None:
             return
 
-        # 공격별 히트박스 데이터 (프레임 → (ox, oy, w, h))
+        # 🔥 캐릭터별 히트박스 데이터
+        #  - 'wasd'  : P1 (controls == 'wasd')
+        #  - 'arrows': P2 (controls == 'arrows')
+        #  숫자들은 예시이니까 나중에 PNG 보고 너가 조절하면 됨!
         HITBOX_DATA = {
-            'front_hand': {
-                2: (80, 20, 70, 40)
+            'wasd': {  # P1용
+                'front_hand': {
+                    2: (80, 20, 70, 40)
+                },
+                'rear_hand': {
+                    3: (90, 15, 75, 45)
+                },
+                'uppercut': {
+                    4: (40, 70, 50, 80)
+                }
             },
-            'rear_hand': {
-                3: (95, 15, 75, 45)
-            },
-            'uppercut': {
-                4: (40, 75, 50, 80)
+            'arrows': {  # P2용
+                'front_hand': {
+                    2: (60, 15, 60, 35)
+                },
+                'rear_hand': {
+                    3: (70, 20, 65, 40)
+                },
+                'uppercut': {
+                    4: (35, 65, 45, 75)
+                }
             }
         }
 
-        # 공격 데이터가 없으면 생성 안 함
-        if attack_type not in HITBOX_DATA:
+        # 내 캐릭터가 어떤 그룹(P1/P2)에 속하는지 결정
+        char_key = self.controls  # 'wasd' 또는 'arrows'
+
+        # 내 캐릭터에 대한 히트박스 데이터가 없으면 종료
+        if char_key not in HITBOX_DATA:
             return
 
-        # 프레임별 히트박스 데이터 가져오기
-        raw_offsets = HITBOX_DATA[attack_type]
+        char_data = HITBOX_DATA[char_key]
 
-        # 좌우 반전 적용(facing 처리)
+        # 현재 공격 타입에 대한 데이터가 없으면 종료
+        if attack_type not in char_data:
+            return
+
+        raw_offsets = char_data[attack_type]  # {frame: (ox, oy, w, h)}
+
+        # 좌우 방향(face)에 따라 x 오프셋 반전
         frame_offsets = {}
         for frame, (ox, oy, w, h) in raw_offsets.items():
-            if self.face == 1:
+            if self.face == 1:  # 오른쪽 바라보는 경우
                 frame_offsets[frame] = (ox, oy, w, h)
-            else:
-                # 왼쪽을 향할 때 반전
+            else:  # 왼쪽 바라보는 경우 → x 반전
                 frame_offsets[frame] = (-ox, oy, w, h)
 
-        # 히트박스 생성
+        # 실제 히트박스 생성
         hitbox = HitBox(
             self,  # owner
             0, 0,  # 기본 오프셋(프레임별 히트박스가 우선 적용됨)
@@ -188,10 +210,8 @@ class Boxer:
             frame_offsets=frame_offsets
         )
 
-        # 월드에 추가
+        # 게임 월드 등록 + 충돌 그룹 등록
         game_world.add_object(hitbox, 1)
-
-        # 상대와 충돌 그룹 연결
         game_world.add_collision_pair('atk:hit', hitbox, self.opponent)
 
     def handle_collision(self, group, other):
