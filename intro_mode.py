@@ -7,7 +7,7 @@ image= None
 frame = 0.0
 FRAME_COUNT = 8
 FRAME_ROWS = 3
-TARGET_ROWS = 1
+TARGET_ROW = 1
 
 ANIMATION_SPEED = 10.0
 
@@ -35,7 +35,17 @@ def update():
         game_framework.chage_mode(title_mode)
 
 def draw():
-    pass
+    clear_canvas()
+
+    current_frame = int(frame)
+    src_x = current_frame * FRAME_W
+    src_y = (FRAME_ROWS - 1 - TARGET_ROW) * FRAME_H
+
+    w, h = get_canvas_width(), get_canvas_height()
+
+    image.clip_draw(src_x, src_y, FRAME_W, FRAME_H, w // 2, h // 2, FRAME_W * 2, FRAME_H * 2)
+
+    update_canvas()
 
 def handle_events(): pass
 def pause(): pass
