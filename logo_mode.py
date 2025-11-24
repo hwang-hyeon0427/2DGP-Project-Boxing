@@ -1,6 +1,6 @@
 from pico2d import *
 import game_framework
-import title_mode
+import intro_mode
 
 image = None
 
@@ -30,7 +30,7 @@ def update():
     frame %= FRAME_COUNT
 
     if get_time() - logo_start_time > 2.0:
-        game_framework.change_mode(title_mode)
+        game_framework.change_mode(intro_mode)
 
 def draw():
     clear_canvas()
