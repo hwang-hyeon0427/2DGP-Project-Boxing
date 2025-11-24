@@ -8,7 +8,7 @@ w, h = 0, 0
 
 def init():
     global image, w, h, width, height
-    image = load_image('title_screen.png')
+    image = load_image('image/title_screen.png')
     w, h = image.w, image.h
     width = get_canvas_width()
     height = get_canvas_height()
