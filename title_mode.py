@@ -5,10 +5,14 @@ import play_mode
 image = None
 w, h = 0, 0
 
+
 def init():
-    global image, w, h
+    global image, w, h, width, height
     image = load_image('title_screen.png')
     w, h = image.w, image.h
+    width = get_canvas_width()
+    height = get_canvas_height()
+
 
 def finish():
     global image
@@ -20,7 +24,7 @@ def update():
 def draw():
     clear_canvas()
     scale = 3.5  # 0 ~ 1 사이의 값으로 조절
-    image.draw(317*4//2, 128*6//2, w * scale, h * scale)
+    image.draw(width//2, height//2, w * scale, h * scale)
     update_canvas()
 
 def handle_events():
