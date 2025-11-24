@@ -36,10 +36,10 @@ def finish():
     del image
 
 def update():
-    global frame
-    frame += ANIMATION_SPEED * game_framework.frame_time
+    global frame_index
+    frame_index += ANIMATION_SPEED * game_framework.frame_time
 
-    if frame >= FRAME_COUNT:
+    if frame_index >= TOTAL_FRAMES:
         game_framework.change_mode(title_mode)
 
 def draw():
