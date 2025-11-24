@@ -72,6 +72,9 @@ def init():
     hp2 = HPBar(p2, x=1000, y=550)
     game_world.add_object(hp2, 2)
 
+    game_world.add_collision_pair('body:block', p1, p2)
+
+
 def update():
     game_world.update()
 
