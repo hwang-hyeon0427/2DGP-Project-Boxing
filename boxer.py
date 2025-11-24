@@ -156,13 +156,13 @@ class Boxer:
         HITBOX_DATA = {
             'wasd': {  # P1용
                 'front_hand': {
-                    2: (80, 20, 70, 40)
+                    3: (85, 12, 65, 38)
                 },
                 'rear_hand': {
-                    3: (90, 15, 75, 45)
+                    3: (92, 15, 70, 42)
                 },
                 'uppercut': {
-                    4: (40, 70, 50, 80)
+                    4: (40, 80, 55, 85)
                 }
             },
             'arrows': {  # P2용
@@ -179,7 +179,7 @@ class Boxer:
         }
 
         # 내 캐릭터가 어떤 그룹(P1/P2)에 속하는지 결정
-        char_key = self.controls  # 'wasd' 또는 'arrows'
+        char_key = self.controls   # 'wasd' 또는 'arrows'
 
         # 내 캐릭터에 대한 히트박스 데이터가 없으면 종료
         if char_key not in HITBOX_DATA:
@@ -196,17 +196,17 @@ class Boxer:
         # 좌우 방향(face)에 따라 x 오프셋 반전
         frame_offsets = {}
         for frame, (ox, oy, w, h) in raw_offsets.items():
-            if self.face == 1:  # 오른쪽 바라보는 경우
+            if self.face == 1:      # 오른쪽 바라보는 경우
                 frame_offsets[frame] = (ox, oy, w, h)
-            else:  # 왼쪽 바라보는 경우 → x 반전
+            else:                   # 왼쪽 바라보는 경우 → x 반전
                 frame_offsets[frame] = (-ox, oy, w, h)
 
         # 실제 히트박스 생성
         hitbox = HitBox(
-            self,  # owner
-            0, 0,  # 기본 오프셋(프레임별 히트박스가 우선 적용됨)
-            0, 0,  # 기본 크기(프레임별 히트박스가 적용됨)
-            0.15,  # 히트박스 지속시간
+            self,      # owner
+            0, 0,      # 기본 오프셋(프레임별 히트박스가 우선 적용됨)
+            0, 0,      # 기본 크기(프레임별 히트박스가 적용됨)
+            0.15,      # 히트박스 지속시간
             frame_offsets=frame_offsets
         )
 
