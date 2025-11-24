@@ -6,6 +6,7 @@ import game_framework
 import game_world
 from hpbar import HPBar
 from boxing_ring import BoxingRing
+from hitbox import HitBox
 
 P1 = {
     "controls": "wasd",
@@ -51,7 +52,7 @@ def handle_events():
             p2.handle_event(event)
 
 def init():
-    global p1, p2, boxing_ring, hp1, hp2
+    global p1, p2, hp1, hp2, boxing_ring
 
     boxing_ring = BoxingRing()
     game_world.add_object(boxing_ring, 0)
@@ -65,16 +66,11 @@ def init():
     p1.opponent = p2
     p2.opponent = p1
 
-    # UI 레이어(보통 depth=2)
     hp1 = HPBar(p1, x=300, y=550)
-    hp2 = HPBar(p2, x=1000, y=550)
-
     game_world.add_object(hp1, 2)
+
+    hp2 = HPBar(p2, x=1000, y=550)
     game_world.add_object(hp2, 2)
-
-    game_world.add_collision_pair('p1:p2', p1, p2)
-    game_world.add_collision_pair('p2:p1', p2, p1)
-
 
 def update():
     game_world.update()
