@@ -18,7 +18,10 @@ logo_start_time = 0
 
 
 def init():
-    pass
+    global image, logo_start_time, frame
+    image = load_image('image/intro.png')
+    frame = 0.0
+    logo_start_time = get_time()
 
 def finish():
     pass
