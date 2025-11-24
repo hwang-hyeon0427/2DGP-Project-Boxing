@@ -4,7 +4,8 @@ from key_events import a_down, a_up, d_down, d_up, left_down, left_up, right_dow
     slash_down, f_down, g_down, h_down
 from state_machine import StateMachine
 
-
+from hitbox import HitBox
+import game_world
 from idle import Idle
 from attack_state import AttackState
 from walk_backward import WalkBackward
@@ -143,23 +144,27 @@ class Boxer:
         return left, bottom, right, top
 
     def spawn_hitbox(self):
-        from hitbox import HitBox
-        import game_world
+        # 오른쪽 / 왼쪽 방향에 따라 공격 거리 변경
+        x_offset = 80 if self.face == 1 else -80
 
-        x_offset = 60 if self.face == 1 else -60
+        # 히트박스 하나 생성
+        hitbox = HitBox(self, x_offset, 0, 80, 60, 0.12)
 
-        hitbox = HitBox(self, x_offset, 0, 60, 50, 0.12)
+        # 게임월드 등록
         game_world.add_object(hitbox, 1)
 
-        # 공격자(self) → 피격자(self.opponent)
+        # 상대방과 충돌 그룹 생성
         game_world.add_collision_pair('atk:hit', hitbox, self.opponent)
 
     def handle_collision(self, group, other):
         now = get_time()
+
         if now - self.last_hit_time < self.hit_cool:
             return
 
         if group == 'atk:hit' and other is self.opponent:
-            self.opponent.hp -= 5
-            self.opponent.last_hit_time = now
-            print("HIT!", self.opponent, self.opponent.hp)
+            shared_hp = max(self.hp, self.opponent.hp)
+            shared_hp -= 5
+            self.hp = shared_hp
+            self.opponent.hp = shared_hp
+            self.last_hit_time = now
