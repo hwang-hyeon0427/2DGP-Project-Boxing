@@ -22,7 +22,19 @@ class HitBox:
             game_world.remove_collision_object(self)
 
     def get_bb(self):
-        # owner의 위치 + 오프셋 적용
+        # 1) 프레임별 히트박스가 존재하면 우선 적용
+        if self.frame_offsets and self.owner.frame in self.frame_offsets:
+            ox, oy, w, h = self.frame_offsets[self.owner.frame]
+            x = self.owner.x + ox
+            y = self.owner.y + oy
+            return (
+                x - w / 2,
+                y - h / 2,
+                x + w / 2,
+                y + h / 2
+            )
+
+        # 2) 아니면 기본 히트박스 사용
         x = self.owner.x + self.offset_x
         y = self.owner.y + self.offset_y
         return (
