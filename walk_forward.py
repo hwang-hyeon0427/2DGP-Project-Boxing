@@ -1,7 +1,6 @@
 from key_events import left_down, right_down
 import boxer
 
-
 class WalkForward:
     def __init__(self, boxer):
         self.boxer = boxer
@@ -16,8 +15,9 @@ class WalkForward:
         self.boxer.dir = 0
 
     def do(self):
-        self.boxer.frame = (self.boxer.frame + 1) % self.boxer.cols
-        self.boxer.x += self.boxer.dir * 5
+        self.boxer.frame = (self.boxer.frame + boxer.FRAMES_PER_ACTION * boxer.ACTION_PER_TIME * boxer.game_framework.frame_time) % 8
+        self.boxer.x += self.boxer.xdir * boxer.RUN_SPEED_PPS * boxer.game_framework.frame_time
+        self.boxer.y += self.boxer.ydir * boxer.RUN_SPEED_PPS * boxer.game_framework.frame_time
 
     def draw(self):
         self.boxer.draw_current()
