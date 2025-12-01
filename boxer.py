@@ -10,7 +10,7 @@ import game_framework
 from idle import Idle
 from attack_state import AttackState
 # from walk_backward import WalkBackward
-from walk_forward import WalkForward
+from walk import Walk
 
 def space_down(e):  # e is space down ?
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
@@ -67,7 +67,7 @@ class Boxer:
         self.dir = 0
 
         self.IDLE = Idle(self)
-        self.WALK_FORWARD = WalkForward(self)
+        self.WALK_FORWARD = Walk(self)
         # self.WALK_BACKWARD = WalkBackward(self)
         self.FRONT_HAND = AttackState(self, 'front_hand')
         self.REAR_HAND = AttackState(self, 'rear_hand')
