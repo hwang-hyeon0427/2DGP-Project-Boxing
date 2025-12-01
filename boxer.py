@@ -182,7 +182,7 @@ class Boxer:
                 elif event.key == SDLK_s: self.ydir -= 1
 
             if cur_xdir != self.xdir or cur_ydir != self.ydir: # 방향키에 따른 변화가 있으면
-                if self.xdir == 0 and self.ydir:  # 멈춤
+                if self.xdir == 0 and self.ydir == 0: # 멈춤
                     self.state_machine.handle_state_event(('STOP', self.face_dir))  # 스탑 시 이전 방향 전달
                 else:  # 움직임
                     self.state_machine.handle_state_event(('WALK', None))
