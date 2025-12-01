@@ -74,57 +74,42 @@ class Boxer:
             self.IDLE,
             {
                 self.IDLE: {
-                    # 플레이어 1 (A/D 키)
-                     a_down: self.WALK,
+                    event_walk: self.WALK,  # ('WALK', None)
+                    a_down: self.WALK,
                     d_down: self.WALK,
-                    # 플레이어 1 (F/G/H 키)
+                    left_down: self.WALK,
+                    right_down: self.WALK,
+
                     f_down: self.FRONT_HAND,
                     g_down: self.REAR_HAND,
                     h_down: self.UPPERCUT,
-                    # 플레이어 2 (←/→ 키)
-                    left_down: self.WALK,
-                    right_down: self.WALK,
-                    # 플레이어 2(콤마, 피리어드, 슬래시)
                     comma_down: self.FRONT_HAND,
                     period_down: self.REAR_HAND,
                     slash_down: self.UPPERCUT
-
                 },
-                # self.WALK_BACKWARD: {a_up: self.IDLE, right_up: self.IDLE,
-                #                      f_down: self.FRONT_HAND,
-                #                      g_down: self.REAR_HAND,
-                #                      h_down: self.UPPERCUT,
-                #                      comma_down: self.FRONT_HAND,
-                #                      period_down: self.REAR_HAND,
-                #                      slash_down: self.UPPERCUT
-                #                      },
-                self.WALK: {d_up: self.IDLE, left_up: self.IDLE,
-                                    f_down: self.FRONT_HAND,
-                                    g_down: self.REAR_HAND,
-                                    h_down: self.UPPERCUT,
-                                    comma_down: self.FRONT_HAND,
-                                    period_down: self.REAR_HAND,
-                                    slash_down: self.UPPERCUT
-                                    },
-                # 공격 상태에서 IDLE로 전환
-                self.FRONT_HAND: {event_stop: self.IDLE,
-                                  a_down: self.WALK,
-                                  d_down: self.WALK,
-                                  left_down: self.WALK,
-                                  right_down: self.WALK
-                                  },
-                self.REAR_HAND: {event_stop: self.IDLE,
-                                 a_down: self.WALK,
-                                 d_down: self.WALK,
-                                 left_down: self.WALK,
-                                 right_down: self.WALK
-                                 },
-                self.UPPERCUT: {event_stop: self.IDLE,
-                                a_down: self.WALK,
-                                d_down: self.WALK,
-                                left_down: self.WALK,
-                                right_down: self.WALK
-                                }
+
+                self.WALK: {
+                    event_stop: self.IDLE,  # ('STOP', face_dir)
+                    f_down: self.FRONT_HAND,
+                    g_down: self.REAR_HAND,
+                    h_down: self.UPPERCUT,
+                    comma_down: self.FRONT_HAND,
+                    period_down: self.REAR_HAND,
+                    slash_down: self.UPPERCUT
+                },
+
+                self.FRONT_HAND: {
+                    event_stop: self.IDLE,
+                    event_walk: self.WALK
+                },
+                self.REAR_HAND: {
+                    event_stop: self.IDLE,
+                    event_walk: self.WALK
+                },
+                self.UPPERCUT: {
+                    event_stop: self.IDLE,
+                    event_walk: self.WALK
+                },
             }
         )
 
@@ -180,7 +165,7 @@ class Boxer:
                 # face_dir 업데이트(좌/우 이동 때만)
                 if self.xdir != 0:
                     self.face_dir = 1 if self.xdir > 0 else -1
-                    
+
                 if self.xdir == 0 and self.ydir == 0: # 멈춤
                     self.state_machine.handle_state_event(('STOP', self.face_dir))  # 스탑 시 이전 방향 전달
                 else:  # 움직임
