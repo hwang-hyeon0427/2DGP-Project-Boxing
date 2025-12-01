@@ -8,8 +8,6 @@ class Walk:
     def enter(self, e):
         sheet = self.boxer.cfg.get('walk_forward')
         self.boxer.use_sheet(sheet)
-        if self.boxer.xdir != 0:
-            self.boxer.face_dir = self.boxer.xdir
 
     def exit(self, e):
         self.boxer.dir = 0
@@ -20,13 +18,12 @@ class Walk:
         self.boxer.y += self.boxer.ydir * boxer.WALK_SPEED_PPS * boxer.game_framework.frame_time
 
     def draw(self):
-        if self.boxer.xdir == 0:  # 위 아래로 움직이는 경우
-            if self.boxer.face_dir == 1:  # right
-                self.boxer.image.clip_draw(int(self.boxer.frame) * 100, 100, 100, 100, self.boxer.x, self.boxer.y)
-            else:
-                self.boxer.image.clip_draw(int(self.boxer.frame) * 100, 0, 100, 100, self.boxer.x, self.boxer.y)
-        elif self.boxer.xdir == 1:
-            self.boxer.image.clip_draw(int(self.boxer.frame) * 100, 100, 100, 100, self.boxer.x, self.boxer.y)
+        frame = int(self.boxer.frame)
+        fw = self.boxer.frame_w
+        fh = self.boxer.frame_h
+
+        if self.boxer.face_dir == 1:  # right
+            self.boxer.image.clip_draw(frame * fw, 0, fw, fh, self.boxer.x, self.boxer.y)
         else:
-            self.boxer.image.clip_draw(int(self.boxer.frame) * 100, 0, 100, 100, self.boxer.x, self.boxer.y)
+            self.boxer.image.clip_composite_draw(frame * fw, 0, fw, fh, 0, 'h', self.boxer.x, self.boxer.y)
 
