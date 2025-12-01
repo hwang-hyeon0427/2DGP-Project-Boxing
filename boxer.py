@@ -144,32 +144,75 @@ class Boxer:
         draw_rectangle(*self.get_bb())
 
     def handle_event(self, event):
-        if event.key in (SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN, SDLK_a, SDLK_d, SDLK_w, SDLK_s):
+        # 1. controls에 따라 이동키 세트 분리
+        if self.controls == 'wasd':
+            move_keys_down = {SDLK_a, SDLK_d, SDLK_w, SDLK_s}
+            move_keys_up = {SDLK_a, SDLK_d, SDLK_w, SDLK_s}
+        else:  # arrows
+            move_keys_down = {SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN}
+            move_keys_up = {SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN}
+
+        # 2. 이동키 처리
+        if event.key in move_keys_down | move_keys_up:
             cur_xdir, cur_ydir = self.xdir, self.ydir
 
             # KEYDOWN
             if event.type == SDL_KEYDOWN:
-                if event.key in (SDLK_LEFT, SDLK_a): self.xdir -= 1
-                elif event.key in (SDLK_RIGHT, SDLK_d): self.xdir += 1
-                elif event.key in (SDLK_UP, SDLK_w): self.ydir += 1
-                elif event.key in (SDLK_DOWN, SDLK_s): self.ydir -= 1
+                if self.controls == 'wasd':
+                    if event.key == SDLK_a:
+                        self.xdir -= 1
+                    elif event.key == SDLK_d:
+                        self.xdir += 1
+                    elif event.key == SDLK_w:
+                        self.ydir += 1
+                    elif event.key == SDLK_s:
+                        self.ydir -= 1
+
+                else:  # arrows
+                    if event.key == SDLK_LEFT:
+                        self.xdir -= 1
+                    elif event.key == SDLK_RIGHT:
+                        self.xdir += 1
+                    elif event.key == SDLK_UP:
+                        self.ydir += 1
+                    elif event.key == SDLK_DOWN:
+                        self.ydir -= 1
 
             # KEYUP
             elif event.type == SDL_KEYUP:
-                if event.key in (SDLK_LEFT, SDLK_a): self.xdir += 1
-                elif event.key in (SDLK_RIGHT, SDLK_d): self.xdir -= 1
-                elif event.key in (SDLK_UP, SDLK_w): self.ydir -= 1
-                elif event.key in (SDLK_DOWN, SDLK_s): self.ydir += 1
+                if self.controls == 'wasd':
+                    if event.key == SDLK_a:
+                        self.xdir += 1
+                    elif event.key == SDLK_d:
+                        self.xdir -= 1
+                    elif event.key == SDLK_w:
+                        self.ydir -= 1
+                    elif event.key == SDLK_s:
+                        self.ydir += 1
 
-            if (cur_xdir, cur_ydir) != (self.xdir, self.ydir): # 방향키에 따른 변화가 있으면
-                # face_dir 업데이트(좌/우 이동 때만)
+                else:  # arrows
+                    if event.key == SDLK_LEFT:
+                        self.xdir += 1
+                    elif event.key == SDLK_RIGHT:
+                        self.xdir -= 1
+                    elif event.key == SDLK_UP:
+                        self.ydir -= 1
+                    elif event.key == SDLK_DOWN:
+                        self.ydir += 1
+
+            # 3. 이동 방향 변화
+            if (cur_xdir, cur_ydir) != (self.xdir, self.ydir):
+
+                # 좌우 이동 시 face_dir 갱신
                 if self.xdir != 0:
                     self.face_dir = 1 if self.xdir > 0 else -1
 
-                if self.xdir == 0 and self.ydir == 0: # 멈춤
-                    self.state_machine.handle_state_event(('STOP', self.face_dir))  # 스탑 시 이전 방향 전달
-                else:  # 움직임
+                if self.xdir == 0 and self.ydir == 0:
+                    self.state_machine.handle_state_event(('STOP', self.face_dir))
+                else:
                     self.state_machine.handle_state_event(('WALK', None))
+
+        # 4. 이동키가 아니면 상태머신 INPUT 처리
         else:
             self.state_machine.handle_state_event(('INPUT', event))
 
@@ -244,7 +287,7 @@ class Boxer:
         # 좌우 방향(face)에 따라 x 오프셋 반전
         frame_offsets = {}
         for frame, (ox, oy, w, h) in raw_offsets.items():
-            if self.face == 1:      # 오른쪽 바라보는 경우
+            if self.face_dir == 1:      # 오른쪽 바라보는 경우
                 frame_offsets[frame] = (ox, oy, w, h)
             else:                   # 왼쪽 바라보는 경우 → x 반전
                 frame_offsets[frame] = (-ox, oy, w, h)
