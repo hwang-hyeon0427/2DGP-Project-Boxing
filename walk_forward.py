@@ -20,4 +20,13 @@ class WalkForward:
         self.boxer.y += self.boxer.ydir * boxer.RUN_SPEED_PPS * boxer.game_framework.frame_time
 
     def draw(self):
-        self.boxer.draw_current()
+        if self.boxer.xdir == 0:  # 위 아래로 움직이는 경우
+            if self.boxer.face_dir == 1:  # right
+                self.boxer.image.clip_draw(int(self.boxer.frame) * 100, 100, 100, 100, self.boxer.x, self.boxer.y)
+            else:
+                self.boxer.image.clip_draw(int(self.boxer.frame) * 100, 0, 100, 100, self.boxer.x, self.boxer.y)
+        elif self.boxer.xdir == 1:
+            self.boxer.image.clip_draw(int(self.boxer.frame) * 100, 100, 100, 100, self.boxer.x, self.boxer.y)
+        else:
+            self.boxer.image.clip_draw(int(self.boxer.frame) * 100, 0, 100, 100, self.boxer.x, self.boxer.y)
+
