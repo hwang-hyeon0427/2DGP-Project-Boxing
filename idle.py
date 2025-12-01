@@ -7,7 +7,7 @@ class Idle:
 
     def enter(self, e):
         self.boxer.use_sheet(self.boxer.cfg['idle'])
-        self.boxer.dir = 0
+        self.boxer.face_dir = e[1]
 
     def exit(self, e):
         pass
