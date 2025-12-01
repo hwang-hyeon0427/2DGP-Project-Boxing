@@ -6,9 +6,12 @@ class Idle:
         self.boxer = boxer
 
     def enter(self, e):
+        # Idle 상태에 진입할 때 idle 시트로 변경
         self.boxer.use_sheet(self.boxer.cfg['idle'])
-        if boxer.event_stop(e):
-            self.boxer.face_dir = e[1]
+
+        # 속도 초기화
+        self.boxer.vx = 0
+        self.boxer.vy = 0
 
     def exit(self, e):
         pass
