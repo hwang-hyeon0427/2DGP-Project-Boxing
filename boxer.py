@@ -190,8 +190,8 @@ class Boxer:
                     elif event.key == SDLK_s: self.ydir -= 1
 
                 else:  # arrows
-                    if event.key == SDLK_LEFT: self.xdir -= 1
-                    elif event.key == SDLK_RIGHT: self.xdir += 1
+                    if event.key == SDLK_LEFT: self.xdir += 1
+                    elif event.key == SDLK_RIGHT: self.xdir -= 1
                     elif event.key == SDLK_UP: self.ydir += 1
                     elif event.key == SDLK_DOWN: self.ydir -= 1
 
@@ -204,8 +204,8 @@ class Boxer:
                     elif event.key == SDLK_s: self.ydir += 1
 
                 else:  # arrows
-                    if event.key == SDLK_LEFT: self.xdir += 1
-                    elif event.key == SDLK_RIGHT: self.xdir -= 1
+                    if event.key == SDLK_LEFT: self.xdir -= 1
+                    elif event.key == SDLK_RIGHT: self.xdir += 1
                     elif event.key == SDLK_UP: self.ydir -= 1
                     elif event.key == SDLK_DOWN: self.ydir += 1
 
