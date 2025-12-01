@@ -76,6 +76,8 @@ class Boxer:
                 event_walk: self.WALK,
                 a_down: self.WALK,
                 d_down: self.WALK,
+                w_down: self.WALK,
+                s_down: self.WALK,
 
                 f_down: self.FRONT_HAND,
                 g_down: self.REAR_HAND,
@@ -84,6 +86,7 @@ class Boxer:
 
             self.WALK: {
                 event_stop: self.IDLE,
+
                 f_down: self.FRONT_HAND,
                 g_down: self.REAR_HAND,
                 h_down: self.UPPERCUT
@@ -99,6 +102,8 @@ class Boxer:
                 event_walk: self.WALK,
                 left_down: self.WALK,
                 right_down: self.WALK,
+                up_down: self.WALK,
+                down_down: self.WALK,
 
                 comma_down: self.FRONT_HAND,
                 period_down: self.REAR_HAND,
@@ -107,6 +112,7 @@ class Boxer:
 
             self.WALK: {
                 event_stop: self.IDLE,
+
                 comma_down: self.FRONT_HAND,
                 period_down: self.REAR_HAND,
                 slash_down: self.UPPERCUT
