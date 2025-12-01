@@ -32,6 +32,8 @@ class Boxer:
 
     def __init__(self, cfg: dict):
         self.cfg = cfg
+
+
         self.hits = 0
         self.max_hp = int(cfg.get('max_hp', 100))  # 값 복사
         self.hp = self.max_hp  # hp는 무조건 새로 생성
@@ -150,7 +152,6 @@ class Boxer:
                                            self.x, self.y, w, h)
 
     def update(self):
-        self.last_x, self.last_y = self.x, self.y
         self.state_machine.update()
 
     def draw(self):
