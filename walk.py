@@ -7,7 +7,7 @@ class Walk:
 
     def enter(self, e):
         sheet = self.boxer.cfg.get('walk_forward')
-        self.b.use_sheet(sheet)
+        self.boxer.use_sheet(sheet)
         if self.boxer.xdir != 0:
             self.boxer.face_dir = self.boxer.xdir
 
