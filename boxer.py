@@ -67,7 +67,7 @@ class Boxer:
         self.dir = 0
 
         self.IDLE = Idle(self)
-        self.WALK_FORWARD = Walk(self)
+        self.WALK = Walk(self)
         # self.WALK_BACKWARD = WalkBackward(self)
         self.FRONT_HAND = AttackState(self, 'front_hand')
         self.REAR_HAND = AttackState(self, 'rear_hand')
@@ -78,15 +78,15 @@ class Boxer:
             {
                 self.IDLE: {
                     # 플레이어 1 (A/D 키)
-                     a_down: self.WALK_FORWARD,
-                    d_down: self.WALK_FORWARD,
+                     a_down: self.WALK,
+                    d_down: self.WALK,
                     # 플레이어 1 (F/G/H 키)
                     f_down: self.FRONT_HAND,
                     g_down: self.REAR_HAND,
                     h_down: self.UPPERCUT,
                     # 플레이어 2 (←/→ 키)
-                    left_down: self.WALK_FORWARD,
-                    right_down: self.WALK_FORWARD,
+                    left_down: self.WALK,
+                    right_down: self.WALK,
                     # 플레이어 2(콤마, 피리어드, 슬래시)
                     comma_down: self.FRONT_HAND,
                     period_down: self.REAR_HAND,
@@ -101,7 +101,7 @@ class Boxer:
                 #                      period_down: self.REAR_HAND,
                 #                      slash_down: self.UPPERCUT
                 #                      },
-                self.WALK_FORWARD: {d_up: self.IDLE, left_up: self.IDLE,
+                self.WALK: {d_up: self.IDLE, left_up: self.IDLE,
                                     f_down: self.FRONT_HAND,
                                     g_down: self.REAR_HAND,
                                     h_down: self.UPPERCUT,
@@ -111,22 +111,22 @@ class Boxer:
                                     },
                 # 공격 상태에서 IDLE로 전환
                 self.FRONT_HAND: {event_stop: self.IDLE,
-                                  a_down: self.WALK_FORWARD,
-                                  d_down: self.WALK_FORWARD,
-                                  left_down: self.WALK_FORWARD,
-                                  right_down: self.WALK_FORWARD
+                                  a_down: self.WALK,
+                                  d_down: self.WALK,
+                                  left_down: self.WALK,
+                                  right_down: self.WALK
                                   },
                 self.REAR_HAND: {event_stop: self.IDLE,
-                                 a_down: self.WALK_FORWARD,
-                                 d_down: self.WALK_FORWARD,
-                                 left_down: self.WALK_FORWARD,
-                                 right_down: self.WALK_FORWARD
+                                 a_down: self.WALK,
+                                 d_down: self.WALK,
+                                 left_down: self.WALK,
+                                 right_down: self.WALK
                                  },
                 self.UPPERCUT: {event_stop: self.IDLE,
-                                a_down: self.WALK_FORWARD,
-                                d_down: self.WALK_FORWARD,
-                                left_down: self.WALK_FORWARD,
-                                right_down: self.WALK_FORWARD
+                                a_down: self.WALK,
+                                d_down: self.WALK,
+                                left_down: self.WALK,
+                                right_down: self.WALK
                                 }
             }
         )
