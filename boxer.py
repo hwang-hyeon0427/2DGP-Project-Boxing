@@ -11,6 +11,14 @@ from attack_state import AttackState
 from walk_backward import WalkBackward
 from walk_forward import WalkForward
 
+def space_down(e):  # e is space down ?
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
+
+def event_stop(e):
+    return e[0] == 'STOP'
+
+def event_run(e):
+    return e[0] == 'RUN'
 
 def animation_end(e):
     return e[0] == 'ANIMATION_END'
