@@ -1,4 +1,5 @@
 import game_framework
+import boxer
 
 class Idle:
     def __init__(self, boxer):
@@ -13,9 +14,9 @@ class Idle:
 
     def do(self):
         # FPS 독립 애니메이션 (시간 기반)
-        self.boxer.frame += (
-            self.boxer.FRAMES_PER_ACTION *
-            self.boxer.ACTION_PER_TIME *
+        self.boxer.frame = ( self.boxer.frame +
+            boxer.FRAMES_PER_ACTION *
+            boxer.ACTION_PER_TIME *
             game_framework.frame_time
         )
 
