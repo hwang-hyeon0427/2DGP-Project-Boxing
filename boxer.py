@@ -134,25 +134,40 @@ class Boxer:
     def use_sheet(self, sheet: dict):
         path = sheet['image']
         self.image = Boxer._img_cache.setdefault(path, load_image(path))
+
         self.cols = sheet['cols']
-        self.frame_w, self.frame_h = sheet['w'], sheet['h']
+        self.frame_w = sheet['w']
+        self.frame_h = sheet['h']
+
         self.scale = sheet.get('scale', 1.0)
 
     def draw_current(self):
-        if self.image is None:
+        if not self.image:
             return
 
-        # ⚠ frame이 float이므로 반드시 정수로 변환
-        frame_index = int(self.frame)
+        # 1) frame index
+        frame = int(self.frame) % self.cols
 
-        src_x = frame_index * self.frame_w
-        w, h = int(self.frame_w * self.scale), int(self.frame_h * self.scale)
+        # 2) 정확한 src 좌표 (프레임 시트는 가로 1줄)
+        src_x = frame * self.frame_w
+        src_y = 0
+        src_w = self.frame_w
+        src_h = self.frame_h
 
+        # 3) 출력 크기 (확대/축소)
+        draw_w = int(self.frame_w * self.scale)
+        draw_h = int(self.frame_h * self.scale)
+
+        # 4) 좌우 방향 반영
         if self.face_dir == 1:
-            self.image.clip_draw(src_x, 0, self.frame_w, self.frame_h, self.x, self.y, w, h)
+            self.image.clip_draw(src_x, src_y, src_w, src_h,
+                                 self.x, self.y,
+                                 draw_w, draw_h)
         else:
-            self.image.clip_composite_draw(src_x, 0, self.frame_w, self.frame_h, 0, 'h',
-                                           self.x, self.y, w, h)
+            self.image.clip_composite_draw(src_x, src_y, src_w, src_h,
+                                           0, 'h',
+                                           self.x, self.y,
+                                           draw_w, draw_h)
 
     def update(self):
         self.state_machine.update()
@@ -184,14 +199,14 @@ class Boxer:
             # KEYDOWN
             if event.type == SDL_KEYDOWN:
                 if self.controls == 'wasd':
-                    if event.key == SDLK_a: self.xdir -= 1
-                    elif event.key == SDLK_d: self.xdir += 1
+                    if event.key == SDLK_a: self.xdir -= 1; self.face_dir = -1
+                    elif event.key == SDLK_d: self.xdir += 1; self.face_dir = 1
                     elif event.key == SDLK_w: self.ydir += 1
                     elif event.key == SDLK_s: self.ydir -= 1
 
                 else:  # arrows
-                    if event.key == SDLK_LEFT: self.xdir += 1
-                    elif event.key == SDLK_RIGHT: self.xdir -= 1
+                    if event.key == SDLK_LEFT: self.xdir -= 1; self.face_dir = -1
+                    elif event.key == SDLK_RIGHT: self.xdir += 1; self.face_dir = 1
                     elif event.key == SDLK_UP: self.ydir += 1
                     elif event.key == SDLK_DOWN: self.ydir -= 1
 
@@ -204,17 +219,13 @@ class Boxer:
                     elif event.key == SDLK_s: self.ydir += 1
 
                 else:  # arrows
-                    if event.key == SDLK_LEFT: self.xdir -= 1
-                    elif event.key == SDLK_RIGHT: self.xdir += 1
+                    if event.key == SDLK_LEFT: self.xdir += 1
+                    elif event.key == SDLK_RIGHT: self.xdir -= 1
                     elif event.key == SDLK_UP: self.ydir -= 1
                     elif event.key == SDLK_DOWN: self.ydir += 1
 
             # 3. 이동 방향 변화
             if (cur_xdir, cur_ydir) != (self.xdir, self.ydir):
-
-                # 좌우 이동 시 face_dir 갱신
-                if self.xdir != 0:
-                    self.face_dir = 1 if self.xdir > 0 else -1
 
                 if self.xdir == 0 and self.ydir == 0:
                     self.state_machine.handle_state_event(('STOP', self.face_dir))
