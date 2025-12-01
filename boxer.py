@@ -70,48 +70,60 @@ class Boxer:
         self.REAR_HAND = AttackState(self, 'rear_hand')
         self.UPPERCUT = AttackState(self, 'uppercut')
 
-        self.state_machine = StateMachine(
-            self.IDLE,
-            {
-                self.IDLE: {
-                    event_walk: self.WALK,  # ('WALK', None)
-                    a_down: self.WALK,
-                    d_down: self.WALK,
-                    left_down: self.WALK,
-                    right_down: self.WALK,
+        # 상태머신 이벤트 테이블 분리
+        self.transitions_wasd = {
+            self.IDLE: {
+                event_walk: self.WALK,
+                a_down: self.WALK,
+                d_down: self.WALK,
 
-                    f_down: self.FRONT_HAND,
-                    g_down: self.REAR_HAND,
-                    h_down: self.UPPERCUT,
-                    comma_down: self.FRONT_HAND,
-                    period_down: self.REAR_HAND,
-                    slash_down: self.UPPERCUT
-                },
+                f_down: self.FRONT_HAND,
+                g_down: self.REAR_HAND,
+                h_down: self.UPPERCUT
+            },
 
-                self.WALK: {
-                    event_stop: self.IDLE,  # ('STOP', face_dir)
-                    f_down: self.FRONT_HAND,
-                    g_down: self.REAR_HAND,
-                    h_down: self.UPPERCUT,
-                    comma_down: self.FRONT_HAND,
-                    period_down: self.REAR_HAND,
-                    slash_down: self.UPPERCUT
-                },
+            self.WALK: {
+                event_stop: self.IDLE,
+                f_down: self.FRONT_HAND,
+                g_down: self.REAR_HAND,
+                h_down: self.UPPERCUT
+            },
 
-                self.FRONT_HAND: {
-                    event_stop: self.IDLE,
-                    event_walk: self.WALK
-                },
-                self.REAR_HAND: {
-                    event_stop: self.IDLE,
-                    event_walk: self.WALK
-                },
-                self.UPPERCUT: {
-                    event_stop: self.IDLE,
-                    event_walk: self.WALK
-                },
-            }
-        )
+            self.FRONT_HAND: {event_stop: self.IDLE, event_walk: self.WALK},
+            self.REAR_HAND: {event_stop: self.IDLE, event_walk: self.WALK},
+            self.UPPERCUT: {event_stop: self.IDLE, event_walk: self.WALK},
+        }
+
+        self.transitions_arrows = {
+            self.IDLE: {
+                event_walk: self.WALK,
+                left_down: self.WALK,
+                right_down: self.WALK,
+
+                comma_down: self.FRONT_HAND,
+                period_down: self.REAR_HAND,
+                slash_down: self.UPPERCUT
+            },
+
+            self.WALK: {
+                event_stop: self.IDLE,
+                comma_down: self.FRONT_HAND,
+                period_down: self.REAR_HAND,
+                slash_down: self.UPPERCUT
+            },
+
+            self.FRONT_HAND: {event_stop: self.IDLE, event_walk: self.WALK},
+            self.REAR_HAND: {event_stop: self.IDLE, event_walk: self.WALK},
+            self.UPPERCUT: {event_stop: self.IDLE, event_walk: self.WALK},
+        }
+
+        # controls에 따라 상태머신 선택
+        if self.controls == 'wasd':
+            transitions = self.transitions_wasd
+        else:
+            transitions = self.transitions_arrows
+
+        self.state_machine = StateMachine(self.IDLE, transitions)
 
     def use_sheet(self, sheet: dict):
         path = sheet['image']
@@ -144,6 +156,13 @@ class Boxer:
         draw_rectangle(*self.get_bb())
 
     def handle_event(self, event):
+        # ==================================================================
+        # 0) 키 이벤트가 아니면 무조건 상태머신 INPUT으로 넘김
+        # ==================================================================
+        if event.type not in (SDL_KEYDOWN, SDL_KEYUP):
+            self.state_machine.handle_state_event(('INPUT', event))
+            return
+
         # 1. controls에 따라 이동키 세트 분리
         if self.controls == 'wasd':
             move_keys_down = {SDLK_a, SDLK_d, SDLK_w, SDLK_s}
@@ -153,52 +172,36 @@ class Boxer:
             move_keys_up = {SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN}
 
         # 2. 이동키 처리
-        if event.key in move_keys_down | move_keys_up:
+        if event.key in move_keys_down or event.key in move_keys_up:
             cur_xdir, cur_ydir = self.xdir, self.ydir
 
             # KEYDOWN
             if event.type == SDL_KEYDOWN:
                 if self.controls == 'wasd':
-                    if event.key == SDLK_a:
-                        self.xdir -= 1
-                    elif event.key == SDLK_d:
-                        self.xdir += 1
-                    elif event.key == SDLK_w:
-                        self.ydir += 1
-                    elif event.key == SDLK_s:
-                        self.ydir -= 1
+                    if event.key == SDLK_a: self.xdir -= 1
+                    elif event.key == SDLK_d: self.xdir += 1
+                    elif event.key == SDLK_w: self.ydir += 1
+                    elif event.key == SDLK_s: self.ydir -= 1
 
                 else:  # arrows
-                    if event.key == SDLK_LEFT:
-                        self.xdir -= 1
-                    elif event.key == SDLK_RIGHT:
-                        self.xdir += 1
-                    elif event.key == SDLK_UP:
-                        self.ydir += 1
-                    elif event.key == SDLK_DOWN:
-                        self.ydir -= 1
+                    if event.key == SDLK_LEFT: self.xdir -= 1
+                    elif event.key == SDLK_RIGHT: self.xdir += 1
+                    elif event.key == SDLK_UP: self.ydir += 1
+                    elif event.key == SDLK_DOWN: self.ydir -= 1
 
             # KEYUP
             elif event.type == SDL_KEYUP:
                 if self.controls == 'wasd':
-                    if event.key == SDLK_a:
-                        self.xdir += 1
-                    elif event.key == SDLK_d:
-                        self.xdir -= 1
-                    elif event.key == SDLK_w:
-                        self.ydir -= 1
-                    elif event.key == SDLK_s:
-                        self.ydir += 1
+                    if event.key == SDLK_a: self.xdir += 1
+                    elif event.key == SDLK_d: self.xdir -= 1
+                    elif event.key == SDLK_w: self.ydir -= 1
+                    elif event.key == SDLK_s: self.ydir += 1
 
                 else:  # arrows
-                    if event.key == SDLK_LEFT:
-                        self.xdir += 1
-                    elif event.key == SDLK_RIGHT:
-                        self.xdir -= 1
-                    elif event.key == SDLK_UP:
-                        self.ydir -= 1
-                    elif event.key == SDLK_DOWN:
-                        self.ydir += 1
+                    if event.key == SDLK_LEFT: self.xdir += 1
+                    elif event.key == SDLK_RIGHT: self.xdir -= 1
+                    elif event.key == SDLK_UP: self.ydir -= 1
+                    elif event.key == SDLK_DOWN: self.ydir += 1
 
             # 3. 이동 방향 변화
             if (cur_xdir, cur_ydir) != (self.xdir, self.ydir):
