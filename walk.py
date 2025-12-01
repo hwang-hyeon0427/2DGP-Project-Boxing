@@ -1,7 +1,7 @@
 from key_events import left_down, right_down
 import boxer
 
-class WalkForward:
+class Walk:
     def __init__(self, boxer):
         self.boxer = boxer
 
