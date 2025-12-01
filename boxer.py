@@ -1,7 +1,6 @@
 from pico2d import *
 
-from key_events import a_down, a_up, d_down, d_up, left_down, left_up, right_down, right_up, comma_down, period_down, \
-    slash_down, f_down, g_down, h_down
+from key_events import *
 from state_machine import StateMachine
 
 from hitbox import HitBox
@@ -11,22 +10,17 @@ from idle import Idle
 from attack_state import AttackState
 # from walk_backward import WalkBackward
 from walk import Walk
-
-def space_down(e):  # e is space down ?
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
-
 def event_stop(e):
     return e[0] == 'STOP'
 
-def event_run(e):
-    return e[0] == 'RUN'
-
+def event_walk(e):
+    return e[0] == 'WALK'
 # boxer 속도 단위 환산
 PIXEL_PER_METER = (10.0 / 0.3)  # 10 pixel 30 cm
-RUN_SPEED_KMPH = 20.0  # Km / Hour
-RUN_SPEED_MPM = (RUN_SPEED_KMPH * 1000.0 / 60.0)
-RUN_SPEED_MPS = (RUN_SPEED_MPM / 60.0)
-RUN_SPEED_PPS = (RUN_SPEED_MPS * PIXEL_PER_METER)
+WALK_SPEED_KMPH = 20.0  # Km / Hour
+WALK_SPEED_MPM = (WALK_SPEED_KMPH * 1000.0 / 60.0)
+WALK_SPEED_MPS = (WALK_SPEED_MPM / 60.0)
+WALK_SPEED_PPS = (WALK_SPEED_MPS * PIXEL_PER_METER)
 
 # Boxer Action Speed
 TIME_PER_ACTION = 0.5
@@ -149,7 +143,7 @@ class Boxer:
         src_x = frame_index * self.frame_w
         w, h = int(self.frame_w * self.scale), int(self.frame_h * self.scale)
 
-        if self.face == 1:
+        if self.face_dir == 1:
             self.image.clip_draw(src_x, 0, self.frame_w, self.frame_h, self.x, self.y, w, h)
         else:
             self.image.clip_composite_draw(src_x, 0, self.frame_w, self.frame_h, 0, 'h',
