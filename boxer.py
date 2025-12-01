@@ -49,7 +49,8 @@ class Boxer:
         spawn = cfg.get('spawn', {})
         self.x = spawn.get('x', 400)
         self.y = spawn.get('y', 90)
-        self.face = spawn.get('face', 1)
+        self.face_dir = spawn.get('face', 1)
+        self.xdir, self.ydir = 0, 0
 
         self.controls = cfg.get('controls', 'both')
 
