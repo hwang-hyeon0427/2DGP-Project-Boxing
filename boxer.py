@@ -6,6 +6,7 @@ from state_machine import StateMachine
 
 from hitbox import HitBox
 import game_world
+import game_framework
 from idle import Idle
 from attack_state import AttackState
 from walk_backward import WalkBackward
