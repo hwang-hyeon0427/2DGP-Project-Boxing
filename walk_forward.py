@@ -1,26 +1,23 @@
 from key_events import left_down, right_down
+import boxer
 
 
 class WalkForward:
     def __init__(self, boxer):
-        self.b = boxer
+        self.boxer = boxer
 
     def enter(self, e):
-        sheet = self.b.cfg.get('walk_forward') or self.b.cfg.get('walk') or self.b.cfg.get('idle')
+        sheet = self.boxer.cfg.get('walk_forward')
         self.b.use_sheet(sheet)
-        if left_down(e):
-            self.b.dir = -1
-        elif right_down(e):
-            self.b.dir = 1
-        else:
-            self.b.dir = self.b.face
+        if self.boxer.xdir != 0:
+            self.boxer.face_dir = self.boxer.xdir
 
     def exit(self, e):
-        self.b.dir = 0
+        self.boxer.dir = 0
 
     def do(self):
-        self.b.frame = (self.b.frame + 1) % self.b.cols
-        self.b.x += self.b.dir * 5
+        self.boxer.frame = (self.boxer.frame + 1) % self.boxer.cols
+        self.boxer.x += self.boxer.dir * 5
 
     def draw(self):
-        self.b.draw_current()
+        self.boxer.draw_current()
