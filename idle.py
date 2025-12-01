@@ -20,23 +20,4 @@ class Idle:
         self.boxer.frame = ( self.boxer.frame + boxer.FRAMES_PER_ACTION * boxer.ACTION_PER_TIME * game_framework.frame_time) % 10
 
     def draw(self):
-        frame = int(self.boxer.frame)
-
-        cfg = self.boxer.cfg['idle']
-        w= cfg['w']
-        h= cfg['h']
-        cols = cfg['cols']
-
-        left = frame * w
-        bottom = 0
-
-        if self.boxer.face_dir == 1:
-            self.boxer.image.clip_draw(left, bottom, w, h, self.boxer.x, self.boxer.y)
-        else:
-            self.boxer.image.clip_composite_draw(
-                left, bottom,
-                w, h,
-                0, 'h',
-                self.boxer.x, self.boxer.y,
-                w, h
-            )
+        self.boxer.draw_current()

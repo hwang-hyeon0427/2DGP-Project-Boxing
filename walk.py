@@ -18,12 +18,4 @@ class Walk:
         self.boxer.y += self.boxer.ydir * boxer.WALK_SPEED_PPS * boxer.game_framework.frame_time
 
     def draw(self):
-        frame = int(self.boxer.frame)
-        fw = self.boxer.frame_w
-        fh = self.boxer.frame_h
-
-        if self.boxer.face_dir == 1:  # right
-            self.boxer.image.clip_draw(frame * fw, 0, fw, fh, self.boxer.x, self.boxer.y)
-        else:
-            self.boxer.image.clip_composite_draw(frame * fw, 0, fw, fh, 0, 'h', self.boxer.x, self.boxer.y)
-
+        self.boxer.draw_current()
