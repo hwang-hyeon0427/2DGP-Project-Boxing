@@ -161,27 +161,26 @@ class Boxer:
     def handle_event(self, event):
         if event.key in (SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN, SDLK_a, SDLK_d, SDLK_w, SDLK_s):
             cur_xdir, cur_ydir = self.xdir, self.ydir
+
+            # KEYDOWN
             if event.type == SDL_KEYDOWN:
-                if event.key == SDLK_LEFT: self.xdir -= 1
-                elif event.key == SDLK_RIGHT: self.xdir += 1
-                elif event.key == SDLK_UP: self.ydir -= 1
-                elif event.key == SDLK_DOWN: self.ydir += 1
-                elif event.key == SDLK_a: self.xdir -= 1
-                elif event.key == SDLK_d: self.xdir += 1
-                elif event.key == SDLK_w: self.ydir -= 1
-                elif event.key == SDLK_s: self.ydir += 1
+                if event.key in (SDLK_LEFT, SDLK_a): self.xdir -= 1
+                elif event.key in (SDLK_RIGHT, SDLK_d): self.xdir += 1
+                elif event.key in (SDLK_UP, SDLK_w): self.ydir += 1
+                elif event.key in (SDLK_DOWN, SDLK_s): self.ydir -= 1
 
+            # KEYUP
             elif event.type == SDL_KEYUP:
-                if event.key == SDLK_LEFT: self.xdir += 1
-                elif event.key == SDLK_RIGHT: self.xdir -= 1
-                elif event.key == SDLK_UP: self.ydir += 1
-                elif event.key == SDLK_DOWN: self.ydir -= 1
-                elif event.key == SDLK_a: self.xdir += 1
-                elif event.key == SDLK_d: self.xdir -= 1
-                elif event.key == SDLK_w: self.ydir += 1
-                elif event.key == SDLK_s: self.ydir -= 1
+                if event.key in (SDLK_LEFT, SDLK_a): self.xdir += 1
+                elif event.key in (SDLK_RIGHT, SDLK_d): self.xdir -= 1
+                elif event.key in (SDLK_UP, SDLK_w): self.ydir -= 1
+                elif event.key in (SDLK_DOWN, SDLK_s): self.ydir += 1
 
-            if cur_xdir != self.xdir or cur_ydir != self.ydir: # 방향키에 따른 변화가 있으면
+            if (cur_xdir, cur_ydir) != (self.xdir, self.ydir): # 방향키에 따른 변화가 있으면
+                # face_dir 업데이트(좌/우 이동 때만)
+                if self.xdir != 0:
+                    self.face_dir = 1 if self.xdir > 0 else -1
+                    
                 if self.xdir == 0 and self.ydir == 0: # 멈춤
                     self.state_machine.handle_state_event(('STOP', self.face_dir))  # 스탑 시 이전 방향 전달
                 else:  # 움직임
