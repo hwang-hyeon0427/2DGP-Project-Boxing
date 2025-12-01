@@ -16,8 +16,8 @@ class Walk:
 
     def do(self):
         self.boxer.frame = (self.boxer.frame + boxer.FRAMES_PER_ACTION * boxer.ACTION_PER_TIME * boxer.game_framework.frame_time) % 10
-        self.boxer.x += self.boxer.xdir * boxer.RUN_SPEED_PPS * boxer.game_framework.frame_time
-        self.boxer.y += self.boxer.ydir * boxer.RUN_SPEED_PPS * boxer.game_framework.frame_time
+        self.boxer.x += self.boxer.xdir * boxer.WALK_SPEED_PPS * boxer.game_framework.frame_time
+        self.boxer.y += self.boxer.ydir * boxer.WALK_SPEED_PPS * boxer.game_framework.frame_time
 
     def draw(self):
         if self.boxer.xdir == 0:  # 위 아래로 움직이는 경우
