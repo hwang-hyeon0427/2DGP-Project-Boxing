@@ -14,12 +14,10 @@ class Idle:
         pass
 
     def do(self):
-        # FPS 독립 애니메이션 (시간 기반)
         self.boxer.frame = ( self.boxer.frame + boxer.FRAMES_PER_ACTION * boxer.ACTION_PER_TIME * game_framework.frame_time) % 10
 
-        # 넘치면 0으로 순환
-        if self.boxer.frame >= self.boxer.cols:
-            self.boxer.frame = 0
-
     def draw(self):
-        self.boxer.draw_current()
+        if self.boxer.face_dir == 1:  # right
+            self.boxer.image.clip_draw(int(self.boxer.frame) * 100, 300, 100, 100, self.boxer.x, self.boxer.y)
+        else:  # face_dir == -1: # left
+            self.boxer.image.clip_draw(int(self.boxer.frame) * 100, 200, 100, 100, self.boxer.x, self.boxer.y)
