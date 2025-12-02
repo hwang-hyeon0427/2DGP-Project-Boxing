@@ -15,7 +15,7 @@ P1 = {
     "idle":  {"image":"player1/player1_Idle.png", "cols":10, "w":499, "h":489, "scale":0.9},
     "spawn": {"x": 300, "y": 300, "face": 1},
     "walk_backward": {"image":"player1/player1_Walk_Backward.png", "cols": 10, "w": 499, "h": 489, "scale": 0.9},
-    "walk_forward":  {"image":"player1/player1_Walk_Forward.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9},
+    "walk_forward":  {"image":"player1/player1_Walk_Forward.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
     "front_hand": {"image":"player1/player1_FrontHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 0.9},
     "uppercut": {"image":"player1/player1_Uppercut.png",  "cols": 7, "w": 499, "h": 489, "scale": 0.9},
     "rear_hand": {"image":"player1/player1_RearHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 0.9},
@@ -31,7 +31,7 @@ P2 = {
     "idle":  {"image":"player2/player2_Idle.png", "cols":10, "w":744, "h":711, "scale":0.5},
     "spawn": {"x": 700, "y": 300, "face": 1},
     "walk_backward": {"image":"player2/player2_Walk_Backward.png", "cols": 10, "w":746, "h":713, "scale":0.5},
-    "walk_forward":  {"image":"player2/player2_Walk_Forward.png",  "cols": 10, "w":746, "h":713, "scale":0.5},
+    "walk_forward":  {"image":"player2/player2_Walk_Forward.png",  "cols": 10, "w":746, "h":713, "scale":0.5, "base_face": -1},
     "front_hand": {"image":"player2/player2_FrontHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5},
     "uppercut": {"image":"player2/player2_Uppercut.png",  "cols": 8, "w":744, "h":713, "scale":0.5},
     "rear_hand": {"image":"player2/player2_RearHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5},
@@ -72,7 +72,7 @@ def init():
     hp2 = HPBar(p2, x=1000, y=550)
     game_world.add_object(hp2, 2)
 
-    game_world.add_collision_pair('body:block', p1, p2)
+    game_world.add_collision_pair('body:block', p1, p2) # 서로의 몸통끼리 충돌
 
 
 def update():
