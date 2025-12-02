@@ -198,44 +198,29 @@ class Boxer:
                 # KEYDOWN
                 if event.type == SDL_KEYDOWN:
                     if self.controls == 'wasd':
-                        if event.key == SDLK_a:
-                            self.xdir -= 1
-                        elif event.key == SDLK_d:
-                            self.xdir += 1
-                        elif event.key == SDLK_w:
-                            self.ydir += 1
-                        elif event.key == SDLK_s:
-                            self.ydir -= 1
+                        if event.key == SDLK_a: self.xdir -= 1
+                        elif event.key == SDLK_d: self.xdir += 1
+                        elif event.key == SDLK_w: self.ydir += 1
+                        elif event.key == SDLK_s: self.ydir -= 1
                     else:
-                        if event.key == SDLK_LEFT:
-                            self.xdir -= 1
-                        elif event.key == SDLK_RIGHT:
-                            self.xdir += 1
-                        elif event.key == SDLK_UP:
-                            self.ydir += 1
-                        elif event.key == SDLK_DOWN:
-                            self.ydir -= 1
+                        if event.key == SDLK_LEFT: self.xdir -= 1
+                        elif event.key == SDLK_RIGHT: self.xdir += 1
+                        elif event.key == SDLK_UP: self.ydir += 1
+                        elif event.key == SDLK_DOWN: self.ydir -= 1
 
                 # KEYUP
                 elif event.type == SDL_KEYUP:
                     if self.controls == 'wasd':
-                        if event.key == SDLK_a:
-                            self.xdir += 1
-                        elif event.key == SDLK_d:
-                            self.xdir -= 1
-                        elif event.key == SDLK_w:
-                            self.ydir -= 1
-                        elif event.key == SDLK_s:
-                            self.ydir += 1
+                        if event.key == SDLK_a: self.xdir += 1
+                        elif event.key == SDLK_d: self.xdir -= 1
+                        elif event.key == SDLK_w: self.ydir -= 1
+                        elif event.key == SDLK_s: self.ydir += 1
                     else:
-                        if event.key == SDLK_LEFT:
-                            self.xdir += 1
-                        elif event.key == SDLK_RIGHT:
-                            self.xdir -= 1
-                        elif event.key == SDLK_UP:
-                            self.ydir -= 1
-                        elif event.key == SDLK_DOWN:
-                            self.ydir += 1
+                        if event.key == SDLK_LEFT: self.xdir += 1
+                        elif event.key == SDLK_RIGHT: self.xdir -= 1
+                        elif event.key == SDLK_UP: self.ydir -= 1
+                        elif event.key == SDLK_DOWN: self.ydir += 1
+
                 if cur_xdir != self.xdir or cur_ydir != self.ydir:  # 방향키에 따른 변화가 있으면
                     if self.xdir == 0 and self.ydir == 0:  # 멈춤
                         self.state_machine.handle_state_event(('STOP', self.face_dir))  # 스탑 시 이전 방향 전달
@@ -251,7 +236,9 @@ class Boxer:
                     if (self.controls == 'wasd' and event.key == SDLK_a) or \
                             (self.controls == 'arrows' and event.key == SDLK_RIGHT):
                         self.face_dir = -1
-        # 키보드 입력이 아니면 → 상태머신 INPUT 처리
+            return
+
+        # 그 외의 이벤트는 상태머신에 직접 전달
         self.state_machine.handle_state_event(('INPUT', event))
 
     def get_bb(self):
