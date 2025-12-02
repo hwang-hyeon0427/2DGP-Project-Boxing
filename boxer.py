@@ -180,72 +180,79 @@ class Boxer:
         draw_rectangle(*self.get_bb())
 
     def handle_event(self, event):
-        if event.type not in (SDL_KEYDOWN, SDL_KEYUP): # 키보드 이벤트가 아니면
-            self.state_machine.handle_state_event(('INPUT', event)) # 기타 이벤트는 상태머신에 INPUT으로 전달
-            return
 
-        # 1. controls에 따라 이동키 세트 분리
-        if self.controls == 'wasd':
-            move_keys_down = {SDLK_a, SDLK_d, SDLK_w, SDLK_s}
-            move_keys_up = {SDLK_a, SDLK_d, SDLK_w, SDLK_s}
-        else:  # arrows
-            move_keys_down = {SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN}
-            move_keys_up = {SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN}
+        # 키보드 입력(KEYDOWN/KEYUP) 처리
+        if event.type in (SDL_KEYDOWN, SDL_KEYUP):
 
-        # 2. 이동키 처리
-        if event.key in move_keys_down or event.key in move_keys_up: # 이동키이면
-            cur_xdir, cur_ydir = self.xdir, self.ydir # 현재 이동 방향 저장
+            # 1. controls에 따라 이동키 세트 분리
+            if self.controls == 'wasd':
+                move_keys = {SDLK_a, SDLK_d, SDLK_w, SDLK_s}
+            else:
+                move_keys = {SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN}
 
-            # KEYDOWN
-            if event.type == SDL_KEYDOWN:
-                if self.controls == 'wasd':
-                    if event.key == SDLK_a: self.xdir -= 1 # 왼쪽 이동
-                    elif event.key == SDLK_d: self.xdir += 1 # 오른쪽 이동
-                    elif event.key == SDLK_w: self.ydir += 1 # 위쪽 이동
-                    elif event.key == SDLK_s: self.ydir -= 1 # 아래쪽 이동
+            # 2. 이동키 처리
+            if event.key in move_keys:
 
-                else:
-                    if event.key == SDLK_LEFT: self.xdir += 1 # 왼쪽 이동
-                    elif event.key == SDLK_RIGHT: self.xdir -= 1  # 오른쪽 이동
-                    elif event.key == SDLK_UP: self.ydir -= 1
-                    elif event.key == SDLK_DOWN: self.ydir += 1
+                cur_xdir, cur_ydir = self.xdir, self.ydir
 
-            # KEYUP
-            elif event.type == SDL_KEYUP:
-                if self.controls == 'wasd':
-                    if event.key == SDLK_a: self.xdir += 1
-                    elif event.key == SDLK_d: self.xdir -= 1
-                    elif event.key == SDLK_w: self.ydir -= 1
-                    elif event.key == SDLK_s: self.ydir += 1
+                # KEYDOWN
+                if event.type == SDL_KEYDOWN:
+                    if self.controls == 'wasd':
+                        if event.key == SDLK_a:
+                            self.xdir -= 1
+                        elif event.key == SDLK_d:
+                            self.xdir += 1
+                        elif event.key == SDLK_w:
+                            self.ydir += 1
+                        elif event.key == SDLK_s:
+                            self.ydir -= 1
+                    else:
+                        if event.key == SDLK_LEFT:
+                            self.xdir -= 1
+                        elif event.key == SDLK_RIGHT:
+                            self.xdir += 1
+                        elif event.key == SDLK_UP:
+                            self.ydir += 1
+                        elif event.key == SDLK_DOWN:
+                            self.ydir -= 1
 
-                else:
-                    if event.key == SDLK_LEFT: self.xdir = 0
-                    elif event.key == SDLK_RIGHT: self.xdir = 0
-                    elif event.key == SDLK_UP: self.ydir = 0
-                    elif event.key == SDLK_DOWN: self.ydir = 0
+                # KEYUP
+                elif event.type == SDL_KEYUP:
+                    if self.controls == 'wasd':
+                        if event.key == SDLK_a:
+                            self.xdir += 1
+                        elif event.key == SDLK_d:
+                            self.xdir -= 1
+                        elif event.key == SDLK_w:
+                            self.ydir -= 1
+                        elif event.key == SDLK_s:
+                            self.ydir += 1
+                    else:
+                        if event.key == SDLK_LEFT:
+                            self.xdir += 1
+                        elif event.key == SDLK_RIGHT:
+                            self.xdir -= 1
+                        elif event.key == SDLK_UP:
+                            self.ydir -= 1
+                        elif event.key == SDLK_DOWN:
+                            self.ydir += 1
+                if cur_xdir != self.xdir or cur_ydir != self.ydir:  # 방향키에 따른 변화가 있으면
+                    if self.xdir == 0 and self.ydir == 0:  # 멈춤
+                        self.state_machine.handle_state_event(('STOP', self.face_dir))  # 스탑 시 이전 방향 전달
+                    else:  # 움직임
+                        self.state_machine.handle_state_event(('WALK', None))
 
+                # 3. face_dir은 키다운 순간에만 변경
+                if event.type == SDL_KEYDOWN:
+                    if (self.controls == 'wasd' and event.key == SDLK_d) or \
+                            (self.controls == 'arrows' and event.key == SDLK_LEFT):
+                        self.face_dir = 1
 
-            if (cur_xdir, cur_ydir) != (self.xdir, self.ydir): # 방향이 변경되었으면
-                if cur_xdir != 0 and self.xdir != 0: # 양쪽 방향키가 눌려서 방향이 반전된 경우
-                    if (cur_xdir > 0 and self.xdir < 0) or (cur_xdir < 0 and self.xdir > 0): # 방향 반전
-                        self.xdir = cur_xdir # 이전 방향 유지
-                        return
-
-                if self.xdir > 0:  # 오른쪽으로 이동
-                    self.face_dir = 1
-                elif self.xdir < 0:  # 왼쪽으로 이동
-                    self.face_dir = -1
-
-                if self.xdir == 0 and self.ydir == 0: # 멈춤
-                    self.state_machine.handle_state_event(('STOP', self.face_dir)) # 멈춤 이벤트 전달
-                else:
-                    self.state_machine.handle_state_event(('WALK', None)) # 걷기 이벤트 전달
-
-        # 4. 이동키가 아니면 상태머신 INPUT 처리
-        else:
-            self.state_machine.handle_state_event(('INPUT', event))
-
-        print('P2 key:', event.key, 'xdir:', self.xdir, 'face_dir:', self.face_dir)
+                    if (self.controls == 'wasd' and event.key == SDLK_a) or \
+                            (self.controls == 'arrows' and event.key == SDLK_RIGHT):
+                        self.face_dir = -1
+        # 키보드 입력이 아니면 → 상태머신 INPUT 처리
+        self.state_machine.handle_state_event(('INPUT', event))
 
     def get_bb(self):
         bb_cfg = self.cfg["bb"]
