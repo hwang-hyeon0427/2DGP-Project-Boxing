@@ -30,6 +30,9 @@ FRAMES_PER_ACTION = 8
 class Boxer:
     _img_cache = {}
 
+    FRAMES_PER_ACTION = FRAMES_PER_ACTION
+    ACTION_PER_TIME = ACTION_PER_TIME
+
     def __init__(self, cfg: dict):
         self.base_face = None
         self.cfg = cfg
@@ -236,7 +239,6 @@ class Boxer:
                     if (self.controls == 'wasd' and event.key == SDLK_a) or \
                             (self.controls == 'arrows' and event.key == SDLK_RIGHT):
                         self.face_dir = -1
-            return
 
         # 그 외의 이벤트는 상태머신에 직접 전달
         self.state_machine.handle_state_event(('INPUT', event))
