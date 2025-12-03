@@ -1,4 +1,3 @@
-import hitbox
 import title_mode
 import game_framework
 import game_world
