@@ -247,22 +247,33 @@ class Boxer:
     def get_bb(self):
         bb_cfg = self.cfg["bb"]
 
-        # 한 프레임 이미지의 실제 픽셀 크기
-        frame_w = self.frame_w * self.scale # 화면에 실제로 그려지는 프레임의 너비 = 원본 프레임 너비 * 확대/축소 비율
-        frame_h = self.frame_h * self.scale # 화면에 실제로 그려지는 프레임의 높이 = 원본 프레임 높이 * 확대/축소 비율
+        # 1) 한 프레임 이미지의 실제 픽셀 크기 (화면 기준)
+        frame_w = self.frame_w * self.scale
+        frame_h = self.frame_h * self.scale
 
-        # 비율 기반 실제 박스 크기
-        bb_w = frame_w * bb_cfg["w"] # 충돌 박스의 실제 너비 = 실제 프레임 너비 * 박스 너비 비율(0~1 사이)
+        # 2) 비율 기반 실제 박스 크기
+        bb_w = frame_w * bb_cfg["w"]
         bb_h = frame_h * bb_cfg["h"]
 
-        # 오프셋
-        x_offset = bb_cfg["x_offset"] # 캐릭터의 중심(self.x)에서 충돌 박스를 좌우로 얼마나 이동시킬지 결정
-        y_offset = bb_cfg["y_offset"]
+        # 3) 오프셋 (스케일 + 좌우 반전 모두 반영)
+        #    - x_offset, y_offset 은 "원본 스프라이트 기준" 거리라고 가정
+        x_offset = bb_cfg["x_offset"] * self.scale
+        y_offset = bb_cfg["y_offset"] * self.scale
 
-        left = self.x - bb_w / 2 + x_offset
-        right = self.x + bb_w / 2 + x_offset
-        bottom = self.y - bb_h / 2 + y_offset
-        top = self.y + bb_h / 2 + y_offset
+        # draw_current() 와 동일한 기준:
+        # base_face 방향으로 그릴 땐 flip 없음, 다를 땐 좌우 반전.
+        flipped = (self.face_dir != self.base_face)
+        if flipped:
+            x_offset = -x_offset  # 이미지가 좌우 반전되면 오프셋도 같이 반전
+
+        # 4) 박스 중심 좌표
+        cx = self.x + x_offset
+        cy = self.y + y_offset
+
+        left = cx - bb_w / 2
+        right = cx + bb_w / 2
+        bottom = cy - bb_h / 2
+        top = cy + bb_h / 2
 
         return left, bottom, right, top
 
