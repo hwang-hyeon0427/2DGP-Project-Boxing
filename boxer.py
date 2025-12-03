@@ -329,9 +329,9 @@ class Boxer:
             return
 
         if group == 'P1_attack:P2':
-            self.hp -= 10
+            self.hp = max(0, self.hp - 10) # 체력은 0 미만으로 떨어지지 않음
             print("P2 HP:", self.hp)
 
         elif group == 'P2_attack:P1':
-            self.hp -= 10
+            self.hp = max(0, self.hp - 10)
             print("P1 HP:", self.hp)
