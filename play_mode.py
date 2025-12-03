@@ -8,6 +8,7 @@ from boxer import Boxer
 from hpbar import HPBar
 from boxing_ring import BoxingRing
 
+import hitbox_edit
 
 P1 = {
     "face_map": {"left": -1, "right": 1},
@@ -50,9 +51,19 @@ def handle_events():
             game_framework.quit()
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             game_framework.change_mode(title_mode)
-        else:
-            p1.handle_event(event)
-            p2.handle_event(event)
+            return
+
+        if event.type == SDL_KEYDOWN and event.key == SDLK_F1:
+            hitbox_edit.edit_mode = not hitbox_edit.edit_mode
+            print(f"Hitbox Edit Mode: {hitbox_edit.edit_mode}")
+            return
+        if hitbox_edit.edit_mode:
+            if handle_hitbox_editor_event(event):
+                return
+
+        p1.handle_event(event)
+        p2.handle_event(event)
+
 
 def init():
     global p1, p2, hp1, hp2, boxing_ring
@@ -94,6 +105,10 @@ def finish():
 def draw():
     clear_canvas()
     game_world.render()
+
+    if hitbox_edit.edit_mode:
+        draw_rectangle(hitbox_edit.x1, hitbox_edit.y1, hitbox_edit.x2, hitbox_edit.y2)
+
     update_canvas()
 
 def pause(): pass
@@ -103,3 +118,58 @@ def limit_boxer_in_boxing_ring(boxer):
     l, b, r, t = boxing_ring.get_bb()
     boxer.x = clamp(l + 40, boxer.x, r - 40)
     boxer.y = clamp(b + 40, boxer.y, t - 40)
+
+def handle_hitbox_editor_event(event):
+    canvas_h = get_canvas_height()
+
+    if event.type == SDL_MOUSEBUTTONDOWN:
+        hitbox_edit.dragging = True
+        hitbox_edit.x1 = event.x
+        hitbox_edit.y1 = canvas_h - event.y
+
+        # 중요! 드래그 시작 시 x2,y2 초기화
+        hitbox_edit.x2 = hitbox_edit.x1
+        hitbox_edit.y2 = hitbox_edit.y1
+
+        return True
+
+    elif event.type == SDL_MOUSEMOTION and hitbox_edit.dragging:
+        hitbox_edit.x2 = event.x
+        hitbox_edit.y2 = canvas_h - event.y
+        return True
+
+    elif event.type == SDL_MOUSEBUTTONUP:
+        hitbox_edit.dragging = False
+        return True
+
+    if event.type == SDL_KEYDOWN and (event.key == SDLK_RETURN or event.key == SDLK_s):
+        save_hitbox_for_current_frame()
+        return True
+
+    return False
+
+def save_hitbox_for_current_frame():
+    boxer = p1  # 편집할 플레이어 선택 (p1/p2 스위치 가능)
+    frame = int(boxer.frame)
+    scale = boxer.scale
+
+    # 드래그한 박스
+    x1, y1 = hitbox_edit.x1, hitbox_edit.y1
+    x2, y2 = hitbox_edit.x2, hitbox_edit.y2
+
+    cx = (x1 + x2) / 2
+    cy = (y1 + y2) / 2
+    w = abs(x2 - x1)
+    h = abs(y2 - y1)
+
+    # boxer 기준 상대 좌표
+    ox = (cx - boxer.x) / scale
+    oy = (cy - boxer.y) / scale
+    w /= scale
+    h /= scale
+
+    print()
+    print("==== HITBOX SAVED ====")
+    print(f"{frame}: ({ox:.1f}, {oy:.1f}, {w:.1f}, {h:.1f})")
+    print("=======================")
+    print()
