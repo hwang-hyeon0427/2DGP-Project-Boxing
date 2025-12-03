@@ -14,7 +14,6 @@ class HitBox:
             game_world.remove_collision_object(self)
 
     def draw(self):
-        print("HITBOX DRAW")
         draw_rectangle(*self.get_bb())
 
     def get_bb(self):
