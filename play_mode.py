@@ -7,6 +7,7 @@ import game_world
 from hpbar import HPBar
 from boxing_ring import BoxingRing
 from hitbox import HitBox
+from hitbox_data import HITBOX_DATA
 
 P1 = {
     "controls": "wasd",
@@ -29,15 +30,15 @@ P2 = {
     "max_hp": 100,
     "bb": {"w": 0.55, "h": 0.7, "x_offset": -35, "y_offset": -20},
     "idle":  {"image":"player2/player2_Idle.png", "cols":10, "w":744, "h":711, "scale":0.5},
-    "spawn": {"x": 700, "y": 300, "face": 1},
+    "spawn": {"x": 700, "y": 300, "face": -1},
     "walk_backward": {"image":"player2/player2_Walk_Backward.png", "cols": 10, "w":746, "h":713, "scale":0.5},
-    "walk_forward":  {"image":"player2/player2_Walk_Forward.png",  "cols": 10, "w":746, "h":713, "scale":0.5, "base_face": -1},
-    "front_hand": {"image":"player2/player2_FrontHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5},
-    "uppercut": {"image":"player2/player2_Uppercut.png",  "cols": 8, "w":744, "h":713, "scale":0.5},
-    "rear_hand": {"image":"player2/player2_RearHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5},
-    "blocking": {"image":"player2/player2_Block.png",  "cols": 10, "w":744, "h":713, "scale":0.5},
-    "dizzy": {"image":"player2/player2_Dizzy.png",  "cols": 10, "w":744, "h":711, "scale":0.5},
-    "ko": {"image":"player2/player2_KO.png",  "cols": 8, "w":744, "h":711, "scale":0.5}
+    "walk_forward":  {"image":"player2/player2_Walk_Forward.png",  "cols": 10, "w":746, "h":713, "scale":0.5, "face": -1},
+    "front_hand": {"image":"player2/player2_FrontHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "face": -1},
+    "uppercut": {"image":"player2/player2_Uppercut.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "face": -1},
+    "rear_hand": {"image":"player2/player2_RearHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "face": -1},
+    "blocking": {"image":"player2/player2_Block.png",  "cols": 10, "w":744, "h":713, "scale":0.5, "face": -1},
+    "dizzy": {"image":"player2/player2_Dizzy.png",  "cols": 10, "w":744, "h":711, "scale":0.5, "face": -1},
+    "ko": {"image":"player2/player2_KO.png",  "cols": 8, "w":744, "h":711, "scale":0.5, "face": -1}
 }
 
 def handle_events():
@@ -73,6 +74,8 @@ def init():
     game_world.add_object(hp2, 2)
 
     game_world.add_collision_pair('body:block', p1, p2) # 서로의 몸통끼리 충돌
+    game_world.add_collision_pair('atk:hit', None, p2)
+    game_world.add_collision_pair('atk:hit', None, p1)
 
 
 def update():
