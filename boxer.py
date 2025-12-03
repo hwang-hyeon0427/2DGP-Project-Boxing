@@ -304,6 +304,9 @@ class Boxer:
     def handle_collision(self, group, other):
         now = get_time()
 
+        if now - self.last_hit_time < self.hit_cool:
+            return
+
         if group == 'body:block' and other is self.opponent: # 몸통끼리 충돌
             l1, b1, r1, t1 = self.get_bb() # 자신의 바운딩 박스
             l2, b2, r2, t2 = other.get_bb() # 상대방의 바운딩 박스
@@ -325,13 +328,16 @@ class Boxer:
 
             return
 
-        if now - self.last_hit_time < self.hit_cool:
-            return
-
         if group == 'P1_attack:P2':
+            old_hp = self.hp
             self.hp = max(0, self.hp - 10) # 체력은 0 미만으로 떨어지지 않음
-            print("P2 HP:", self.hp)
+            self.last_hit_time = now
+            if old_hp != self.hp:
+                print("P2 HP:", self.hp)
 
         elif group == 'P2_attack:P1':
+            old_hp = self.hp
             self.hp = max(0, self.hp - 10)
-            print("P1 HP:", self.hp)
+            self.last_hit_time = now
+            if old_hp != self.hp:
+                print("P1 HP:", self.hp)
