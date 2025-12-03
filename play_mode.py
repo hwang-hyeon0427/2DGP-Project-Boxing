@@ -79,7 +79,7 @@ def init():
     p1.opponent = p2
     p2.opponent = p1
 
-    hpui = HPUI(p1, p2, x=get_canvas_width()//2, y=600, scale=3.0)
+    hpui = HPUI(p1, p2, x=get_canvas_width()//2 - 160*3//2, y=560, scale=3.0)
     game_world.add_object(hpui, 2)
 
     game_world.add_collision_pair('body:block', p1, p2) # 서로의 몸통끼리 충돌
