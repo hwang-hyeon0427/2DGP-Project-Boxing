@@ -231,15 +231,21 @@ class Boxer:
                     else:  # 움직임
                         self.state_machine.handle_state_event(('WALK', None))
 
-                # 3. face_dir은 키다운 순간에만 변경
-                if event.type == SDL_KEYDOWN:
-                    if (self.controls == 'wasd' and event.key == SDLK_d) or \
-                            (self.controls == 'arrows' and event.key == SDLK_LEFT):
-                        self.face_dir = 1
+                # face_map 불러오기 (P1/P2 config 기반)
+                face_map = self.cfg.get("face_map", {"left": -1, "right": 1})
 
-                    if (self.controls == 'wasd' and event.key == SDLK_a) or \
-                            (self.controls == 'arrows' and event.key == SDLK_RIGHT):
-                        self.face_dir = -1
+                if event.type == SDL_KEYDOWN:
+                    if self.controls == 'wasd':
+                        if event.key == SDLK_a:
+                            self.face_dir = face_map["left"]
+                        elif event.key == SDLK_d:
+                            self.face_dir = face_map["right"]
+
+                    else:  # arrows
+                        if event.key == SDLK_LEFT:
+                            self.face_dir = face_map["left"]
+                        elif event.key == SDLK_RIGHT:
+                            self.face_dir = face_map["right"]
 
         # 그 외의 이벤트는 상태머신에 직접 전달
         self.state_machine.handle_state_event(('INPUT', event))
