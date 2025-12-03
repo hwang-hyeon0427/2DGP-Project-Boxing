@@ -1,16 +1,15 @@
 from pico2d import *
-
 from key_events import *
 from state_machine import StateMachine
-
 from hitbox_data import HITBOX_DATA
 from hitbox import HitBox
-import game_world
-import game_framework
 from idle import Idle
 from attack_state import AttackState
 # from walk_backward import WalkBackward
 from walk import Walk
+
+import game_world
+
 def event_stop(e):
     return e[0] == 'STOP'
 
@@ -293,7 +292,6 @@ class Boxer:
             frame_offsets=frame_offsets,
             duration=0.15  # 또는 원하는 지속시간
         )
-
         game_world.add_object(hitbox, 1)
         game_world.add_collision_pair('atk:hit', hitbox, self.opponent)
 
