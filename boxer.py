@@ -41,7 +41,7 @@ class Boxer:
 
 
         self.hits = 0
-        self.max_hp = int(cfg.get('max_hp', 100))  # 값 복사
+        self.max_hp = cfg["max_hp"]  # 값 복사
         self.hp = self.max_hp  # hp는 무조건 새로 생성
         self.opponent = None
 
@@ -295,7 +295,11 @@ class Boxer:
             duration=0.15  # 또는 원하는 지속시간
         )
         game_world.add_object(hitbox, 1)
-        game_world.add_collision_pair('atk:hit', hitbox, self.opponent)
+
+        if self.controls == "wasd":  # P1
+            game_world.add_collision_pair('P1_attack:P2', hitbox, self.opponent)
+        else:  # P2
+            game_world.add_collision_pair('P2_attack:P1', hitbox, self.opponent)
 
     def handle_collision(self, group, other):
         now = get_time()
@@ -324,9 +328,10 @@ class Boxer:
         if now - self.last_hit_time < self.hit_cool:
             return
 
-        if group == 'atk:hit' and other is self.opponent:
-            shared_hp = max(self.hp, self.opponent.hp)
-            shared_hp -= 5
-            self.hp = shared_hp
-            self.opponent.hp = shared_hp
-            self.last_hit_time = now
+        if group == 'P1_attack:P2':
+            self.hp -= 10
+            print("P2 HP:", self.hp)
+
+        elif group == 'P2_attack:P1':
+            self.hp -= 10
+            print("P1 HP:", self.hp)
