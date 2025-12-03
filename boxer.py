@@ -3,6 +3,7 @@ from pico2d import *
 from key_events import *
 from state_machine import StateMachine
 
+from hitbox_data import HITBOX_DATA
 from hitbox import HitBox
 import game_world
 import game_framework
@@ -270,67 +271,46 @@ class Boxer:
         if attack_type is None:
             return
 
-        # 🔥 캐릭터별 히트박스 데이터
-        HITBOX_DATA = {
-            'wasd': {  # P1용
-                'front_hand': {
-                    3: (85, 12, 65, 38)
-                },
-                'rear_hand': {
-                    3: (92, 15, 70, 42)
-                },
-                'uppercut': {
-                    4: (150, 80, 55, 85)
-                }
-            },
-            'arrows': {  # P2용
-                'front_hand': {
-                    2: (60, 15, 60, 35)
-                },
-                'rear_hand': {
-                    3: (70, 20, 65, 40)
-                },
-                'uppercut': {
-                    4: (35, 65, 45, 75)
-                }
-            }
-        }
-
-        # 내 캐릭터가 어떤 그룹(P1/P2)에 속하는지 결정
-        char_key = self.controls   # 'wasd' 또는 'arrows'
-
-        # 내 캐릭터에 대한 히트박스 데이터가 없으면 종료
+        char_key = self.controls
         if char_key not in HITBOX_DATA:
             return
 
-        char_data = HITBOX_DATA[char_key] # 공격 타입별 데이터
+        char_data = HITBOX_DATA[char_key]
 
-        # 현재 공격 타입에 대한 데이터가 없으면 종료
         if attack_type not in char_data:
             return
 
-        raw_offsets = char_data[attack_type]  # {frame: (ox, oy, w, h)}
+        raw_offsets = char_data[attack_type]
 
-        # 좌우 방향(face)에 따라 x 오프셋 반전
         frame_offsets = {}
         for frame, (ox, oy, w, h) in raw_offsets.items():
-            if self.face_dir == 1:      # 오른쪽 바라보는 경우
-                frame_offsets[frame] = (ox, oy, w, h)
-            else:                   # 왼쪽 바라보는 경우 → x 반전
-                frame_offsets[frame] = (-ox, oy, w, h)
 
-        # 실제 히트박스 생성
+            # scale 적용
+            ox *= self.scale
+            oy *= self.scale
+            w *= self.scale
+            h *= self.scale
+
+            # 좌우 반전
+            if self.face_dir == 1:  # right
+                frame_offsets[frame] = (ox, oy, w, h)
+            else:  # left
+                frame_offsets[frame] = (-ox - w, oy, w, h)
+
+        # lifespan을 "1 프레임" 정도로 제한하는 것이 더 정확함
+        duration = game_framework.frame_time * 1.5
+
         hitbox = HitBox(
-            self,      # owner
-            0, 0,      # 기본 오프셋(프레임별 히트박스가 우선 적용됨)
-            0, 0,      # 기본 크기(프레임별 히트박스가 적용됨)
-            1.0,      # 히트박스 지속시간
+            owner=self,
+            x_offset=0, y_offset=0,
+            w=0, h=0,
+            lifespan=duration,
             frame_offsets=frame_offsets
         )
+        print("Spawn hitbox: frame =", self.frame, "pos=", self.x, self.y)
 
-        # 게임 월드 등록 + 충돌 그룹 등록
         game_world.add_object(hitbox, 1)
-        game_world.add_collision_pair('atk:hit', hitbox, self.opponent) # 히트박스 vs 상대방
+        game_world.add_collision_pair('atk:hit', hitbox, self.opponent)
 
     def handle_collision(self, group, other):
         now = get_time()
