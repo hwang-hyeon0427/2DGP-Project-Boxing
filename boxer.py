@@ -286,32 +286,12 @@ class Boxer:
         if attack_type is None:
             return
 
-        raw_offsets = HITBOX_DATA[self.controls][attack_type]
-        frame_offsets = {}
-
-        for frame, (ox, oy, w, h) in raw_offsets.items():
-
-            ox *= self.scale
-            oy *= self.scale
-            w *= self.scale
-            h *= self.scale
-
-            # base_face 기준으로 flip 판단
-            flipped = (self.face_dir != self.base_face)
-
-            if not flipped:
-                frame_offsets[frame] = (ox, oy, w, h)
-            else:
-                frame_offsets[frame] = (-ox - w, oy, w, h)
-
-        duration = game_framework.frame_time * 1.5
+        frame_offsets = HITBOX_DATA[self.controls][attack_type]
 
         hitbox = HitBox(
             owner=self,
-            x_offset=0, y_offset=0,
-            w=0, h=0,
-            lifespan=duration,
-            frame_offsets=frame_offsets
+            frame_offsets=frame_offsets,
+            duration=0.15  # 또는 원하는 지속시간
         )
 
         game_world.add_object(hitbox, 1)
