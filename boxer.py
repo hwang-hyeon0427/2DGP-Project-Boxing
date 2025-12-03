@@ -185,6 +185,20 @@ class Boxer:
 
     def handle_event(self, event):
 
+        if event.type == SDL_KEYDOWN:
+            face_map = self.cfg.get("face_map", {"left": -1, "right": 1})
+            if self.controls == 'wasd':
+                if event.key == SDLK_a:
+                    self.face_dir = face_map["left"]
+                elif event.key == SDLK_d:
+                    self.face_dir = face_map["right"]
+
+            else:  # arrows
+                if event.key == SDLK_LEFT:
+                    self.face_dir = face_map["left"]
+                elif event.key == SDLK_RIGHT:
+                    self.face_dir = face_map["right"]
+
         # 키보드 입력(KEYDOWN/KEYUP) 처리
         if event.type in (SDL_KEYDOWN, SDL_KEYUP):
 
@@ -231,22 +245,6 @@ class Boxer:
                     else:  # 움직임
                         self.state_machine.handle_state_event(('WALK', None))
 
-                # face_map 불러오기 (P1/P2 config 기반)
-                face_map = self.cfg.get("face_map", {"left": -1, "right": 1})
-
-                if event.type == SDL_KEYDOWN:
-                    if self.controls == 'wasd':
-                        if event.key == SDLK_a:
-                            self.face_dir = face_map["left"]
-                        elif event.key == SDLK_d:
-                            self.face_dir = face_map["right"]
-
-                    else:  # arrows
-                        if event.key == SDLK_LEFT:
-                            self.face_dir = face_map["left"]
-                        elif event.key == SDLK_RIGHT:
-                            self.face_dir = face_map["right"]
-
         # 그 외의 이벤트는 상태머신에 직접 전달
         self.state_machine.handle_state_event(('INPUT', event))
 
@@ -288,33 +286,24 @@ class Boxer:
         if attack_type is None:
             return
 
-        char_key = self.controls
-        if char_key not in HITBOX_DATA:
-            return
-
-        char_data = HITBOX_DATA[char_key]
-
-        if attack_type not in char_data:
-            return
-
-        raw_offsets = char_data[attack_type]
-
+        raw_offsets = HITBOX_DATA[self.controls][attack_type]
         frame_offsets = {}
+
         for frame, (ox, oy, w, h) in raw_offsets.items():
 
-            # scale 적용
             ox *= self.scale
             oy *= self.scale
             w *= self.scale
             h *= self.scale
 
-            # 좌우 반전
-            if self.face_dir == 1:  # right
+            # base_face 기준으로 flip 판단
+            flipped = (self.face_dir != self.base_face)
+
+            if not flipped:
                 frame_offsets[frame] = (ox, oy, w, h)
-            else:  # left
+            else:
                 frame_offsets[frame] = (-ox - w, oy, w, h)
 
-        # lifespan을 "1 프레임" 정도로 제한하는 것이 더 정확함
         duration = game_framework.frame_time * 1.5
 
         hitbox = HitBox(
@@ -324,7 +313,6 @@ class Boxer:
             lifespan=duration,
             frame_offsets=frame_offsets
         )
-        print("Spawn hitbox: frame =", self.frame, "pos=", self.x, self.y)
 
         game_world.add_object(hitbox, 1)
         game_world.add_collision_pair('atk:hit', hitbox, self.opponent)
