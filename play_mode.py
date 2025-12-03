@@ -10,6 +10,7 @@ from hitbox import HitBox
 from hitbox_data import HITBOX_DATA
 
 P1 = {
+    "face_map": {1: "right", -1: "left"},
     "controls": "wasd",
     "max_hp": 100,
     "bb": {"w": 0.40, "h": 0.55, "x_offset": 55, "y_offset": -30}, # 박스 크기 비율과 오프셋
@@ -26,6 +27,7 @@ P1 = {
 }
 
 P2 = {
+    "face_map": {-1: "right", 1: "left"},
     "controls": "arrows",
     "max_hp": 100,
     "bb": {"w": 0.55, "h": 0.7, "x_offset": -35, "y_offset": -20},
