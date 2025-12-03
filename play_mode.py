@@ -4,7 +4,7 @@ import game_world
 
 from pico2d import *
 from boxer import Boxer
-from hpbar import HPBar
+from hp_ui import HPUI
 from boxing_ring import BoxingRing
 
 import hitbox_edit
@@ -65,7 +65,7 @@ def handle_events():
 
 
 def init():
-    global p1, p2, hp1, hp2, boxing_ring
+    global p1, p2, hpui, boxing_ring
 
     boxing_ring = BoxingRing()
     game_world.add_object(boxing_ring, 0)
@@ -79,11 +79,8 @@ def init():
     p1.opponent = p2
     p2.opponent = p1
 
-    hp1 = HPBar(p1, x=300, y=550)
-    game_world.add_object(hp1, 2)
-
-    hp2 = HPBar(p2, x=1000, y=550)
-    game_world.add_object(hp2, 2)
+    hpui = HPUI(p1, p2, x=get_canvas_width()//2, y=600, scale=3.0)
+    game_world.add_object(hpui, 2)
 
     game_world.add_collision_pair('body:block', p1, p2) # 서로의 몸통끼리 충돌
     game_world.add_collision_pair('atk:hit', None, p2)
