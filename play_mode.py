@@ -86,6 +86,7 @@ def init():
 
 def update():
     game_world.update()
+    hpui.update()
 
     limit_boxer_in_boxing_ring(p1)
     limit_boxer_in_boxing_ring(p2)
