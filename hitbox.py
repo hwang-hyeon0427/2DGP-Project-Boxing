@@ -1,16 +1,8 @@
-# hitbox.py
 from pico2d import *
 import game_world
 
 
 class HitBox:
-    """
-    공격 판정 히트박스
-    - frame_offsets: {frame: (ox, oy, w, h)}
-    - duration: 히트박스 유지 시간
-    - owner: 히트박스를 만든 공격자(Boxer)
-    """
-
     def __init__(self, owner, frame_offsets, duration=0.15):
         self.owner = owner
         self.frame_offsets = frame_offsets    # {frame: (ox, oy, w, h)}
@@ -22,21 +14,14 @@ class HitBox:
             game_world.remove_collision_object(self)
 
     def draw(self):
-        # 디버그용 충돌 박스 표시
+        print("HITBOX DRAW")
         draw_rectangle(*self.get_bb())
 
     def get_bb(self):
-        """
-        히트박스 바운딩 박스 계산
-        - owner.x, owner.y 기준
-        - owner.scale 반영
-        - owner.face_dir(1 또는 -1) 반영
-        """
+        scale = getattr(self.owner, "scale", 1.0)
+        face = getattr(self.owner, "face_dir", 1)
 
-        scale = getattr(self.owner, "scale", 1.0)  # 플레이어마다 scale 다름
-        face = getattr(self.owner, "face_dir", 1)  # 좌우 방향
-
-        frame = self.owner.frame
+        frame = int(self.owner.frame)
 
         if self.frame_offsets and frame in self.frame_offsets:
             ox, oy, w, h = self.frame_offsets[frame]
@@ -62,7 +47,4 @@ class HitBox:
         return (self.owner.x, self.owner.y, self.owner.x, self.owner.y)
 
     def handle_collision(self, group, other):
-        """
-        충돌 처리 (필요하면 구현)
-        """
         pass
