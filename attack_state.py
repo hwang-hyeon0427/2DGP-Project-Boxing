@@ -1,6 +1,4 @@
-from pico2d import *
 import game_framework
-from hitbox_data import HITBOX_DATA
 
 class AttackState:
     def __init__(self, boxer, attack_type):
