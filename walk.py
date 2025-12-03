@@ -6,6 +6,8 @@ class Walk:
         self.boxer = boxer
 
     def enter(self, e):
+        self.boxer.frame = 0
+
         sheet = self.boxer.cfg.get('walk_forward')
         self.boxer.use_sheet(sheet)
 
