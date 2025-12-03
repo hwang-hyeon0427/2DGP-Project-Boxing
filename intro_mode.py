@@ -48,7 +48,7 @@ def draw():
 
     idx = int(frame_index)
     frame_x, frame_row = FRAME_SEQUENCE[idx]
-    
+
     src_x = frame_x * FRAME_W
     src_y = (2 - frame_row) * FRAME_H
 
