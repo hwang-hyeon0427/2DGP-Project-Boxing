@@ -1,13 +1,13 @@
-from pico2d import *
-
+import hitbox
 import title_mode
-from boxer import Boxer
 import game_framework
 import game_world
+
+from pico2d import *
+from boxer import Boxer
 from hpbar import HPBar
 from boxing_ring import BoxingRing
-from hitbox import HitBox
-from hitbox_data import HITBOX_DATA
+
 
 P1 = {
     "face_map": {"left": -1, "right": 1},
