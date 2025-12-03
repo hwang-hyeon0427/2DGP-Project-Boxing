@@ -40,14 +40,13 @@ class HpUi:
     def update(self):
         dt = game_framework.frame_time
 
+        # 데미지 감지
         if self.p1.hp < self.p1_last_hp:
             self.p1_flash = self.flash_duration
-        self.p1_last_hp = self.p1.hp
-
         if self.p2.hp < self.p2_last_hp:
             self.p2_flash = self.flash_duration
-        self.p2_last_hp = self.p2.hp
 
+        # 깜빡임
         if self.p1_flash > 0 or self.p2_flash > 0:
             self.blink_timer += dt
             if self.blink_timer >= self.blink_interval:
@@ -124,3 +123,6 @@ class HpUi:
         # 3) 빨간 플래시
         self.draw_flash(self.p1_last_hp, self.p1.hp, self.LEFT_X)
         self.draw_flash(self.p2_last_hp, self.p2.hp, self.RIGHT_X)
+
+        self.p1_last_hp = self.p1.hp
+        self.p2_last_hp = self.p2.hp
