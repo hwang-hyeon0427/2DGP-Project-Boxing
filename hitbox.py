@@ -47,4 +47,4 @@ class HitBox:
         return (self.owner.x, self.owner.y, self.owner.x, self.owner.y)
 
     def handle_collision(self, group, other):
-        pass
+        other.handle_collision(group, self)
