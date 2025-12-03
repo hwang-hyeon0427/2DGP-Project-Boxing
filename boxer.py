@@ -8,6 +8,7 @@ from attack_state import AttackState
 # from walk_backward import WalkBackward
 from walk import Walk
 
+import game_framework
 import game_world
 
 def event_stop(e):
@@ -34,6 +35,7 @@ class Boxer:
     ACTION_PER_TIME = ACTION_PER_TIME
 
     def __init__(self, cfg: dict):
+        self.current_attack_type = None
         self.base_face = None
         self.cfg = cfg
 
