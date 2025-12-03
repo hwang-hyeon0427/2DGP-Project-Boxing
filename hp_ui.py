@@ -1,19 +1,20 @@
-# hp_ui.py
 from pico2d import *
 import game_framework
 
-class HPUI:
+class HpUi:
     image = None
-    W = 329
-    H = 31
 
-    # hp.png 내부 바 픽셀 좌표
-    LEFT_BAR_X = 0        # 0~159
-    RIGHT_BAR_X = 169     # 169~328
+    IMG_W = 329
+    IMG_H = 31
+
     BAR_W = 160
-    RED_Y = 0             # 빨간바 y=0~9
-    YELLOW_Y = 11         # 노란바 y=11~20
-    BAR_H = 10
+    BAR_H = 16
+
+    LEFT_X  = 0
+    RIGHT_X = 169
+
+    YELLOW_Y = 0
+    RED_Y = 11
 
     def __init__(self, p1, p2, x, y, scale=3.0):
         self.p1 = p1
@@ -22,34 +23,31 @@ class HPUI:
         self.y = y
         self.scale = scale
 
-        if HPUI.image is None:
-            HPUI.image = load_image('hp.png')
+        if HpUi.image is None:
+            HpUi.image = load_image('health/hp.png')
 
-        # 플래시용
         self.p1_last_hp = p1.hp
         self.p2_last_hp = p2.hp
 
         self.p1_flash = 0
         self.p2_flash = 0
-        self.flash_time = 0.25
-        self.blink = False
+
+        self.flash_duration = 0.25
         self.blink_interval = 0.07
         self.blink_timer = 0
+        self.blink = False
 
     def update(self):
         dt = game_framework.frame_time
 
-        # P1 데미지 감지
         if self.p1.hp < self.p1_last_hp:
-            self.p1_flash = self.flash_time
+            self.p1_flash = self.flash_duration
         self.p1_last_hp = self.p1.hp
 
-        # P2 데미지 감지
         if self.p2.hp < self.p2_last_hp:
-            self.p2_flash = self.flash_time
+            self.p2_flash = self.flash_duration
         self.p2_last_hp = self.p2.hp
 
-        # 플래시 타이머
         if self.p1_flash > 0 or self.p2_flash > 0:
             self.blink_timer += dt
             if self.blink_timer >= self.blink_interval:
@@ -59,72 +57,70 @@ class HPUI:
         self.p1_flash = max(0, self.p1_flash - dt)
         self.p2_flash = max(0, self.p2_flash - dt)
 
-    def draw_bar(self, cur_hp, max_hp, bar_x, direction):
-        """
-        direction = 1 : 왼쪽→오른쪽 (P1)
-        direction = -1: 오른쪽→왼쪽 (P2)
-        """
-        ratio = max(0, min(1, cur_hp / max_hp))
-        bar_pixel_w = int(self.BAR_W * ratio)
+    # -------------------
+    # 전체 hp.png 그림
+    # -------------------
+    def draw_base(self):
+        HpUi.image.clip_draw(
+            0, self.YELLOW_Y,  # src_x, src_y
+            self.IMG_W, self.BAR_H,  # width=전체폭, height=노란바 높이
+            self.x, self.y,  # 화면 좌표
+            self.IMG_W * self.scale,
+            self.BAR_H * self.scale
+        )
 
-        if bar_pixel_w <= 0:
-            return
+    # -------------------
+    # 노란바 (항상 표시)
+    # -------------------
+    def draw_yellow(self, hp, src_x):
+        ratio = hp / 100.0
+        px = int(self.BAR_W * ratio)
+        if px <= 0: return
 
-        if direction == 1:     # P1 왼쪽바
-            src_x = bar_x
-        else:                  # P2 오른쪽바 (오른쪽에서 줄어듬)
-            src_x = bar_x + (self.BAR_W - bar_pixel_w)
+        img_left = self.x - (self.IMG_W * self.scale)/2 + src_x * self.scale
+        center_x = img_left + (px * self.scale)/2
 
-        screen_w = bar_pixel_w * self.scale
-        screen_h = self.BAR_H * self.scale
-        center_x = self.x - (self.W*self.scale)/2 + (src_x + bar_pixel_w/2)*self.scale
-        center_y = self.y
-
-        HPUI.image.clip_draw(
+        HpUi.image.clip_draw(
             src_x, self.YELLOW_Y,
-            bar_pixel_w, self.BAR_H,
-            center_x, center_y,
-            screen_w, screen_h
+            px, self.BAR_H,
+            center_x, self.y,
+            px * self.scale, self.BAR_H * self.scale
         )
 
-    def draw_flash(self, old_hp, new_hp, bar_x, direction):
-        if old_hp <= new_hp:
-            return
+    # -------------------
+    # 빨간 플래시 (데미지 구간)
+    # -------------------
+    def draw_flash(self, last_hp, hp, src_x):
+        if last_hp <= hp: return
+        if not self.blink: return
 
-        old_w = int(self.BAR_W * (old_hp / 100))
-        new_w = int(self.BAR_W * (new_hp / 100))
-        diff = old_w - new_w
-        if diff <= 0:
-            return
+        old_px = int(self.BAR_W * (last_hp / 100))
+        new_px = int(self.BAR_W * (hp / 100))
+        lost_px = old_px - new_px
+        if lost_px <= 0: return
 
-        if not self.blink:
-            return
+        img_left = self.x - (self.IMG_W * self.scale)/2 + src_x * self.scale
+        center_x = img_left + ((new_px + lost_px/2) * self.scale)
+        center_y = self.y + (self.BAR_H * self.scale)
 
-        if direction == 1:
-            src_x = bar_x + new_w
-        else:
-            src_x = bar_x + (self.BAR_W - old_w)
-
-        screen_w = diff * self.scale
-        screen_h = self.BAR_H * self.scale
-        center_x = self.x - (self.W*self.scale)/2 + (src_x + diff/2)*self.scale
-        center_y = self.y
-
-        HPUI.image.clip_draw(
-            src_x, self.RED_Y,
-            diff, self.BAR_H,
+        HpUi.image.clip_draw(
+            src_x + new_px, self.RED_Y,
+            lost_px, self.BAR_H,
             center_x, center_y,
-            screen_w, screen_h
+            lost_px * self.scale, self.BAR_H * self.scale
         )
 
+    # -------------------
+    # 전체 draw()
+    # -------------------
     def draw(self):
-        # 배경 전체(중앙 KO 포함) 먼저 그리기
-        HPUI.image.draw(self.x, self.y, self.W*self.scale, self.H*self.scale)
+        # 1) hp.png 전체 (KO 포함)
+        self.draw_base()
 
-        # ---- P1 ----
-        self.draw_bar(self.p1.hp, 100, self.LEFT_BAR_X, +1)
-        self.draw_flash(self.p1_last_hp, self.p1.hp, self.LEFT_BAR_X, +1)
+        # 2) 노란바
+        self.draw_yellow(self.p1.hp, self.LEFT_X)
+        self.draw_yellow(self.p2.hp, self.RIGHT_X)
 
-        # ---- P2 ----
-        self.draw_bar(self.p2.hp, 100, self.RIGHT_BAR_X, -1)
-        self.draw_flash(self.p2_last_hp, self.p2.hp, self.RIGHT_BAR_X, -1)
+        # 3) 빨간 플래시
+        self.draw_flash(self.p1_last_hp, self.p1.hp, self.LEFT_X)
+        self.draw_flash(self.p2_last_hp, self.p2.hp, self.RIGHT_X)
