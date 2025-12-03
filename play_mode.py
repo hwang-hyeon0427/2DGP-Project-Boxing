@@ -83,9 +83,6 @@ def init():
     game_world.add_object(hpui, 2)
 
     game_world.add_collision_pair('body:block', p1, p2) # 서로의 몸통끼리 충돌
-    game_world.add_collision_pair('atk:hit', None, p2)
-    game_world.add_collision_pair('atk:hit', None, p1)
-
 
 def update():
     game_world.update()
