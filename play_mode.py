@@ -27,7 +27,7 @@ P1 = {
 }
 
 P2 = {
-    "face_map": {"left": 1, "right": -1},
+    "face_map": {"left": -1, "right": 1},
     "controls": "arrows",
     "max_hp": 100,
     "bb": {"w": 0.55, "h": 0.7, "x_offset": -35, "y_offset": -20},
