@@ -15,7 +15,7 @@ logo_start_time = 0
 
 def init():
     global image, logo_start_time, frame
-    image = load_image('image/SUPER-PUNCH-OUT_logo.png')
+    image = load_image('resource/image/SUPER-PUNCH-OUT_logo.png')
     frame = 0.0
     logo_start_time = get_time()
 

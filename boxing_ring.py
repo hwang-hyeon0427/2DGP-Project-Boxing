@@ -9,10 +9,10 @@ class BoxingRing:
 
     def __init__(self):
         bg_list = [
-            'background/Boxing_Ring_Blue.png',
-            'background/Boxing_Ring_Green.png',
-            'background/Boxing_Ring_Orange.png',
-            'background/Boxing_Ring_Purple.png'
+            'resource/background/Boxing_Ring_Blue.png',
+            'resource/background/Boxing_Ring_Green.png',
+            'resource/background/Boxing_Ring_Orange.png',
+            'resource/background/Boxing_Ring_Purple.png'
         ]
         self.image = load_image(random.choice(bg_list))
 

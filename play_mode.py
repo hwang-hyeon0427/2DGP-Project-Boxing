@@ -14,16 +14,16 @@ P1 = {
     "controls": "wasd",
     "max_hp": 100,
     "bb": {"w": 0.40, "h": 0.55, "x_offset": 55, "y_offset": -30}, # 박스 크기 비율과 오프셋
-    "idle":  {"image":"player1/player1_Idle.png", "cols":10, "w":499, "h":489, "scale":0.9, "base_face": 1},
+    "idle":  {"image":"resource/player1/player1_Idle.png", "cols":10, "w":499, "h":489, "scale":0.9, "base_face": 1},
     "spawn": {"x": 300, "y": 300, "base_face": 1},
-    "walk_backward": {"image":"player1/player1_Walk_Backward.png", "cols": 10, "w": 499, "h": 489, "scale": 0.9},
-    "walk_forward":  {"image":"player1/player1_Walk_Forward.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "front_hand": {"image":"player1/player1_FrontHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "uppercut": {"image":"player1/player1_Uppercut.png",  "cols": 7, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "rear_hand": {"image":"player1/player1_RearHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "blocking": {"image":"player1/player1_Blocking.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "dizzy": {"image":"player1/player1_Dizzy.png",  "cols": 8, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "ko": {"image":"player1/player1_KO.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1}
+    "walk_backward": {"image":"resource/player1/player1_Walk_Backward.png", "cols": 10, "w": 499, "h": 489, "scale": 0.9},
+    "walk_forward":  {"image":"resource/player1/player1_Walk_Forward.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
+    "front_hand": {"image":"resource/player1/player1_FrontHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
+    "uppercut": {"image":"resource/player1/player1_Uppercut.png",  "cols": 7, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
+    "rear_hand": {"image":"resource/player1/player1_RearHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
+    "blocking": {"image":"resource/player1/player1_Blocking.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
+    "dizzy": {"image":"resource/player1/player1_Dizzy.png",  "cols": 8, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
+    "ko": {"image":"resource/player1/player1_KO.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1}
 }
 
 P2 = {
@@ -31,16 +31,16 @@ P2 = {
     "controls": "arrows",
     "max_hp": 100,
     "bb": {"w": 0.55, "h": 0.7, "x_offset": -35, "y_offset": -20},
-    "idle":  {"image":"player2/player2_Idle.png", "cols":10, "w":744, "h":711, "scale":0.5, "base_face": -1},
+    "idle":  {"image":"resource/player2/player2_Idle.png", "cols":10, "w":744, "h":711, "scale":0.5, "base_face": -1},
     "spawn": {"x": 700, "y": 300, "base_face": -1},
-    "walk_backward": {"image":"player2/player2_Walk_Backward.png", "cols": 10, "w":746, "h":713, "scale":0.5},
-    "walk_forward":  {"image":"player2/player2_Walk_Forward.png",  "cols": 10, "w":746, "h":713, "scale":0.5, "base_face": -1},
-    "front_hand": {"image":"player2/player2_FrontHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1},
-    "uppercut": {"image":"player2/player2_Uppercut.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1},
-    "rear_hand": {"image":"player2/player2_RearHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1},
-    "blocking": {"image":"player2/player2_Block.png",  "cols": 10, "w":744, "h":713, "scale":0.5, "base_face": -1},
-    "dizzy": {"image":"player2/player2_Dizzy.png",  "cols": 10, "w":744, "h":711, "scale":0.5, "base_face": -1},
-    "ko": {"image":"player2/player2_KO.png",  "cols": 8, "w":744, "h":711, "scale":0.5, "base_face": -1}
+    "walk_backward": {"image":"resource/player2/player2_Walk_Backward.png", "cols": 10, "w":746, "h":713, "scale":0.5},
+    "walk_forward":  {"image":"resource/player2/player2_Walk_Forward.png",  "cols": 10, "w":746, "h":713, "scale":0.5, "base_face": -1},
+    "front_hand": {"image":"resource/player2/player2_FrontHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1},
+    "uppercut": {"image":"resource/player2/player2_Uppercut.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1},
+    "rear_hand": {"image":"resource/player2/player2_RearHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1},
+    "blocking": {"image":"resource/player2/player2_Block.png",  "cols": 10, "w":744, "h":713, "scale":0.5, "base_face": -1},
+    "dizzy": {"image":"resource/player2/player2_Dizzy.png",  "cols": 10, "w":744, "h":711, "scale":0.5, "base_face": -1},
+    "ko": {"image":"resource/player2/player2_KO.png",  "cols": 8, "w":744, "h":711, "scale":0.5, "base_face": -1}
 }
 
 def handle_events():
@@ -80,7 +80,7 @@ def init():
     p2.opponent = p1
 
     hpui = HpUi(p1, p2, x = get_canvas_width()//2, y=600, scale=2.8)
-    game_world.add_object(hpui, 3)
+    game_world.add_object(hpui, 2)
 
     game_world.add_collision_pair('body:block', p1, p2) # 서로의 몸통끼리 충돌
 

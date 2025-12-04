@@ -6,7 +6,7 @@ class WalkBackward:
         self.b = boxer
 
     def enter(self, e):
-        sheet = self.b.cfg.get('walk_backward') or self.b.cfg.get('walk') or self.b.cfg.get('idle')
+        sheet = self.b.cfg.get('resource/walk_backward') or self.b.cfg.get('walk') or self.b.cfg.get('idle')
         self.b.use_sheet(sheet)
         if right_down(e):
             self.b.dir = 1

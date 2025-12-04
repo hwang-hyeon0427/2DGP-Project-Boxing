@@ -27,7 +27,7 @@ TOTAL_FRAMES = len(FRAME_SEQUENCE)
 
 def init():
     global image, logo_start_time, frame_index
-    image = load_image('image/intro.png')
+    image = load_image('resource/image/intro.png')
     frame_index = 0
     logo_start_time = get_time()
 
