@@ -3,6 +3,19 @@ from pico2d import *
 import game_framework
 
 class Button:
+    # button 내부에서 재사용 가능
+    _mouse_x = 0
+    _mouse_y = 0
+
+    def get_mouse_position():
+        global _mouse_x, _mouse_y
+        events = get_events()
+        for e in events:
+            if e.type == SDL_MOUSEMOTION:
+                _mouse_x = e.x
+                _mouse_y = get_canvas_height() - 1 - e.y
+        return _mouse_x, _mouse_y
+
     def __init__(self, x, y, w, h,
                  normal_img, hover_img,
                  anim_sheet, frame_count,
