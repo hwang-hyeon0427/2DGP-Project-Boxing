@@ -51,7 +51,7 @@ class Boxer:
         spawn = cfg.get('spawn', {})
         self.x = spawn.get('x', 400)
         self.y = spawn.get('y', 90)
-        self.face_dir = spawn.get('face', 1)
+        self.face_dir = spawn.get('base_face', 1)
         self.xdir, self.ydir = 0, 0
 
         self.controls = cfg.get('controls', 'both')
@@ -147,7 +147,7 @@ class Boxer:
 
         self.scale = sheet.get('scale', 1.0)
         
-        self.base_face = sheet.get('face', 1)
+        self.base_face = sheet.get('base_face', 1)
 
     def draw_current(self):
         if not self.image:
