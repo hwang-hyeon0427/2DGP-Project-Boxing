@@ -101,17 +101,16 @@ def pause_game():
     create_pause_ui()
 
 def init():
-    global p1, p2, hpui, boxing_ring, buttons
+    global p1, p2, hpui, boxing_ring, buttons, paused
 
-    buttons = []
-    buttons.append(Button())
+    paused = False
+    buttons.clear()
 
     boxing_ring = BoxingRing()
     game_world.add_object(boxing_ring, 0)
 
     p1 = Boxer(P1)
     game_world.add_object(p1, 1)
-
     p2 = Boxer(P2)
     game_world.add_object(p2, 1)
 
@@ -122,6 +121,16 @@ def init():
     game_world.add_object(hpui, 2)
 
     sheet = "resource\Prinbles_YetAnotherIcons\@preview\White.png"
+
+    pause_btn = Button(
+        sheet_path=sheet,
+        row=0, col=0,
+        x=750, y=550,
+        scale=1.5,
+        on_click=lambda: pause_game()
+    )
+
+    buttons.append(pause_btn)
 
     game_world.add_collision_pair('body:block', p1, p2) # 서로의 몸통끼리 충돌
 
