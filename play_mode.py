@@ -58,6 +58,40 @@ def go_to_main_menu():
     print("MAIN MENU")
     game_framework.change_mode(lobby_mode)
 
+def create_pause_ui():
+    global pause_ui
+
+    sheet = "resource/Prinbles_YetAnotherIcons/@preview/White.png"
+    pause_ui.clear()
+
+    # Resume ▶ (row=2, col=1 또는 0)
+    resume_btn = Button(
+        sheet_path = sheet,
+        row = 2, col = 1,     # 너가 원하는 아이콘 위치
+        x = 400, y = 350,
+        scale = 1.3,
+        on_click = lambda: resume_game()
+    )
+
+    # Main Menu (집 아이콘)
+    main_btn = Button(
+        sheet_path = sheet,
+        row = 0, col = 1,
+        x = 400, y = 260,
+        scale = 1.3,
+        on_click = lambda: go_to_main_menu()
+    )
+
+    # Quit / Back (X 아이콘)
+    quit_btn = Button(
+        sheet_path = sheet,
+        row = 4, col = 0,
+        x = 400, y = 170,
+        scale = 1.3,
+        on_click = lambda: game_framework.change_mode(lobby_mode)
+    )
+
+    pause_ui = [resume_btn, main_btn, quit_btn]
 
 
 def pause_game():
