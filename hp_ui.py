@@ -1,145 +1,67 @@
 from pico2d import *
-import game_framework
 
 class HpUi:
     red_img = None
     yellow_img = None
 
-    WIDTH = 329
+    WIDTH = 600      # 전체 HP바 길이 (원하는 값으로 조절)
     HEIGHT = 16
 
-    def __init__(self, p1, p2, x, y, scale=3.0):
+    def __init__(self, p1, p2, x=None, y=None, scale=2.8):
         self.p1 = p1
         self.p2 = p2
         self.x = x
         self.y = y
         self.scale = scale
 
+        # 체력 (100 기준)
+        self.hp_left  = 100   # P1
+        self.hp_right = 100   # P2
+
         if HpUi.red_img is None:
-            HpUi.red_img = load_image('resource/health/hp_red.png')
+            HpUi.red_img = load_image("resource/health/hp_red.png")
         if HpUi.yellow_img is None:
-            HpUi.yellow_img = load_image('resource/health/hp_yellow.png')
-
-        # delayed red hp
-        self.p1_red_hp = p1.hp
-        self.p2_red_hp = p2.hp
-
-        # flash
-        self.flash_duration = 1.0
-        self.blink_interval = 0.2
-
-        # P1 blink
-        self.p1_flash = 0.0
-        self.p1_blink = True
-        self.p1_blink_timer = 0.0
-
-        # P2 blink
-        self.p2_flash = 0.0
-        self.p2_blink = True
-        self.p2_blink_timer = 0.0
+            HpUi.yellow_img = load_image("resource/health/hp_yellow.png")
 
     def update(self):
-        dt = game_framework.frame_time
+        self.hp_left = self.p1.hp
+        self.hp_right = self.p2.hp
 
-        # 데미지 체크
-        if self.p1.hp < self.p1_red_hp:
-            self.p1_flash = self.flash_duration
-        if self.p2.hp < self.p2_red_hp:
-            self.p2_flash = self.flash_duration
-
-        # Flash 타이머 감소 + Red bar 추적
-        # ---------------------
-        # P1
-        if self.p1_flash > 0:
-            self.p1_flash -= dt
-            self.p1_blink_timer += dt
-            if self.p1_blink_timer >= self.blink_interval:
-                self.p1_blink_timer = 0
-                self.p1_blink = not self.p1_blink
-        else:
-            self.p1_blink = True
-            self.p1_blink_timer = 0
-            if self.p1_red_hp > self.p1.hp:
-                self.p1_red_hp -= dt * 20
-                if self.p1_red_hp < self.p1.hp:
-                    self.p1_red_hp = self.p1.hp
-
-        # ---------------------
-        # P2
-        if self.p2_flash > 0:
-            self.p2_flash -= dt
-            self.p2_blink_timer += dt
-            if self.p2_blink_timer >= self.blink_interval:
-                self.p2_blink_timer = 0
-                self.p2_blink = not self.p2_blink
-        else:
-            self.p2_blink = True
-            self.p2_blink_timer = 0
-            if self.p2_red_hp > self.p2.hp:
-                self.p2_red_hp -= dt * 20
-                if self.p2_red_hp < self.p2.hp:
-                    self.p2_red_hp = self.p2.hp
-
-    # ---------------------------------------------
-    # Draw left → right HP bar (P1)
-    # ---------------------------------------------
-    def draw_bar_left(self, yellow_hp, red_hp, blink):
-        yp = int(self.WIDTH * (yellow_hp / 100))
-        rp = int(self.WIDTH * (red_hp / 100))
-
-        center_x = self.x - self.WIDTH * self.scale / 2
-
-        # Red bar (Delayed HP)
-        if blink and rp > 0:
-            HpUi.red_img.clip_draw(
-                0, 0, rp, self.HEIGHT,
-                center_x + rp * self.scale / 2,
-                self.y,
-                rp * self.scale, self.HEIGHT * self.scale
-            )
-
-        # Yellow bar (Real-time HP)
-        if yp > 0:
-            HpUi.yellow_img.clip_draw(
-                0, 0, yp, self.HEIGHT,
-                center_x + yp * self.scale / 2,
-                self.y,
-                yp * self.scale, self.HEIGHT * self.scale
-            )
-
-    # ---------------------------------------------
-    # Draw right → left HP bar (P2)
-    # ---------------------------------------------
-    def draw_bar_right(self, yellow_hp, red_hp, blink):
-        yp = int(self.WIDTH * (yellow_hp / 100))
-        rp = int(self.WIDTH * (red_hp / 100))
-
-        center_x = self.x + self.WIDTH * self.scale / 2
-
-        # Red bar (Delayed HP)
-        if blink and rp > 0:
-            r_src = self.WIDTH - rp
-            HpUi.red_img.clip_draw(
-                r_src, 0, rp, self.HEIGHT,
-                center_x - rp * self.scale / 2,
-                self.y,
-                rp * self.scale, self.HEIGHT * self.scale
-            )
-
-        # Yellow bar (Real-time HP)
-        if yp > 0:
-            y_src = self.WIDTH - yp
-            HpUi.yellow_img.clip_draw(
-                y_src, 0, yp, self.HEIGHT,
-                center_x - yp * self.scale / 2,
-                self.y,
-                yp * self.scale, self.HEIGHT * self.scale
-            )
-
-    # ---------------------------------------------
+    # -------------------------------------------------------
+    # 단일 draw() – red 1번 + yellow 1번만 사용!
+    # -------------------------------------------------------
     def draw(self):
-        # P1: Left bar
-        self.draw_bar_left(self.p1.hp, self.p1_red_hp, self.p1_blink)
 
-        # P2: Right bar
-        self.draw_bar_right(self.p2.hp, self.p2_red_hp, self.p2_blink)
+        # RED HP (전체 바)
+        HpUi.red_img.clip_draw(
+            0, 0, self.WIDTH, self.HEIGHT,
+            self.x, self.y,
+            self.WIDTH * self.scale,
+            self.HEIGHT * self.scale
+        )
+
+        ratio_left = max(0, self.hp_left / self.p1.max_hp)
+        ratio_right = max(0, self.hp_right / self.p2.max_hp)
+
+        left_len = int(self.WIDTH * ratio_left)
+        right_len = int(self.WIDTH * ratio_right)
+
+        # LEFT HP (왼 → 왼)
+        if left_len > 0:
+            HpUi.yellow_img.clip_draw(
+                0, 0, left_len, self.HEIGHT,
+                self.x - (self.WIDTH * self.scale) / 2 + (left_len * self.scale) / 2,
+                self.y,
+                left_len * self.scale,
+                self.HEIGHT * self.scale
+            )
+
+        # RIGHT HP (오 → 오)
+        if right_len > 0:
+            HpUi.yellow_img.clip_draw(
+                self.WIDTH - right_len, 0, right_len, self.HEIGHT,
+                self.x + (self.WIDTH * self.scale) / 2 - (right_len * self.scale) / 2,
+                self.y,
+                right_len * self.scale,
+                self.HEIGHT * self.scale
+            )
