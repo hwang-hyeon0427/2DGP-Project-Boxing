@@ -1,5 +1,5 @@
 from pico2d import *
-from button import Button
+from button import SpriteSheetButton
 
 import game_framework
 import game_world
@@ -19,11 +19,11 @@ def init():
     sheet = "resource/buttons_spritesheet_Photoroom.png"
 
     buttons = [
-        Button(sheet, row=3, x=400, y=400, scale=6,
+        SpriteSheetButton(sheet, row=3, x=400, y=400, scale=6,
                           on_click=lambda: level_selected(1)),
-        Button(sheet, row=4, x=400, y=300, scale=6,
+        SpriteSheetButton(sheet, row=4, x=400, y=300, scale=6,
                           on_click=lambda: level_selected(2)),
-        Button(sheet, row=5, x=400, y=200, scale=6,
+        SpriteSheetButton(sheet, row=5, x=400, y=200, scale=6,
                           on_click=lambda: level_selected(3)),
     ]
 

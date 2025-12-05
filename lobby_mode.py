@@ -3,7 +3,7 @@ import game_framework
 import game_world
 import play_mode
 
-from button import Button
+from button import SpriteSheetButton
 from boxing_ring import BoxingRing   # ← 최적화된 배경 클래스
 import mouse
 
@@ -25,7 +25,7 @@ def init():
 
     sheet = "resource/buttons_spritesheet_Photoroom.png"
 
-    start_btn = Button(
+    start_btn = SpriteSheetButton(
         sheet_path = sheet,
         row = 9,            # START 버튼 row
         x = 400, y = 300,
@@ -33,7 +33,7 @@ def init():
         on_click=start_game
     )
 
-    # back_btn = Button(
+    # back_btn = SpriteSheetButton(
     #     sheet_path=sheet,
     #     row=1,            # BACK 버튼 row
     #     x=400, y=200,
