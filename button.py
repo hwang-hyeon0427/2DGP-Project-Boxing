@@ -58,55 +58,28 @@ class SpriteSheetButton:
             self.on_click()
 
 class Button:
-    image_cache = {}
-
-    def __init__(self, sheet_path, row, col, x, y,
-                 scale=1.0, on_click=None):
-
-        # 이미지 캐싱
-        if sheet_path not in Button.image_cache:
-            Button.image_cache[sheet_path] = load_image(sheet_path)
-
-        self.image = Button.image_cache[sheet_path]
-
-        self.row = row
-        self.col = col
+    def __init__(self, image_path, x, y, scale=1.0, on_click=None):
+        self.image = load_image(image_path)
         self.x, self.y = x, y
         self.scale = scale
         self.on_click = on_click
-
-        # White.png 기준 (10x5)
-        self.COLS = 10
-        self.ROWS = 5
-        self.CELL_W = self.image.w // self.COLS
-        self.CELL_H = self.image.h // self.ROWS
-
         self.hover = False
 
+        self.w = self.image.w * scale
+        self.h = self.image.h * scale
+
     def update(self, mx, my):
-        w = self.CELL_W * self.scale
-        h = self.CELL_H * self.scale
-        self.hover = (self.x - w/2 < mx < self.x + w/2 and
-                      self.y - h/2 < my < self.y + h/2)
+        self.hover = (self.x - self.w/2 < mx < self.x + self.w/2 and
+                      self.y - self.h/2 < my < self.y + self.h/2)
 
     def draw(self):
-        left = self.col * self.CELL_W
-        bottom = (self.ROWS - 1 - self.row) * self.CELL_H
+        # hover 시 약간 크게
+        draw_scale = self.scale * (1.1 if self.hover else 1.0)
 
-        self.image.clip_draw(
-            left, bottom,
-            self.CELL_W, self.CELL_H,
-            self.x, self.y,
-            self.CELL_W * self.scale,
-            self.CELL_H * self.scale
-        )
+        self.image.draw(self.x, self.y,
+                        self.image.w * draw_scale,
+                        self.image.h * draw_scale)
 
     def click(self, mx, my):
-        w = self.CELL_W * self.scale
-        h = self.CELL_H * self.scale
-
-        inside = (self.x - w/2 < mx < self.x + w/2 and
-                  self.y - h/2 < my < self.y + h/2)
-
-        if inside and self.on_click:
+        if self.hover and self.on_click:
             self.on_click()
