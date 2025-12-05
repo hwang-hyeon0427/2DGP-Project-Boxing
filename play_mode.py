@@ -6,6 +6,8 @@ from pico2d import *
 from boxer import Boxer
 from hp_ui import HpUi
 from boxing_ring import BoxingRing
+from button import Button
+import mouse
 
 import hitbox_edit
 
@@ -43,29 +45,11 @@ P2 = {
     "ko": {"image":"resource/player2/player2_KO.png",  "cols": 8, "w":744, "h":711, "scale":0.5, "base_face": -1}
 }
 
-def handle_events():
-    event_list = get_events()
-    for event in event_list:
-        if event.type == SDL_QUIT:
-            game_framework.quit()
-        elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
-            game_framework.change_mode(lobby_mode)
-            return
-
-        if event.type == SDL_KEYDOWN and event.key == SDLK_F1:
-            hitbox_edit.edit_mode = not hitbox_edit.edit_mode
-            print(f"Hitbox Edit Mode: {hitbox_edit.edit_mode}")
-            return
-        if hitbox_edit.edit_mode:
-            if handle_hitbox_editor_event(event):
-                return
-
-        p1.handle_event(event)
-        p2.handle_event(event)
-
-
 def init():
-    global p1, p2, hpui, boxing_ring
+    global p1, p2, hpui, boxing_ring, buttons
+
+    buttons = []
+    buttons.append(Button())
 
     boxing_ring = BoxingRing()
     game_world.add_object(boxing_ring, 0)
@@ -82,9 +66,16 @@ def init():
     hpui = HpUi(p1, p2, x = get_canvas_width()//2, y=600, scale=2.8)
     game_world.add_object(hpui, 2)
 
+    sheet = "resource\Prinbles_YetAnotherIcons\@preview\White.png"
+
     game_world.add_collision_pair('body:block', p1, p2) # 서로의 몸통끼리 충돌
 
 def update():
+    mx, my = mouse.get_pos()
+
+    for b in buttons:
+        b.update(mx, my)
+
     game_world.update()
 
 
@@ -101,6 +92,9 @@ def draw():
     clear_canvas()
     game_world.render()
 
+    for b in buttons:
+        b.draw()
+
     if hitbox_edit.edit_mode:
         draw_rectangle(hitbox_edit.x1, hitbox_edit.y1, hitbox_edit.x2, hitbox_edit.y2)
 
@@ -108,6 +102,31 @@ def draw():
 
 def pause(): pass
 def resume(): pass
+
+def handle_events():
+    event_list = get_events()
+    for event in event_list:
+        if event.type == SDL_QUIT:
+            game_framework.quit()
+        elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
+            game_framework.change_mode(lobby_mode)
+        elif event.type == SDL_MOUSEMOTION:
+            mouse.update(event)
+        elif event.type == SDL_MOUSEBUTTONDOWN:
+            mx, my = mouse.get_pos()
+            for b in buttons:
+                b.click(mx, my)
+
+        if event.type == SDL_KEYDOWN and event.key == SDLK_F1:
+            hitbox_edit.edit_mode = not hitbox_edit.edit_mode
+            print(f"Hitbox Edit Mode: {hitbox_edit.edit_mode}")
+            return
+        if hitbox_edit.edit_mode:
+            if handle_hitbox_editor_event(event):
+                return
+
+        p1.handle_event(event)
+        p2.handle_event(event)
 
 def limit_boxer_in_boxing_ring(boxer):
     l, b, r, t = boxing_ring.get_bb()
