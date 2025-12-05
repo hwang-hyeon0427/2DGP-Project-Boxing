@@ -1,6 +1,6 @@
 from pico2d import *
 import game_framework
-import title_mode
+import lobby_mode
 
 image= None
 
@@ -40,7 +40,7 @@ def update():
     frame_index += ANIMATION_SPEED * game_framework.frame_time
 
     if frame_index >= TOTAL_FRAMES:
-        game_framework.change_mode(title_mode)
+        game_framework.change_mode(lobby_mode)
 
 def draw():
     clear_canvas()
