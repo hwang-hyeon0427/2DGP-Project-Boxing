@@ -161,8 +161,16 @@ def draw():
     clear_canvas()
     game_world.render()
 
-    for b in buttons:
-        b.draw()
+    if not paused:
+        for b in buttons:
+            b.draw()
+
+    hpui.draw()
+    
+    if paused:
+        draw_rectangle(0, 0, get_canvas_width(), get_canvas_height())
+        for b in pause_ui:
+            b.draw()
 
     if hitbox_edit.edit_mode:
         draw_rectangle(hitbox_edit.x1, hitbox_edit.y1, hitbox_edit.x2, hitbox_edit.y2)
