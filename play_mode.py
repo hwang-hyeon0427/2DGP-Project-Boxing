@@ -137,6 +137,11 @@ def init():
 def update():
     mx, my = mouse.get_pos()
 
+    if paused:
+        for b in pause_ui:
+            b.update(mx, my)
+        return
+
     for b in buttons:
         b.update(mx, my)
 
