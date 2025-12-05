@@ -68,7 +68,7 @@ def create_pause_ui():
     # Resume ▶ (row=2, col=1 또는 0)
     resume_btn = Button(
         sheet_path = sheet,
-        row = 2, col = 1,     # 너가 원하는 아이콘 위치
+        row = 0, col = 0,     # 너가 원하는 아이콘 위치
         x = 400, y = 350,
         scale = 1.3,
         on_click = lambda: resume_game()
@@ -102,7 +102,7 @@ def pause_game():
     create_pause_ui()
 
 def init():
-    global p1, p2, hpui, boxing_ring, buttons, paused, paused_ui
+    global p1, p2, hpui, boxing_ring, buttons, paused, pause_ui
 
     paused = False
     buttons.clear()
@@ -125,9 +125,9 @@ def init():
 
     pause_btn = Button(
         sheet_path=sheet,
-        row=0, col=0,
+        row=2, col=0,
         x=750, y=550,
-        scale=1.5,
+        scale=1.0,
         on_click=lambda: pause_game()
     )
 
@@ -200,7 +200,7 @@ def handle_events():
                 mouse.update(event)
             elif event.type == SDL_MOUSEBUTTONDOWN:
                 mx, my = mouse.get_pos()
-                for b in buttons:
+                for b in pause_ui:
                     b.click(mx, my)
             return
         if event.type == SDL_MOUSEMOTION:
