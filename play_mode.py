@@ -60,26 +60,26 @@ def go_to_main_menu():
     game_framework.change_mode(lobby_mode)
 
 def build_pause_menu():
-    global pause_ui
+    global pause_ui, screen_w, screen_h
 
     resume_btn = SpriteSheetButton(
         "resource/buttons_spritesheet_Photoroom.png",
         row=7,
-        x = get_canvas_width()//2, y=350,
+        x = screen_w//2, y = screen_h * 0.9,
         scale=6,
         on_click = resume_game
     )
     main_btn = SpriteSheetButton(
         "resource/buttons_spritesheet_Photoroom.png",
         row=8,
-        x = get_canvas_width()//2, y=250,
+        x = screen_w//2, y = screen_h * 0.7,
         scale=6,
         on_click = go_to_main_menu
     )
     back_btn = SpriteSheetButton(
         "resource/buttons_spritesheet_Photoroom.png",
         row=9,
-        x = get_canvas_width()//2, y=150,
+        x = screen_w//2, y = screen_h * 0.5,
         scale=6,
         on_click = resume_game
     )
@@ -93,7 +93,10 @@ def pause_game():
     build_pause_menu()
 
 def init():
-    global p1, p2, hpui, boxing_ring, buttons, paused, pause_ui
+    global p1, p2, hpui, boxing_ring, buttons, paused, pause_ui, screen_w, screen_h
+    
+    screen_w = get_canvas_width()
+    screen_h = get_canvas_height()
 
     paused = False
 
@@ -115,7 +118,7 @@ def init():
 
     pause_btn = Button(
         "resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",
-        x=750, y=550,
+        x= get_canvas_width()//2, y=550,
         scale=1.0,
         on_click=lambda: pause_game()
     )
