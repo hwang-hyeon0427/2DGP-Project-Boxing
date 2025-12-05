@@ -6,7 +6,7 @@ from pico2d import *
 from boxer import Boxer
 from hp_ui import HpUi
 from boxing_ring import BoxingRing
-from button import Button
+from button import Button, SpriteSheetButton
 import mouse
 
 import hitbox_edit
@@ -61,39 +61,30 @@ def go_to_main_menu():
 
 def build_pause_menu():
     global pause_ui
-    pause_ui = [
-        Button("resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",400, 500, scale=1.5),
-        Button("resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",400, 400, scale=1.5),
-        Button("resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",400, 300, scale=1.5)
-    ]
-    pause_ui.clear()
 
-    # Resume ▶ (row=2, col=1 또는 0)
-    resume_btn = Button(
-        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",
-        x = 400, y = 350,
-        scale = 1.3,
-        on_click = lambda: resume_game()
+    resume_btn = SpriteSheetButton(
+        "resource/buttons_spritesheet_Photoroom.png",
+        row=7,
+        x = get_canvas_width()//2, y=350,
+        scale=6,
+        on_click = resume_game
+    )
+    main_btn = SpriteSheetButton(
+        "resource/buttons_spritesheet_Photoroom.png",
+        row=8,
+        x = get_canvas_width()//2, y=250,
+        scale=6,
+        on_click = go_to_main_menu
+    )
+    back_btn = SpriteSheetButton(
+        "resource/buttons_spritesheet_Photoroom.png",
+        row=9,
+        x = get_canvas_width()//2, y=150,
+        scale=6,
+        on_click = resume_game
     )
 
-    # Main Menu (집 아이콘)
-    main_btn = Button(
-        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",
-        x = 400, y = 260,
-        scale = 1.3,
-        on_click = lambda: go_to_main_menu()
-    )
-
-    # Quit / Back (X 아이콘)
-    quit_btn = Button(
-        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",
-        x = 400, y = 170,
-        scale = 1.3,
-        on_click = lambda: game_framework.change_mode(lobby_mode)
-    )
-
-    pause_ui = [resume_btn, main_btn, quit_btn]
-
+    pause_ui = [resume_btn, main_btn, back_btn]
 
 def pause_game():
     global paused
@@ -105,7 +96,6 @@ def init():
     global p1, p2, hpui, boxing_ring, buttons, paused, pause_ui
 
     paused = False
-    buttons.clear()
 
     boxing_ring = BoxingRing()
     game_world.add_object(boxing_ring, 0)
@@ -120,6 +110,8 @@ def init():
 
     hpui = HpUi(p1, p2, x = get_canvas_width()//2, y=600, scale=2.8)
     game_world.add_object(hpui, 2)
+
+    sheet = "resource/buttons_spritesheet_Photoroom.png"
 
     pause_btn = Button(
         "resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",
