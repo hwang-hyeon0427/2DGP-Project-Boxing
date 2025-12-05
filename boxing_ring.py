@@ -1,32 +1,50 @@
 from pico2d import *
 import random
-import game_framework  # ← frame_time 쓰려고
+import game_framework  # frame_time
 
 class BoxingRing:
     FRAME_W = 317
     FRAME_H = 128
     TOTAL_FRAMES = 4
 
+    # -----------------------------
+    # 이미지 캐싱 (공용 저장소)
+    # -----------------------------
+    image_cache = {}   # { "path": image_object }
+
     def __init__(self):
+        # 사용할 이미지 리스트
         bg_list = [
             'resource/background/Boxing_Ring_Blue.png',
             'resource/background/Boxing_Ring_Green.png',
             'resource/background/Boxing_Ring_Orange.png',
             'resource/background/Boxing_Ring_Purple.png'
         ]
-        self.image = load_image(random.choice(bg_list))
 
+        # 랜덤 선택된 이미지 경로
+        chosen_path = random.choice(bg_list)
+
+        # -----------------------------
+        # 캐시 확인 → 없으면 로드
+        # -----------------------------
+        if chosen_path not in BoxingRing.image_cache:
+            print(f"[BoxingRing] loading image: {chosen_path}")
+            BoxingRing.image_cache[chosen_path] = load_image(chosen_path)
+        else:
+            print(f"[BoxingRing] use cached image: {chosen_path}")
+
+        # 캐싱된 이미지 객체 참조
+        self.image = BoxingRing.image_cache[chosen_path]
+
+        # 인스턴스 상태 (개별 프레임)
         self.frame = 0.0
-        # 1초에 몇 프레임 진행할지 (느리게: 1~4 정도 추천)
         self.frames_per_second = 4.0
 
     def update(self):
-        # frame_time 기반으로 부드럽게
         self.frame += self.frames_per_second * game_framework.frame_time
         self.frame %= BoxingRing.TOTAL_FRAMES
 
     def draw(self):
-        # 현재 프레임 인덱스는 int로
         src_x = int(self.frame) * BoxingRing.FRAME_W
 
         w, h = get_canvas_width(), get_canvas_height()
