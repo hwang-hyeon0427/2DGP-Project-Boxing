@@ -58,6 +58,14 @@ def go_to_main_menu():
     print("MAIN MENU")
     game_framework.change_mode(lobby_mode)
 
+
+
+def pause_game():
+    global paused
+    print("GAME PAUSED")
+    paused = True
+    create_pause_ui()
+
 def init():
     global p1, p2, hpui, boxing_ring, buttons
 
