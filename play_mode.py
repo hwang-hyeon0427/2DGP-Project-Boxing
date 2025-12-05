@@ -166,7 +166,7 @@ def draw():
             b.draw()
 
     hpui.draw()
-    
+
     if paused:
         draw_rectangle(0, 0, get_canvas_width(), get_canvas_height())
         for b in pause_ui:
@@ -181,18 +181,34 @@ def pause(): pass
 def resume(): pass
 
 def handle_events():
+    global paused
+
     event_list = get_events()
     for event in event_list:
         if event.type == SDL_QUIT:
             game_framework.quit()
-        elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
-            game_framework.change_mode(lobby_mode)
-        elif event.type == SDL_MOUSEMOTION:
+            return
+        if event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
+            if paused:
+                resume_game()
+            else:
+                game_framework.change_mode(lobby_mode)
+            return
+        if paused:
+            if event.type == SDL_MOUSEMOTION:
+                mouse.update(event)
+            elif event.type == SDL_MOUSEBUTTONDOWN:
+                mx, my = mouse.get_pos()
+                for b in buttons:
+                    b.click(mx, my)
+            return
+        if event.type == SDL_MOUSEMOTION:
             mouse.update(event)
         elif event.type == SDL_MOUSEBUTTONDOWN:
             mx, my = mouse.get_pos()
             for b in buttons:
                 b.click(mx, my)
+
 
         if event.type == SDL_KEYDOWN and event.key == SDLK_F1:
             hitbox_edit.edit_mode = not hitbox_edit.edit_mode
