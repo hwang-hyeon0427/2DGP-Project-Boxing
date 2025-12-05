@@ -1,4 +1,4 @@
-import title_mode
+import lobby_mode
 import game_framework
 import game_world
 
@@ -49,7 +49,7 @@ def handle_events():
         if event.type == SDL_QUIT:
             game_framework.quit()
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
-            game_framework.change_mode(title_mode)
+            game_framework.change_mode(lobby_mode)
             return
 
         if event.type == SDL_KEYDOWN and event.key == SDLK_F1:
