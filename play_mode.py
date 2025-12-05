@@ -59,16 +59,18 @@ def go_to_main_menu():
     print("MAIN MENU")
     game_framework.change_mode(lobby_mode)
 
-def create_pause_ui():
+def build_pause_menu():
     global pause_ui
-
-    sheet = "resource/Prinbles_YetAnotherIcons/@preview/White.png"
+    pause_ui = [
+        Button("resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",400, 500, scale=1.5),
+        Button("resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",400, 400, scale=1.5),
+        Button("resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",400, 300, scale=1.5)
+    ]
     pause_ui.clear()
 
     # Resume ▶ (row=2, col=1 또는 0)
     resume_btn = Button(
-        sheet_path = sheet,
-        row = 0, col = 0,     # 너가 원하는 아이콘 위치
+        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",
         x = 400, y = 350,
         scale = 1.3,
         on_click = lambda: resume_game()
@@ -76,8 +78,7 @@ def create_pause_ui():
 
     # Main Menu (집 아이콘)
     main_btn = Button(
-        sheet_path = sheet,
-        row = 0, col = 1,
+        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",
         x = 400, y = 260,
         scale = 1.3,
         on_click = lambda: go_to_main_menu()
@@ -85,8 +86,7 @@ def create_pause_ui():
 
     # Quit / Back (X 아이콘)
     quit_btn = Button(
-        sheet_path = sheet,
-        row = 4, col = 0,
+        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",
         x = 400, y = 170,
         scale = 1.3,
         on_click = lambda: game_framework.change_mode(lobby_mode)
@@ -99,7 +99,7 @@ def pause_game():
     global paused
     print("GAME PAUSED")
     paused = True
-    create_pause_ui()
+    build_pause_menu()
 
 def init():
     global p1, p2, hpui, boxing_ring, buttons, paused, pause_ui
@@ -121,11 +121,8 @@ def init():
     hpui = HpUi(p1, p2, x = get_canvas_width()//2, y=600, scale=2.8)
     game_world.add_object(hpui, 2)
 
-    sheet = "resource\Prinbles_YetAnotherIcons\@preview\White.png"
-
     pause_btn = Button(
-        sheet_path=sheet,
-        row=2, col=0,
+        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",
         x=750, y=550,
         scale=1.0,
         on_click=lambda: pause_game()
@@ -169,7 +166,6 @@ def draw():
     hpui.draw()
 
     if paused:
-        draw_rectangle(0, 0, get_canvas_width(), get_canvas_height())
         for b in pause_ui:
             b.draw()
 
