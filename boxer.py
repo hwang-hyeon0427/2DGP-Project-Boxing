@@ -3,10 +3,8 @@ from key_events import *
 from state_machine import StateMachine
 from hitbox_data import HITBOX_DATA
 from hitbox import HitBox
-from idle import Idle
 from attack_state import AttackState
 # from walk_backward import WalkBackward
-from walk import Walk
 
 import game_framework
 import game_world
@@ -341,3 +339,45 @@ class Boxer:
             self.last_hit_time = now
             if old_hp != self.hp:
                 print("P1 HP:", self.hp)
+
+class Idle:
+    def __init__(self, boxer):
+        self.boxer = boxer
+
+    def enter(self, e):
+        # Idle 상태에 진입할 때 idle 시트로 변경
+        self.boxer.use_sheet(self.boxer.cfg['idle'])
+
+        # 속도 초기화
+        self.boxer.vx = 0
+        self.boxer.vy = 0
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        self.boxer.frame = ( self.boxer.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 10
+
+    def draw(self):
+        self.boxer.draw_current()
+
+class Walk:
+    def __init__(self, boxer):
+        self.boxer = boxer
+
+    def enter(self, e):
+        self.boxer.frame = 0
+
+        sheet = self.boxer.cfg.get('walk_forward')
+        self.boxer.use_sheet(sheet)
+
+    def exit(self, e):
+        self.boxer.dir = 0
+
+    def do(self):
+        self.boxer.frame = (self.boxer.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 10
+        self.boxer.x += self.boxer.xdir * WALK_SPEED_PPS * game_framework.frame_time
+        self.boxer.y += self.boxer.ydir * WALK_SPEED_PPS * game_framework.frame_time
+
+    def draw(self):
+        self.boxer.draw_current()
