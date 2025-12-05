@@ -48,6 +48,13 @@ P2 = {
 paused = False
 pause_ui = []
 
+def resume_game():
+    global paused, pause_ui
+    print("RESUME GAME")
+    paused = False
+    pause_ui.clear()
+
+
 def init():
     global p1, p2, hpui, boxing_ring, buttons
 
