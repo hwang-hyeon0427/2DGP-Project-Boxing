@@ -1,85 +1,87 @@
+from pico2d import *
+import game_framework
 import game_world
 import play_mode
-import game_world
-import game_framework
 
-from pico2d import *
-from boxing_ring import BoxingRing
-from button import Button
+from button import SpriteSheetButton
+from boxing_ring import BoxingRing   # ← 최적화된 배경 클래스
+import mouse
+
+
+background = None
+buttons = []
+
+def levels():
+    print("LEVELS")
+    game_framework.change_mode(lobby_mode)
 
 def start_game():
-    game_framework.change_state(play_mode)
+    print("START GAME")
+    game_framework.change_mode(play_mode)
 
-def how_to_play():
-    pass
-
-def exit_game():
-    game_framework.quit()
-
-def init(set_game=None):
-    global bg, start_btn, how_btn, exit_btn, settings_btn
+def init():
+    global background, buttons
 
     game_world.clear()
 
-    bg = BoxingRing()
-    game_world.add_object(bg, 0)
+    # -----------------------------
+    # 애니메이션 배경 BoxingRing
+    # -----------------------------
+    background = BoxingRing()
+    game_world.add_object(background, 0)   # depth 0에 배경 추가
 
-    # start_btn = Button(400, 300, 250, 80,
-    #                    'ui/start_normal.png',
-    #                    'ui/start_hover.png',
-    #                    on_click=start_game)
+    sheet = "resource/buttons_spritesheet_Photoroom.png"
 
-    settings_btn = Button(
-        400, 300, 250, 80,
-        'Button_Itch_Pack/settings/settings1.png',  # normal
-        'Button_Itch_Pack/settings/settings_sheet.png',  # anim_sheet
-        frame_count=5,  # 시트에 포함된 프레임 수
-        fps=20,  # 원하는 애니메이션 속도
-        on_click = set_game
+    start_btn = SpriteSheetButton(
+        sheet_path = sheet,
+        row = 9,            # START 버튼 row
+        x = 400, y = 300,
+        scale = 8,
+        on_click=start_game
     )
 
-    # how_btn = Button(400, 200, 250, 80,
-    #                  'ui/how_normal.png',
-    #                  'ui/how_hover.png',
-    #                  on_click=how_to_play)
+    # back_btn = SpriteSheetButton(
+    #     sheet_path=sheet,
+    #     row=1,            # BACK 버튼 row
+    #     x=400, y=200,
+    #     scale=4,
+    #     on_click= game_framework.quit
+    # )
 
-    # exit_btn = Button(400, 100, 250, 80,
-    #                   'ui/exit_normal.png',
-    #                   'ui/exit_hover.png',
-    #                   on_click=exit_game)
+    buttons = [start_btn]
 
-    # game_world.add_object(start_btn, 1)
-    # game_world.add_object(how_btn, 1)
-    # game_world.add_object(exit_btn, 1)
-    game_world.add_object(settings_btn, 1)
 
+def finish(): pass
+def pause(): pass
+def resume(): pass
 
 def update():
-    game_world.update()
+    mx, my = mouse.get_pos()
 
+    for b in buttons:
+        b.update(mx, my)
+
+    game_world.update()
 
 def draw():
     clear_canvas()
     game_world.render()
+
+    for b in buttons:
+        b.draw()
+
     update_canvas()
 
-
 def handle_events():
-    events = get_events()
-    for e in events:
-        if e.type == SDL_QUIT:
-            exit_game()
-
-        # 버튼 이벤트 전달
-        for obj in game_world.world[1]:
-            obj.handle_event(e)
-
-        if e.type == SDL_KEYDOWN and e.key == SDLK_ESCAPE:
-            exit_game()
-
-
-def finish():
-    game_world.clear()
-
-def pause(): pass
-def resume(): pass
+    event_list = get_events()
+    for event in event_list:
+        if event.type == SDL_QUIT:
+            game_framework.quit()
+        elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
+            game_framework.quit()
+        elif event.type == SDL_MOUSEMOTION:
+            mouse.update(event)
+        elif event.type == SDL_MOUSEBUTTONDOWN:
+            mx, my = mouse.get_pos()
+            for b in buttons:
+                b.click(mx, my)
