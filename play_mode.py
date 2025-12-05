@@ -86,12 +86,13 @@ def init():
 
 def update():
     game_world.update()
-    hpui.update()
+
 
     limit_boxer_in_boxing_ring(p1)
     limit_boxer_in_boxing_ring(p2)
 
     game_world.handle_collisions()
+    hpui.update()
 
 def finish():
     game_world.clear()
