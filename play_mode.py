@@ -45,6 +45,7 @@ P2 = {
     "ko": {"image":"resource/player2/player2_KO.png",  "cols": 8, "w":744, "h":711, "scale":0.5, "base_face": -1}
 }
 
+buttons = []
 paused = False
 pause_ui = []
 
@@ -101,7 +102,7 @@ def pause_game():
     create_pause_ui()
 
 def init():
-    global p1, p2, hpui, boxing_ring, buttons, paused
+    global p1, p2, hpui, boxing_ring, buttons, paused, paused_ui
 
     paused = False
     buttons.clear()
