@@ -73,6 +73,9 @@ class Boxer:
         self.FRONT_HAND = AttackState(self, 'front_hand')
         self.REAR_HAND = AttackState(self, 'rear_hand')
         self.UPPERCUT = AttackState(self, 'uppercut')
+        self.HURT = Hurt(self)
+        self.DIZZY = Dizzy(self)
+        self.KO = Ko(self)
 
         # 상태머신 이벤트 테이블 분리
         self.transitions_wasd = {
@@ -87,7 +90,6 @@ class Boxer:
                 g_down: self.REAR_HAND,
                 h_down: self.UPPERCUT
             },
-
             self.WALK: {
                 event_stop: self.IDLE,
 
@@ -95,10 +97,12 @@ class Boxer:
                 g_down: self.REAR_HAND,
                 h_down: self.UPPERCUT
             },
-
-            self.FRONT_HAND: {event_stop: self.IDLE, event_walk: self.WALK},
-            self.REAR_HAND: {event_stop: self.IDLE, event_walk: self.WALK},
-            self.UPPERCUT: {event_stop: self.IDLE, event_walk: self.WALK},
+            self.FRONT_HAND: {event_stop: self.IDLE, event_walk: self.WALK,
+                              event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
+            self.REAR_HAND: {event_stop: self.IDLE, event_walk: self.WALK,
+                             event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
+            self.UPPERCUT: {event_stop: self.IDLE, event_walk: self.WALK,
+                            event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
         }
 
         self.transitions_arrows = {
@@ -125,6 +129,9 @@ class Boxer:
             self.FRONT_HAND: {event_stop: self.IDLE, event_walk: self.WALK},
             self.REAR_HAND: {event_stop: self.IDLE, event_walk: self.WALK},
             self.UPPERCUT: {event_stop: self.IDLE, event_walk: self.WALK},
+            self.HURT: {event_hurt_done: self.IDLE,event_ko: self.KO},
+            self.DIZZY: {event_dizzy_done: self.IDLE,event_ko: self.KO},
+            self.KO: {}
         }
 
         # controls에 따라 상태머신 선택
