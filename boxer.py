@@ -81,6 +81,11 @@ class Boxer:
         self.transitions_wasd = {
             self.IDLE: {
                 event_walk: self.WALK,
+
+                event_hurt: self.HURT,
+                event_dizzy: self.DIZZY,
+                event_ko: self.KO,
+
                 a_down: self.WALK,
                 d_down: self.WALK,
                 w_down: self.WALK,
@@ -93,6 +98,10 @@ class Boxer:
             self.WALK: {
                 event_stop: self.IDLE,
 
+                event_hurt: self.HURT,
+                event_dizzy: self.DIZZY,
+                event_ko: self.KO,
+
                 f_down: self.FRONT_HAND,
                 g_down: self.REAR_HAND,
                 h_down: self.UPPERCUT
@@ -103,11 +112,19 @@ class Boxer:
                              event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
             self.UPPERCUT: {event_stop: self.IDLE, event_walk: self.WALK,
                             event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
+            self.HURT: {event_hurt_done: self.IDLE, event_ko: self.KO},
+            self.DIZZY: {event_dizzy_done: self.IDLE, event_ko: self.KO},
+            self.KO: {}
         }
 
         self.transitions_arrows = {
             self.IDLE: {
                 event_walk: self.WALK,
+
+                event_hurt: self.HURT,
+                event_dizzy: self.DIZZY,
+                event_ko: self.KO,
+
                 left_down: self.WALK,
                 right_down: self.WALK,
                 up_down: self.WALK,
@@ -121,14 +138,21 @@ class Boxer:
             self.WALK: {
                 event_stop: self.IDLE,
 
+                event_hurt: self.HURT,
+                event_dizzy: self.DIZZY,
+                event_ko: self.KO,
+
                 comma_down: self.FRONT_HAND,
                 period_down: self.REAR_HAND,
                 slash_down: self.UPPERCUT
             },
 
-            self.FRONT_HAND: {event_stop: self.IDLE, event_walk: self.WALK},
-            self.REAR_HAND: {event_stop: self.IDLE, event_walk: self.WALK},
-            self.UPPERCUT: {event_stop: self.IDLE, event_walk: self.WALK},
+            self.FRONT_HAND: {event_stop: self.IDLE, event_walk: self.WALK,
+                              event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
+            self.REAR_HAND: {event_stop: self.IDLE, event_walk: self.WALK,
+                             event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
+            self.UPPERCUT: {event_stop: self.IDLE, event_walk: self.WALK,
+                            event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
             self.HURT: {event_hurt_done: self.IDLE,event_ko: self.KO},
             self.DIZZY: {event_dizzy_done: self.IDLE,event_ko: self.KO},
             self.KO: {}
@@ -190,6 +214,8 @@ class Boxer:
         draw_rectangle(*self.get_bb())
 
     def handle_event(self, event):
+        if isinstance(self.state_machine.cur_state, Ko):
+            return
 
         if event.type == SDL_KEYDOWN:
             face_map = self.cfg.get("face_map", {"left": -1, "right": 1})
