@@ -63,7 +63,7 @@ class Boxer:
         spawn = cfg.get('spawn', {})
         self.x = spawn.get('x', 400)
         self.y = spawn.get('y', 90)
-        self.face_dir = spawn.get('base_face', 1)
+        self.face_dir = spawn.get("base_face", 1)
         self.xdir, self.ydir = 0, 0
 
         self.controls = cfg.get('controls', 'both')
@@ -197,28 +197,29 @@ class Boxer:
         return base_knockback * scale
 
     def start_pushback(self, attacker, amount=40, duration=0.18):
-        # 1) 기본 방향 = 공격자의 바라보는 방향
-        dir_x = attacker.face_dir
-
-        # 2) y 성분은 좌표 차이의 10% 정도만 사용 (벨트스크롤 전형)
+        # 공격자 → 피격자 벡터
+        dx = self.x - attacker.x
         dy = self.y - attacker.y
-        dir_y = dy * 0.1
 
-        # 3) 정규화
-        length = max((dir_x * dir_x + dir_y * dir_y) ** 0.5, 0.001)
-        nx = dir_x / length
-        ny = dir_y / length
+        length = max((dx * dx + dy * dy) ** 0.5, 0.001)
+        nx = dx / length
+        ny = dy / length
 
-        # 4) 넉백 속도 설정
-        self.pushback_velocity_x = nx * (amount / duration)
-        self.pushback_velocity_y = ny * (amount / duration) + 70
+        # 넉백 속도 (y는 너무 튀지 않게 약하게)
+        power = amount / duration
+        self.pushback_velocity_x = nx * power
+        self.pushback_velocity_y = ny * power * 0.25
 
-        # 5) 중력
-        self.pushback_gravity = -1200
+        # 중력
+        self.pushback_gravity = -900
 
-        # 6) 시간이동
+        # 넉백 시간
         self.pushback_time = duration
         self.pushback_duration = duration
+
+        # 넉백 중 이동 입력 완전 무시
+        self.xdir = 0
+        self.ydir = 0
 
     def use_sheet(self, sheet: dict):
         path = sheet['image']
@@ -261,54 +262,50 @@ class Boxer:
                                            draw_w, draw_h)
 
     def update(self):
+        dt = game_framework.frame_time
 
-        # ============================
-        # Final Fight 스타일 넉백 물리
-        # ============================
+        # ================
+        # 넉백 처리
+        # ================
         if self.pushback_time > 0:
-            dt = game_framework.frame_time
+            # X 이동
+            self.x += self.pushback_velocity_x * dt
 
-            # -------- X축 이동 --------
-            new_x = self.x + self.pushback_velocity_x * dt
-
-            LEFT_WALL = 50
-            RIGHT_WALL = 750
-
-            # 벽 충돌 → 넉백 종료
-            if new_x < LEFT_WALL:
-                new_x = LEFT_WALL
-                self.pushback_time = 0
-                self.pushback_velocity_x = 0
-                self.pushback_velocity_y = 0
-
-            elif new_x > RIGHT_WALL:
-                new_x = RIGHT_WALL
-                self.pushback_time = 0
-                self.pushback_velocity_x = 0
-                self.pushback_velocity_y = 0
-
-            self.x = new_x
-
-            # -------- Y축 작은 튕김 + 중력 --------
+            # Y 이동 + 중력
             self.pushback_velocity_y += self.pushback_gravity * dt
             self.y += self.pushback_velocity_y * dt
 
+            # 경기장 경계 처리
+            LEFT_WALL = 50
+            RIGHT_WALL = 750
             FLOOR_Y = 90
+            CEILING_Y = 500
+
+            if self.x < LEFT_WALL:
+                self.x = LEFT_WALL
+            elif self.x > RIGHT_WALL:
+                self.x = RIGHT_WALL
 
             if self.y < FLOOR_Y:
                 self.y = FLOOR_Y
                 self.pushback_velocity_y = 0
 
-            # -------- 넉백 시간 감소 --------
+            if self.y > CEILING_Y:
+                self.y = CEILING_Y
+
+            # 넉백 시간 감소
             self.pushback_time -= dt
             if self.pushback_time <= 0:
                 self.pushback_time = 0
                 self.pushback_velocity_x = 0
                 self.pushback_velocity_y = 0
 
-        # ============================
-        # 상태머신 업데이트
-        # ============================
+            # 넉백 중엔 상태머신 움직임 차단
+            return
+
+        # ========================
+        # 넉백이 아닐 때 정상 상태머신
+        # ========================
         self.state_machine.update()
 
     def draw(self):
@@ -321,22 +318,20 @@ class Boxer:
 
         if isinstance(self.state_machine.cur_state, Ko):
             return
-
         if isinstance(self.state_machine.cur_state, Dizzy):
             return
 
         if event.type == SDL_KEYDOWN:
-            face_map = self.cfg.get("face_map", {"left": -1, "right": 1})
             if self.controls == 'wasd':
                 if event.key == SDLK_a:
-                    self.face_dir = face_map["left"]
+                    self.face_dir = -1  # 왼쪽
                 elif event.key == SDLK_d:
-                    self.face_dir = face_map["right"]
-            else:
+                    self.face_dir = +1  # 오른쪽
+            else:  # arrows
                 if event.key == SDLK_LEFT:
-                    self.face_dir = face_map["left"]
+                    self.face_dir = -1  # 왼쪽
                 elif event.key == SDLK_RIGHT:
-                    self.face_dir = face_map["right"]
+                    self.face_dir = +1  # 오른쪽
 
         if event.type in (SDL_KEYDOWN, SDL_KEYUP):
 
@@ -349,6 +344,7 @@ class Boxer:
 
                 cur_xdir, cur_ydir = self.xdir, self.ydir
 
+                # 이동키에 따른 바라보는 방향 변경
                 if event.type == SDL_KEYDOWN:
                     if self.controls == 'wasd':
                         if event.key == SDLK_a:
@@ -368,6 +364,8 @@ class Boxer:
                             self.ydir += 1
                         elif event.key == SDLK_DOWN:
                             self.ydir -= 1
+
+
 
                 elif event.type == SDL_KEYUP:
                     if self.controls == 'wasd':
@@ -483,81 +481,35 @@ class Boxer:
                     other.x -= push
             return
 
-        if group == 'P1_attack:P2':
-            # 공격자 Boxer
+        if group in ('P1_attack:P2', 'P2_attack:P1'):
             attacker = other.owner
 
+            # 체력 감소
             old_hp = self.hp
             self.hp = max(0, self.hp - 10)
-
             self.last_hit_time = now
 
-            # KO
             if self.hp <= 0:
                 self.state_machine.handle_state_event(('KO', None))
                 return
-
-            # Dizzy
             if self.hp <= self.max_hp * 0.3:
                 self.state_machine.handle_state_event(('DIZZY', None))
                 return
 
-            # ----------------------------------------
-            # Final Fight 벡터 기반 넉백
-            # ----------------------------------------
+            # ====== 넉백 호출 ======
             attack_type = attacker.current_attack_type
-            base_knockback = Boxer.KNOCKBACK_POWER.get(attack_type, 20)
+            base_knock = Boxer.KNOCKBACK_POWER.get(attack_type, 20)
+            knockback = self.adjust_knockback_based_on_distance(attacker, base_knock)
 
-            # 거리 기반 넉백 보정
-            knockback = self.adjust_knockback_based_on_distance(attacker, base_knockback)
+            self.start_pushback(attacker, amount=knockback, duration=0.18)
 
-            # 넉백 시작 (벡터 기반)
-            self.start_pushback(attacker=attacker, amount=knockback, duration=0.18)
-
-            # Hurt 상태 진입
             self.state_machine.handle_state_event(('HURT', None))
 
             if old_hp != self.hp:
-                print("P2 HP:", self.hp)
-
-
-
-        elif group == 'P2_attack:P1':
-            # 공격자 Boxer
-            attacker = other.owner
-
-            old_hp = self.hp
-            self.hp = max(0, self.hp - 10)
-
-            self.last_hit_time = now
-
-            # KO
-            if self.hp <= 0:
-                self.state_machine.handle_state_event(('KO', None))
-                return
-
-            # Dizzy
-            if self.hp <= self.max_hp * 0.3:
-                self.state_machine.handle_state_event(('DIZZY', None))
-                return
-
-            # ----------------------------------------
-            # Final Fight 벡터 기반 넉백
-            # ----------------------------------------
-            attack_type = attacker.current_attack_type
-            base_knockback = Boxer.KNOCKBACK_POWER.get(attack_type, 20)
-
-            # 거리 기반 넉백 보정
-            knockback = self.adjust_knockback_based_on_distance(attacker, base_knockback)
-
-            # 넉백 시작 (벡터 기반)
-            self.start_pushback(attacker=attacker, amount=knockback, duration=0.18)
-
-            # Hurt 상태 진입
-            self.state_machine.handle_state_event(('HURT', None))
-
-            if old_hp != self.hp:
-                print("P1 HP:", self.hp)
+                if group == 'P1_attack:P2':
+                    print("P2 HP:", self.hp)
+                else:
+                    print("P1 HP:", self.hp)
 
 
 class Idle:
