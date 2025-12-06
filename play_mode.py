@@ -87,14 +87,15 @@ def init():
 
     pause_btn = Button(
         "resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",
-        x = screen_w // 2, y = screen_h * 0.95,
+        x = screen_w // 2,
+        y = screen_h * 0.95,
         scale=1.0,
         on_click=lambda: pause_game()
     )
     gear_btn = Button(
         "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Gear.png",
-        x=screen_w // 2 + 60,
-        y=screen_h * 0.95,
+        x = screen_w // 2 + 60,
+        y = screen_h * 0.95,
         scale=1.0,
         on_click=lambda: build_gear_menu()
     )
@@ -110,10 +111,10 @@ def build_gear_menu():
     gear_open = True
     gear_ui = []
 
-    cx = screen_w // 2
-    cy = screen_h // 2
-    spacing = 50
-    btn_y = cy + 40
+    cx = screen_w // 2 # 중앙 x 위치
+    cy = screen_h // 2 # 중앙 y 위치
+    spacing = 50 # 버튼 간격
+    btn_y = cy + 40 # 사운드 버튼 y 위치
 
     close_btn = Button(
         "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Cross.png",
@@ -254,11 +255,8 @@ def draw_gear_popup_panel():
     draw_rectangle(x1, y1, x2, y2)
 
 
-def music_on():
-    pass
-def music_off():
-    pass
-
+def music_on():pass
+def music_off():pass
 
 def update():
     mx, my = mouse.get_pos()
@@ -330,7 +328,7 @@ def handle_events():
                 game_framework.change_mode(lobby_mode)
             return
         if gear_open:
-            if event.type == SDL_MOUSEBUTTONDOWN:
+            if event.type == SDL_MOUSEMOTION:
                 mouse.update(event)
             elif event.type == SDL_MOUSEBUTTONDOWN:
                 mx, my = mouse.get_pos()
