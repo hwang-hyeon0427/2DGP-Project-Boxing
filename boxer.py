@@ -31,12 +31,26 @@ class Boxer:
 
     FRAMES_PER_ACTION = FRAMES_PER_ACTION
     ACTION_PER_TIME = ACTION_PER_TIME
+    # 공격 종류별 넉백 세기(픽셀)
+    KNOCKBACK_POWER = {
+        'front_hand': 20,  # 잽
+        'rear_hand': 35,  # 스트레이트
+        'uppercut': 50  # 어퍼컷
+    }
 
     def __init__(self, cfg: dict):
         self.current_attack_type = None
         self.base_face = None
         self.cfg = cfg
 
+        # 넉백 상태 변수
+        self.pushback_velocity_x = 0
+        self.pushback_velocity_y = 0
+        self.pushback_time = 0
+        self.pushback_duration = 0
+
+        # 중력 계수
+        self.pushback_gravity = -600  # 튕김 후 아래로 떨어지는 힘
 
         self.hits = 0
         self.max_hp = cfg["max_hp"]  # 값 복사
@@ -166,6 +180,46 @@ class Boxer:
 
         self.state_machine = StateMachine(self.IDLE, transitions)
 
+    def adjust_knockback_based_on_distance(self, attacker, base_knockback):
+        distance = abs(self.x - attacker.x)
+
+        min_dist = 40
+        max_dist = 160
+
+        if distance < min_dist:
+            scale = 0.4
+        elif distance > max_dist:
+            scale = 1.0
+        else:
+            scale = (distance - min_dist) / (max_dist - min_dist)
+            scale = max(0.4, scale)
+
+        return base_knockback * scale
+
+    def start_pushback(self, attacker, amount=40, duration=0.18):
+        # 1) 기본 방향 = 공격자의 바라보는 방향
+        dir_x = attacker.face_dir
+
+        # 2) y 성분은 좌표 차이의 10% 정도만 사용 (벨트스크롤 전형)
+        dy = self.y - attacker.y
+        dir_y = dy * 0.1
+
+        # 3) 정규화
+        length = max((dir_x * dir_x + dir_y * dir_y) ** 0.5, 0.001)
+        nx = dir_x / length
+        ny = dir_y / length
+
+        # 4) 넉백 속도 설정
+        self.pushback_velocity_x = nx * (amount / duration)
+        self.pushback_velocity_y = ny * (amount / duration) + 70
+
+        # 5) 중력
+        self.pushback_gravity = -1200
+
+        # 6) 시간이동
+        self.pushback_time = duration
+        self.pushback_duration = duration
+
     def use_sheet(self, sheet: dict):
         path = sheet['image']
         self.image = Boxer._img_cache.setdefault(path, load_image(path))
@@ -207,6 +261,54 @@ class Boxer:
                                            draw_w, draw_h)
 
     def update(self):
+
+        # ============================
+        # Final Fight 스타일 넉백 물리
+        # ============================
+        if self.pushback_time > 0:
+            dt = game_framework.frame_time
+
+            # -------- X축 이동 --------
+            new_x = self.x + self.pushback_velocity_x * dt
+
+            LEFT_WALL = 50
+            RIGHT_WALL = 750
+
+            # 벽 충돌 → 넉백 종료
+            if new_x < LEFT_WALL:
+                new_x = LEFT_WALL
+                self.pushback_time = 0
+                self.pushback_velocity_x = 0
+                self.pushback_velocity_y = 0
+
+            elif new_x > RIGHT_WALL:
+                new_x = RIGHT_WALL
+                self.pushback_time = 0
+                self.pushback_velocity_x = 0
+                self.pushback_velocity_y = 0
+
+            self.x = new_x
+
+            # -------- Y축 작은 튕김 + 중력 --------
+            self.pushback_velocity_y += self.pushback_gravity * dt
+            self.y += self.pushback_velocity_y * dt
+
+            FLOOR_Y = 90
+
+            if self.y < FLOOR_Y:
+                self.y = FLOOR_Y
+                self.pushback_velocity_y = 0
+
+            # -------- 넉백 시간 감소 --------
+            self.pushback_time -= dt
+            if self.pushback_time <= 0:
+                self.pushback_time = 0
+                self.pushback_velocity_x = 0
+                self.pushback_velocity_y = 0
+
+        # ============================
+        # 상태머신 업데이트
+        # ============================
         self.state_machine.update()
 
     def draw(self):
@@ -214,11 +316,12 @@ class Boxer:
         draw_rectangle(*self.get_bb())
 
     def handle_event(self, event):
-        # KO 상태는 완전 무력화 → 입력 전부 무시
+        if self.pushback_time > 0:
+            return
+
         if isinstance(self.state_machine.cur_state, Ko):
             return
 
-        # Dizzy 상태도 조작 불가 → 입력 무시
         if isinstance(self.state_machine.cur_state, Dizzy):
             return
 
@@ -349,12 +452,19 @@ class Boxer:
     def handle_collision(self, group, other):
         now = get_time()
 
-        # KO 상태에서는 충돌 자체 무시 (확정 다운)
+        # KO 상태 충돌 무시
         if isinstance(self.state_machine.cur_state, Ko):
             return
 
-        # 맞은 직후 쿨다운(무적 프레임)
+        # 넉백 중 모든 충돌 무시 (body:block 포함)
+        if self.pushback_time > 0:
+            return
+
+        # 피격 직후 무적 시간
         if now - self.last_hit_time < self.hit_cool:
+            return
+
+        if self.pushback_time > 0:
             return
 
         if group == 'body:block' and other is self.opponent:
@@ -374,42 +484,76 @@ class Boxer:
             return
 
         if group == 'P1_attack:P2':
+            # 공격자 Boxer
+            attacker = other.owner
+
             old_hp = self.hp
             self.hp = max(0, self.hp - 10)
 
-            # 1) 피격 즉시 쿨다운 갱신 (항상)
             self.last_hit_time = now
 
-            # 2) KO는 즉시 처리
+            # KO
             if self.hp <= 0:
                 self.state_machine.handle_state_event(('KO', None))
                 return
 
-            # 3) 어지러움(Dizzy)
+            # Dizzy
             if self.hp <= self.max_hp * 0.3:
                 self.state_machine.handle_state_event(('DIZZY', None))
                 return
 
-            # 4) 기본 피격
+            # ----------------------------------------
+            # Final Fight 벡터 기반 넉백
+            # ----------------------------------------
+            attack_type = attacker.current_attack_type
+            base_knockback = Boxer.KNOCKBACK_POWER.get(attack_type, 20)
+
+            # 거리 기반 넉백 보정
+            knockback = self.adjust_knockback_based_on_distance(attacker, base_knockback)
+
+            # 넉백 시작 (벡터 기반)
+            self.start_pushback(attacker=attacker, amount=knockback, duration=0.18)
+
+            # Hurt 상태 진입
             self.state_machine.handle_state_event(('HURT', None))
 
             if old_hp != self.hp:
                 print("P2 HP:", self.hp)
 
+
+
         elif group == 'P2_attack:P1':
+            # 공격자 Boxer
+            attacker = other.owner
+
             old_hp = self.hp
             self.hp = max(0, self.hp - 10)
 
             self.last_hit_time = now
 
+            # KO
             if self.hp <= 0:
                 self.state_machine.handle_state_event(('KO', None))
                 return
 
+            # Dizzy
             if self.hp <= self.max_hp * 0.3:
                 self.state_machine.handle_state_event(('DIZZY', None))
                 return
 
+            # ----------------------------------------
+            # Final Fight 벡터 기반 넉백
+            # ----------------------------------------
+            attack_type = attacker.current_attack_type
+            base_knockback = Boxer.KNOCKBACK_POWER.get(attack_type, 20)
+
+            # 거리 기반 넉백 보정
+            knockback = self.adjust_knockback_based_on_distance(attacker, base_knockback)
+
+            # 넉백 시작 (벡터 기반)
+            self.start_pushback(attacker=attacker, amount=knockback, duration=0.18)
+
+            # Hurt 상태 진입
             self.state_machine.handle_state_event(('HURT', None))
 
             if old_hp != self.hp:
@@ -423,10 +567,6 @@ class Idle:
     def enter(self, e):
         # Idle 상태에 진입할 때 idle 시트로 변경
         self.boxer.use_sheet(self.boxer.cfg['idle'])
-
-        # 속도 초기화
-        self.boxer.vx = 0
-        self.boxer.vy = 0
 
     def exit(self, e):
         pass
@@ -515,6 +655,10 @@ class Ko:
     def enter(self, e):
         self.boxer.frame = 0
         self.boxer.use_sheet(self.boxer.cfg['ko'])
+
+        self.boxer.pushback_time = 0
+        self.boxer.pushback_velocity_x = 0
+        self.boxer.pushback_velocity_y = 0
 
     def exit(self, e):
         pass
