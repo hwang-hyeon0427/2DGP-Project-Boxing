@@ -381,3 +381,74 @@ class Walk:
 
     def draw(self):
         self.boxer.draw_current()
+
+class Hurt:
+    DURATION = 0.25  # 피격 모션 길이
+
+    def __init__(self, boxer):
+        self.boxer = boxer
+        self.start_time = 0
+
+    def enter(self, e):
+        self.start_time = get_time()
+        self.boxer.frame = 0
+        self.boxer.use_sheet(self.boxer.cfg['hurt'])
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        self.boxer.frame += FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
+
+        # 모션 끝나면 Idle로 자동 복귀
+        if get_time() - self.start_time >= Hurt.DURATION:
+            self.boxer.state_machine.handle_state_event(('HURT_DONE', None))
+
+    def draw(self):
+        self.boxer.draw_current()
+
+class Dizzy:
+    DURATION = 0.8  # 어지러움 유지 시간
+
+    def __init__(self, boxer):
+        self.boxer = boxer
+        self.start_time = 0
+
+    def enter(self, e):
+        self.start_time = get_time()
+        self.boxer.frame = 0
+        self.boxer.use_sheet(self.boxer.cfg['dizzy'])
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        self.boxer.frame += FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
+
+        # 자동 복귀
+        if get_time() - self.start_time >= Dizzy.DURATION:
+            self.boxer.state_machine.handle_state_event(('DIZZY_DONE', None))
+
+    def draw(self):
+        self.boxer.draw_current()
+
+class Ko:
+    def __init__(self, boxer):
+        self.boxer = boxer
+
+    def enter(self, e):
+        self.boxer.frame = 0
+        self.boxer.use_sheet(self.boxer.cfg['ko'])
+
+    def exit(self, e):
+        pass
+
+    def do(self):
+        # KO는 마지막 프레임에서 멈춤
+        max_frame = self.boxer.cols - 1
+        self.boxer.frame += FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
+        if self.boxer.frame > max_frame:
+            self.boxer.frame = max_frame  # 프레임 고정
+
+    def draw(self):
+        self.boxer.draw_current()
