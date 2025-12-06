@@ -33,15 +33,15 @@ def init():
         on_click=start_game
     )
 
-    # back_btn = SpriteSheetButton(
-    #     sheet_path=sheet,
-    #     row=1,            # BACK 버튼 row
-    #     x=400, y=200,
-    #     scale=4,
-    #     on_click= game_framework.quit
-    # )
+    levels_btn = SpriteSheetButton(
+        sheet_path = sheet,
+        row = 4,           # LEVELS 버튼 row
+        x = 400, y = 200,
+        scale = 8,
+        on_click=lambda: game_framework.change_mode('levels_mode')
+    )
 
-    buttons = [start_btn]
+    buttons = [start_btn, levels_btn]
 
 
 def finish(): pass
