@@ -99,6 +99,12 @@ def semicolon_up(e):
 # ===================
 # 게임 상태 이벤트
 # ===================
+def event_stop(e):
+    return e[0] == 'STOP'
+
+def event_walk(e):
+    return e[0] == 'WALK'
+
 def event_hurt(e):
     return e[0] == 'HURT'
 
