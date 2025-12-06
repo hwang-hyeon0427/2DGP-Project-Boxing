@@ -196,6 +196,17 @@ class Boxer:
 
         self.state_machine = StateMachine(self.IDLE, transitions)
 
+        self.is_cpu = False  # 기본은 사람 조작
+        self.ai_level = 'easy'  # 'easy' / 'medium' / 'hard'
+        self.bt = None  # BehaviorTree 객체 (나중에 build_bt에서 설정)
+
+        self.ai_last_attack_time = 0.0
+        self.ai_blocking = False
+        self.ai_block_start_time = 0.0
+
+        # 이동 제어용
+        self.ai_move_dir = 0
+
     def adjust_knockback_based_on_distance(self, attacker, base_knockback):
         distance = abs(self.x - attacker.x)
 
