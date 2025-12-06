@@ -188,14 +188,14 @@ def init():
     p1.opponent = p2
     p2.opponent = p1
 
-    hpui = HpUi(p1, p2, x = get_canvas_width()//2, y=600, scale=2.8)
+    hpui = HpUi(p1, p2, x = screen_w // 2, y = 600, scale=2.8)
     game_world.add_object(hpui, 2)
 
     sheet = "resource/buttons_spritesheet_Photoroom.png"
 
     pause_btn = Button(
         "resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",
-        x= get_canvas_width()//2, y=550,
+        x = screen_w // 2, y = screen_h * 0.95,
         scale=1.0,
         on_click=lambda: pause_game()
     )
