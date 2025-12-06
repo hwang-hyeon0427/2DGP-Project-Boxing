@@ -1,77 +1,102 @@
 from pico2d import *
 
 class HpUi:
-    bar_red = None
-    bar_yellow = None
-    ko_img = None
+    # 고정된 소스 좌표 (절대 변경 X)
+    P1_SRC_X = 0
+    P1_SRC_W = 144      # P1 HP 바 길이
 
-    WIDTH = 600
-    HALF = WIDTH // 2
-    HEIGHT = 13   # 너의 hp_bar PNG 높이에 맞춤
+    KO_SRC_X = 145
+    KO_SRC_W = 31       # KO 중앙
 
-    def __init__(self, p1, p2, x=None, y=None, scale=3.0):
+    P2_SRC_X = 177
+    P2_SRC_W = (321 - 177 + 1)   # P2 HP 바 길이 = 145px
+
+    SRC_H = 16          # 이미지 높이
+
+    def __init__(self, p1, p2, x, y, scale=1.0):
+        # p1, p2 직접 참조
         self.p1 = p1
         self.p2 = p2
+
+        # KO 중심 좌표
         self.x = x
         self.y = y
         self.scale = scale
 
-        if HpUi.bar_red is None:
-            HpUi.bar_red = load_image("resource/health/hp_bar_red.png")
-        if HpUi.bar_yellow is None:
-            HpUi.bar_yellow = load_image("resource/health/hp_bar_yellow.png")
-        if HpUi.ko_img is None:
-            HpUi.ko_img = load_image("resource/health/hp_KO_red.png")
+        # 이미지 로드
+        self.img_red = load_image('resource/health/hp_red.png')
+        self.img_yellow = load_image('resource/health/hp_yellow.png')
+
+        # HP 최대값은 p1.hp_max 로 가져감 (둘이 같다고 가정)
+        self.max_hp = p1.max_hp
 
     def update(self):
+        # 즉시 반영 방식 → update 는 아무것도 안 함
         pass
 
     def draw(self):
-        ### 1) RED 전체 바 ###
-        HpUi.bar_red.draw(
-            self.x, self.y,
-            HpUi.WIDTH * self.scale,
-            HpUi.HEIGHT * self.scale
+        # =============================================
+        # KO 중심 기준 위치 계산
+        # =============================================
+        ko_center_x = self.x
+        ko_left_x   = ko_center_x - (HpUi.KO_SRC_W * 0.5 * self.scale)
+        ko_right_x  = ko_center_x + (HpUi.KO_SRC_W * 0.5 * self.scale)
+
+        # =============================================
+        # 1) RED 바(전체 바탕) 먼저 출력
+        # =============================================
+        # P1 전체 red bar
+        p1_red_center = ko_left_x - (HpUi.P1_SRC_W * 0.5 * self.scale)
+        self.img_red.clip_draw(
+            HpUi.P1_SRC_X, 0, HpUi.P1_SRC_W, HpUi.SRC_H,
+            p1_red_center, self.y,
+            HpUi.P1_SRC_W * self.scale, HpUi.SRC_H * self.scale
         )
 
-        ### P1 / P2 HP 비율 ###
-        ratio_left  = max(0, min(1, self.p1.hp / self.p1.max_hp))
-        ratio_right = max(0, min(1, self.p2.hp / self.p2.max_hp))
+        # P2 전체 red bar
+        p2_red_center = ko_right_x + (HpUi.P2_SRC_W * 0.5 * self.scale)
+        self.img_red.clip_draw(
+            HpUi.P2_SRC_X, 0, HpUi.P2_SRC_W, HpUi.SRC_H,
+            p2_red_center, self.y,
+            HpUi.P2_SRC_W * self.scale, HpUi.SRC_H * self.scale
+        )
 
-        left_len  = int(HpUi.HALF * ratio_left)
-        right_len = int(HpUi.HALF * ratio_right)
+        # =============================================
+        # 2) KO 중앙 출력
+        # =============================================
+        self.img_red.clip_draw(
+            HpUi.KO_SRC_X, 0, HpUi.KO_SRC_W, HpUi.SRC_H,
+            ko_center_x, self.y,
+            HpUi.KO_SRC_W * self.scale, HpUi.SRC_H * self.scale
+        )
 
-        # --------------------------------------
-        # 2) LEFT HP (왼쪽 → 오른쪽)
-        # --------------------------------------
-        if left_len > 0:
-            HpUi.bar_yellow.clip_draw(
-                0, 0, left_len, HpUi.HEIGHT,
-                self.x - (HpUi.WIDTH * self.scale) / 2 + (left_len * self.scale) / 2,
-                self.y,
-                left_len * self.scale,
-                HpUi.HEIGHT * self.scale
-            )
+        # =============================================
+        # 3) P1 HP BAR (왼쪽)
+        # =============================================
+        p1_hp_ratio = max(0.001, self.p1.hp / self.max_hp)  # 최소 0.1% 유지
+        p1_hp_w = int(HpUi.P1_SRC_W * p1_hp_ratio)
 
-        # --------------------------------------
-        # 3) RIGHT HP (오른쪽 → 왼쪽)
-        # --------------------------------------
-        if right_len > 0:
-            src_x = HpUi.HALF - right_len  # 오른쪽 기준으로 자르기
-            HpUi.bar_yellow.clip_draw(
-                src_x, 0, right_len, HpUi.HEIGHT,
-                self.x + (HpUi.WIDTH * self.scale) / 2 - (right_len * self.scale) / 2,
-                self.y,
-                right_len * self.scale,
-                HpUi.HEIGHT * self.scale
-            )
+        # 오른쪽 anchor 고정 → P1은 KO 왼쪽을 anchor
+        p1_src_x = HpUi.P1_SRC_W - p1_hp_w
+        p1_hp_center = ko_left_x - (p1_hp_w * 0.5 * self.scale)
 
-        # --------------------------------------
-        # 4) 중앙 KO 출력
-        # --------------------------------------
-        HpUi.ko_img.draw(
-            self.x,
-            self.y + HpUi.HEIGHT * self.scale * 0.55,
-            HpUi.ko_img.w * self.scale,
-            HpUi.ko_img.h * self.scale
+        self.img_yellow.clip_draw(
+            HpUi.P1_SRC_X + p1_src_x, 0, p1_hp_w, HpUi.SRC_H,
+            p1_hp_center, self.y,
+            p1_hp_w * self.scale, HpUi.SRC_H * self.scale
+        )
+
+        # =============================================
+        # 4) P2 HP BAR (오른쪽)
+        # =============================================
+        p2_hp_ratio = max(0.001, self.p2.hp / self.max_hp)
+        p2_hp_w = int(HpUi.P2_SRC_W * p2_hp_ratio)
+
+        # 왼쪽 anchor 고정 → P2는 KO 오른쪽을 anchor
+        p2_hp_center = ko_right_x + (p2_hp_w * 0.5 * self.scale)
+
+        self.img_yellow.clip_draw(
+            HpUi.P2_SRC_X, 0, p2_hp_w, HpUi.SRC_H,
+            p2_hp_center, self.y,
+            p2_hp_w * self.scale, HpUi.SRC_H * self.scale
         )
