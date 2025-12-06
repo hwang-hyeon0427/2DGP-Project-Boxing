@@ -214,7 +214,12 @@ class Boxer:
         draw_rectangle(*self.get_bb())
 
     def handle_event(self, event):
+        # KO 상태는 완전 무력화 → 입력 전부 무시
         if isinstance(self.state_machine.cur_state, Ko):
+            return
+
+        # Dizzy 상태도 조작 불가 → 입력 무시
+        if isinstance(self.state_machine.cur_state, Dizzy):
             return
 
         if event.type == SDL_KEYDOWN:
@@ -224,60 +229,69 @@ class Boxer:
                     self.face_dir = face_map["left"]
                 elif event.key == SDLK_d:
                     self.face_dir = face_map["right"]
-
-            else:  # arrows
+            else:
                 if event.key == SDLK_LEFT:
                     self.face_dir = face_map["left"]
                 elif event.key == SDLK_RIGHT:
                     self.face_dir = face_map["right"]
 
-        # 키보드 입력(KEYDOWN/KEYUP) 처리
         if event.type in (SDL_KEYDOWN, SDL_KEYUP):
 
-            # 1. controls에 따라 이동키 세트 분리
             if self.controls == 'wasd':
                 move_keys = {SDLK_a, SDLK_d, SDLK_w, SDLK_s}
             else:
                 move_keys = {SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN}
 
-            # 2. 이동키 처리
             if event.key in move_keys:
 
                 cur_xdir, cur_ydir = self.xdir, self.ydir
 
-                # KEYDOWN
                 if event.type == SDL_KEYDOWN:
                     if self.controls == 'wasd':
-                        if event.key == SDLK_a: self.xdir -= 1
-                        elif event.key == SDLK_d: self.xdir += 1
-                        elif event.key == SDLK_w: self.ydir += 1
-                        elif event.key == SDLK_s: self.ydir -= 1
+                        if event.key == SDLK_a:
+                            self.xdir -= 1
+                        elif event.key == SDLK_d:
+                            self.xdir += 1
+                        elif event.key == SDLK_w:
+                            self.ydir += 1
+                        elif event.key == SDLK_s:
+                            self.ydir -= 1
                     else:
-                        if event.key == SDLK_LEFT: self.xdir -= 1
-                        elif event.key == SDLK_RIGHT: self.xdir += 1
-                        elif event.key == SDLK_UP: self.ydir += 1
-                        elif event.key == SDLK_DOWN: self.ydir -= 1
+                        if event.key == SDLK_LEFT:
+                            self.xdir -= 1
+                        elif event.key == SDLK_RIGHT:
+                            self.xdir += 1
+                        elif event.key == SDLK_UP:
+                            self.ydir += 1
+                        elif event.key == SDLK_DOWN:
+                            self.ydir -= 1
 
-                # KEYUP
                 elif event.type == SDL_KEYUP:
                     if self.controls == 'wasd':
-                        if event.key == SDLK_a: self.xdir += 1
-                        elif event.key == SDLK_d: self.xdir -= 1
-                        elif event.key == SDLK_w: self.ydir -= 1
-                        elif event.key == SDLK_s: self.ydir += 1
+                        if event.key == SDLK_a:
+                            self.xdir += 1
+                        elif event.key == SDLK_d:
+                            self.xdir -= 1
+                        elif event.key == SDLK_w:
+                            self.ydir -= 1
+                        elif event.key == SDLK_s:
+                            self.ydir += 1
                     else:
-                        if event.key == SDLK_LEFT: self.xdir += 1
-                        elif event.key == SDLK_RIGHT: self.xdir -= 1
-                        elif event.key == SDLK_UP: self.ydir -= 1
-                        elif event.key == SDLK_DOWN: self.ydir += 1
+                        if event.key == SDLK_LEFT:
+                            self.xdir += 1
+                        elif event.key == SDLK_RIGHT:
+                            self.xdir -= 1
+                        elif event.key == SDLK_UP:
+                            self.ydir -= 1
+                        elif event.key == SDLK_DOWN:
+                            self.ydir += 1
 
-                if cur_xdir != self.xdir or cur_ydir != self.ydir:  # 방향키에 따른 변화가 있으면
-                    if self.xdir == 0 and self.ydir == 0:  # 멈춤
-                        self.state_machine.handle_state_event(('STOP', self.face_dir))  # 스탑 시 이전 방향 전달
-                    else:  # 움직임
+                if cur_xdir != self.xdir or cur_ydir != self.ydir:
+                    if self.xdir == 0 and self.ydir == 0:
+                        self.state_machine.handle_state_event(('STOP', self.face_dir))
+                    else:
                         self.state_machine.handle_state_event(('WALK', None))
 
-        # 그 외의 이벤트는 상태머신에 직접 전달
         self.state_machine.handle_state_event(('INPUT', event))
 
     def get_bb(self):
@@ -335,65 +349,72 @@ class Boxer:
     def handle_collision(self, group, other):
         now = get_time()
 
+        # KO 상태에서는 충돌 자체 무시 (확정 다운)
+        if isinstance(self.state_machine.cur_state, Ko):
+            return
+
+        # 맞은 직후 쿨다운(무적 프레임)
         if now - self.last_hit_time < self.hit_cool:
             return
 
-        if group == 'body:block' and other is self.opponent: # 몸통끼리 충돌
-            l1, b1, r1, t1 = self.get_bb() # 자신의 바운딩 박스
-            l2, b2, r2, t2 = other.get_bb() # 상대방의 바운딩 박스
+        if group == 'body:block' and other is self.opponent:
+            l1, b1, r1, t1 = self.get_bb()
+            l2, b2, r2, t2 = other.get_bb()
 
-            # 겹친 정도(overlap)를 계산
             overlap = min(r1 - l2, r2 - l1)
 
             if overlap > 0:
-                # 자기 기준으로 반씩 밀기
-                push_amount = overlap / 2
-
-                # 자신의 얼굴 방향 기준이 아니라 두 플레이어의 위치 관계로 밀기
+                push = overlap / 2
                 if self.x < other.x:
-                    self.x -= push_amount
-                    other.x += push_amount
+                    self.x -= push
+                    other.x += push
                 else:
-                    self.x += push_amount
-                    other.x -= push_amount
-
+                    self.x += push
+                    other.x -= push
             return
 
         if group == 'P1_attack:P2':
             old_hp = self.hp
-            self.hp = max(0, self.hp - 10) # 체력은 0 미만으로 떨어지지 않음
+            self.hp = max(0, self.hp - 10)
 
+            # 1) 피격 즉시 쿨다운 갱신 (항상)
+            self.last_hit_time = now
+
+            # 2) KO는 즉시 처리
             if self.hp <= 0:
                 self.state_machine.handle_state_event(('KO', None))
                 return
+
+            # 3) 어지러움(Dizzy)
             if self.hp <= self.max_hp * 0.3:
                 self.state_machine.handle_state_event(('DIZZY', None))
                 return
+
+            # 4) 기본 피격
             self.state_machine.handle_state_event(('HURT', None))
 
-            self.last_hit_time = now
             if old_hp != self.hp:
                 print("P2 HP:", self.hp)
 
         elif group == 'P2_attack:P1':
             old_hp = self.hp
             self.hp = max(0, self.hp - 10)
-            # KO
+
+            self.last_hit_time = now
+
             if self.hp <= 0:
                 self.state_machine.handle_state_event(('KO', None))
                 return
 
-            # Dizzy 조건 (예: hp 절반 이하)
             if self.hp <= self.max_hp * 0.3:
                 self.state_machine.handle_state_event(('DIZZY', None))
                 return
 
-            # 기본 피격 → Hurt
             self.state_machine.handle_state_event(('HURT', None))
 
-            self.last_hit_time = now
             if old_hp != self.hp:
                 print("P1 HP:", self.hp)
+
 
 class Idle:
     def __init__(self, boxer):
