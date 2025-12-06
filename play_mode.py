@@ -82,7 +82,7 @@ def init():
     p1.opponent = p2
     p2.opponent = p1
 
-    hpui = HpUi(p1, p2, x = screen_w // 2, y = 600, scale=2.8)
+    hpui = HpUi(p1, p2, x = screen_w // 2, y = screen_h * 0.9, scale=4)
     game_world.add_object(hpui, 2)
 
     sheet = "resource/buttons_spritesheet_Photoroom.png"
