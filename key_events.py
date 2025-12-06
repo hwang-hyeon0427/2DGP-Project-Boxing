@@ -91,3 +91,22 @@ def slash_down(e): # 어퍼
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SLASH
 def slash_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_SLASH
+
+# ===================
+# 게임 상태 이벤트
+# ===================
+def event_hurt(e):
+    return e[0] == 'HURT'
+
+def event_hurt_done(e):
+    return e[0] == 'HURT_DONE'
+
+def event_dizzy(e):
+    return e[0] == 'DIZZY'
+
+def event_dizzy_done(e):
+    return e[0] == 'DIZZY_DONE'
+
+def event_ko(e):
+    return e[0] == 'KO'
+
