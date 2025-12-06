@@ -314,7 +314,7 @@ def pause(): pass
 def resume(): pass
 
 def handle_events():
-    global paused
+    global paused, gear_open
 
     event_list = get_events()
     for event in event_list:
@@ -322,11 +322,21 @@ def handle_events():
             game_framework.quit()
             return
         if event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
-            if paused:
+            if gear_open:
+                close_gear_menu()
+            elif paused:
                 resume_game()
             else:
                 game_framework.change_mode(lobby_mode)
             return
+        if gear_open:
+            if event.type == SDL_MOUSEBUTTONDOWN:
+                mouse.update(event)
+            elif event.type == SDL_MOUSEBUTTONDOWN:
+                mx, my = mouse.get_pos()
+                for b in gear_ui:
+                    b.click(mx, my)
+            continue
         if paused:
             if event.type == SDL_MOUSEMOTION:
                 mouse.update(event)
@@ -334,7 +344,7 @@ def handle_events():
                 mx, my = mouse.get_pos()
                 for b in pause_ui:
                     b.click(mx, my)
-            return
+            continue
         if event.type == SDL_MOUSEMOTION:
             mouse.update(event)
         elif event.type == SDL_MOUSEBUTTONDOWN:
