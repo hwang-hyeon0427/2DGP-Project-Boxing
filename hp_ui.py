@@ -1,4 +1,5 @@
 from pico2d import *
+from boxer import Ko
 
 class HpUi:
     # 고정된 소스 좌표 (절대 변경 X)
@@ -42,9 +43,6 @@ class HpUi:
         ko_left_x   = ko_center_x - (HpUi.KO_SRC_W * 0.5 * self.scale)
         ko_right_x  = ko_center_x + (HpUi.KO_SRC_W * 0.5 * self.scale)
 
-        # =============================================
-        # 1) RED 바(전체 바탕) 먼저 출력
-        # =============================================
         # P1 전체 red bar
         p1_red_center = ko_left_x - (HpUi.P1_SRC_W * 0.5 * self.scale)
         self.img_red.clip_draw(
@@ -61,10 +59,21 @@ class HpUi:
             HpUi.P2_SRC_W * self.scale, HpUi.SRC_H * self.scale
         )
 
-        # =============================================
-        # 2) KO 중앙 출력
-        # =============================================
-        self.img_red.clip_draw(
+        # ==========================
+        # KO 글자 이미지 선택
+        # ==========================
+        p1_ko = isinstance(self.p1.state_machine.cur_state, Ko)
+        p2_ko = isinstance(self.p2.state_machine.cur_state, Ko)
+
+        if p1_ko or p2_ko:
+            ko_img = self.img_red  # KO 시 = 빨간색 KO
+        else:
+            ko_img = self.img_yellow  # 평상시 = 노란색 KO
+
+        # ==========================
+        # KO 그리기
+        # ==========================
+        ko_img.clip_draw(
             HpUi.KO_SRC_X, 0, HpUi.KO_SRC_W, HpUi.SRC_H,
             ko_center_x, self.y,
             HpUi.KO_SRC_W * self.scale, HpUi.SRC_H * self.scale
