@@ -49,6 +49,8 @@ class Boxer:
         self.pushback_time = 0
         self.pushback_duration = 0
 
+        self.ignore_next_move_keyup = False
+
         # 중력 계수
         self.gravity = -600  # 튕김 후 아래로 떨어지는 힘
 
@@ -320,15 +322,45 @@ class Boxer:
         draw_rectangle(*self.get_bb())
 
     def handle_event(self, event):
+        # 디버그 로그: 현재 상태 + 들어온 이벤트
+        print(f"[EVENT] state={self.state_machine.cur_state.__class__.__name__}, "
+              f"type={event.type}, key={getattr(event, 'key', None)}, "
+              f"xdir={self.xdir}, ydir={self.ydir}")
+
+        if event.type not in (SDL_KEYDOWN, SDL_KEYUP):
+            return
+
         if self.pushback_time > 0:
             return
+
+        if self.controls == 'wasd':
+            # P1: 이동 + 공격 + 가드 키만
+            allowed_keys = {
+                SDLK_a, SDLK_d, SDLK_w, SDLK_s,  # 이동
+                SDLK_f, SDLK_g, SDLK_h,  # 공격
+                SDLK_r  # 가드
+            }
+        else:
+            allowed_keys = {
+                SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN,
+                SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH,
+                SDLK_SEMICOLON
+            }
+        if event.key not in allowed_keys:
+            # 이 Boxer 관할이 아닌 키는 완전히 무시
+            return
+
         if isinstance(self.state_machine.cur_state, (BlockEnter, Block, BlockExit)):
-            if event.type in (SDL_KEYDOWN, SDL_KEYUP):
+            if event.type == SDL_KEYDOWN:
                 if self.controls == 'wasd':
                     if event.key != SDLK_r:
+                        print(f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
+                              f"IGNORED key={event.key}")
                         return
                 else:
                     if event.key != SDLK_SEMICOLON:
+                        print(f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
+                              f"IGNORED key={event.key}")
                         return
         if isinstance(self.state_machine.cur_state, Ko):
             return
@@ -354,9 +386,24 @@ class Boxer:
             else:
                 move_keys = {SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN}
 
+            if (event.type == SDL_KEYUP
+                    and self.ignore_next_move_keyup
+                    and event.key in move_keys):
+                print(f"[BLOCK_EXIT] ignore first move KEYUP: key={event.key}")
+                self.ignore_next_move_keyup = False
+                return
+
             if event.key in move_keys:
 
+                print(f"[MOVE_KEYS-BEFORE] state={self.state_machine.cur_state.__class__.__name__}, "
+                      f"event_type={event.type}, key={event.key}, "
+                      f"xdir={self.xdir}, ydir={self.ydir}")
+
                 cur_xdir, cur_ydir = self.xdir, self.ydir
+
+                if isinstance(self.state_machine.cur_state, BlockExit):
+                    print(f"[PATCH] BlockExit ignores move key: {event.key}")
+                    return
 
                 # 이동키에 따른 바라보는 방향 변경
                 if event.type == SDL_KEYDOWN:
@@ -378,10 +425,14 @@ class Boxer:
                             self.ydir += 1
                         elif event.key == SDLK_DOWN:
                             self.ydir -= 1
-
-
-
                 elif event.type == SDL_KEYUP:
+                    if event.key in move_keys:
+
+                        if self.ignore_next_move_keyup:
+                            print(f"[PATCH] swallow first keyup after BlockExit: {event.key}")
+                            self.ignore_next_move_keyup = False
+                            return
+
                     if self.controls == 'wasd':
                         if event.key == SDLK_a:
                             self.xdir += 1
@@ -401,10 +452,17 @@ class Boxer:
                         elif event.key == SDLK_DOWN:
                             self.ydir += 1
 
-                if cur_xdir != self.xdir or cur_ydir != self.ydir:
-                    if self.xdir == 0 and self.ydir == 0:
-                        self.state_machine.handle_state_event(('STOP', self.face_dir))
-                    else:
+                print(f"[MOVE_KEYS-AFTER]  state={self.state_machine.cur_state.__class__.__name__}, "
+                      f"event_type={event.type}, key={event.key}, "
+                      f"xdir={self.xdir}, ydir={self.ydir}")
+
+                if self.xdir == 0 and self.ydir == 0:
+                    print("[PATCH] => STOP")
+                    self.state_machine.handle_state_event(('STOP', self.face_dir))
+                else:
+                    # KEYDOWN일 때만 WALK 발생
+                    if event.type == SDL_KEYDOWN:
+                        print("[PATCH] => WALK")
                         self.state_machine.handle_state_event(('WALK', None))
 
         self.state_machine.handle_state_event(('INPUT', event))
@@ -541,6 +599,7 @@ class Idle:
         self.boxer = boxer
 
     def enter(self, e):
+        print(f"[ENTER] Idle: reset xdir/ydir from {self.boxer.xdir}, {self.boxer.ydir}")
         self.boxer.use_sheet(self.boxer.cfg['idle'])
         self.boxer.xdir = 0
         self.boxer.ydir = 0
@@ -700,11 +759,12 @@ class BlockExit:
         self.boxer = boxer
 
     def enter(self, e):
-        self.boxer.use_sheet(self.boxer.cfg['blocking'])
-        self.boxer.frame = self.boxer.cols - 1
-
+        print("[ENTER] BlockExit: force stop movement")
         self.boxer.xdir = 0
         self.boxer.ydir = 0
+        self.boxer.ignore_next_move_keyup = True
+        self.boxer.use_sheet(self.boxer.cfg['blocking'])
+        self.boxer.frame = self.boxer.cols - 1
 
     def exit(self, e):
         pass
