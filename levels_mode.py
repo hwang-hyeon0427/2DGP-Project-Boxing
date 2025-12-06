@@ -3,7 +3,9 @@ from button import SpriteSheetButton
 
 import game_framework
 import game_world
-import mouse
+from mouse import update as mouse_update
+from mouse import get_pos as mouse_get_pos
+
 
 buttons = []
 
@@ -28,7 +30,7 @@ def init():
     ]
 
 def update():
-    mx, my = mouse.get_pos()
+    mx, my = mouse_get_pos()
     for b in buttons:
         b.update(mx, my)
 
@@ -44,9 +46,9 @@ def handle_events():
         if e.type == SDL_QUIT:
             game_framework.quit()
         elif e.type == SDL_MOUSEMOTION:
-            mouse.update(e)
+            mouse_update(events)
         elif e.type == SDL_MOUSEBUTTONDOWN:
-            mx, my = mouse.get_pos()
+            mx, my = mouse_get_pos()
             for b in buttons:
                 b.click(mx, my)
 

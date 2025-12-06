@@ -5,7 +5,9 @@ import play_mode
 
 from button import SpriteSheetButton
 from boxing_ring import BoxingRing   # ← 최적화된 배경 클래스
-import mouse
+from mouse import update as mouse_update
+from mouse import get_pos as mouse_get_pos
+
 
 
 background = None
@@ -49,7 +51,7 @@ def pause(): pass
 def resume(): pass
 
 def update():
-    mx, my = mouse.get_pos()
+    mx, my = mouse_get_pos()
 
     for b in buttons:
         b.update(mx, my)
@@ -73,8 +75,8 @@ def handle_events():
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             game_framework.quit()
         elif event.type == SDL_MOUSEMOTION:
-            mouse.update(event)
+            mouse_update(event)
         elif event.type == SDL_MOUSEBUTTONDOWN:
-            mx, my = mouse.get_pos()
+            mx, my = mouse_get_pos()
             for b in buttons:
                 b.click(mx, my)

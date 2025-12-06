@@ -1,15 +1,17 @@
 import lobby_mode
 import game_framework
 import game_world
+import hitbox_edit
 
 from pico2d import *
 from boxer import Boxer
 from hp_ui import HpUi
 from boxing_ring import BoxingRing
 from button import Button, SpriteSheetButton
-import mouse
+from mouse import update as mouse_update
+from mouse import get_pos as mouse_get_pos
 
-import hitbox_edit
+
 
 P1 = {
     "face_map": {"left": -1, "right": 1},
@@ -261,7 +263,7 @@ def music_on():pass
 def music_off():pass
 
 def update():
-    mx, my = mouse.get_pos()
+    mx, my = mouse_get_pos()
 
     if gear_open:
         for b in gear_ui:
@@ -331,24 +333,24 @@ def handle_events():
             return
         if gear_open:
             if event.type == SDL_MOUSEMOTION:
-                mouse.update(event)
+                mouse_update(event)
             elif event.type == SDL_MOUSEBUTTONDOWN:
-                mx, my = mouse.get_pos()
+                mx, my = mouse_get_pos()
                 for b in gear_ui:
                     b.click(mx, my)
             continue
         if paused:
             if event.type == SDL_MOUSEMOTION:
-                mouse.update(event)
+                mouse_update(event)
             elif event.type == SDL_MOUSEBUTTONDOWN:
-                mx, my = mouse.get_pos()
+                mx, my = mouse_get_pos()
                 for b in pause_ui:
                     b.click(mx, my)
             continue
         if event.type == SDL_MOUSEMOTION:
-            mouse.update(event)
+            mouse_update(event)
         elif event.type == SDL_MOUSEBUTTONDOWN:
-            mx, my = mouse.get_pos()
+            mx, my = mouse_get_pos()
             for b in buttons:
                 b.click(mx, my)
 
