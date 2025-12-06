@@ -102,6 +102,14 @@ def build_pause_menu():
         on_click=lambda: sound_one()
     )
 
+    sound_two_btn = Button(
+        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Sound-Two.png",
+        x=get_canvas_width() // 2 + 50,
+        y = screen_h * 0.75,
+        scale=1.0,
+        on_click=lambda: sound_two()
+    )
+
     # Sound THREE 버튼
     sound_three_btn = Button(
         "resource\Prinbles_YetAnotherIcons\png\White-Icon\Sound-Three.png",
@@ -111,7 +119,7 @@ def build_pause_menu():
         on_click=lambda: sound_three()
     )
 
-    pause_ui = [resume_btn, main_btn, back_btn, sound_none_btn, sound_one_btn, sound_three_btn]
+    pause_ui = [resume_btn, main_btn, back_btn, sound_none_btn, sound_one_btn, sound_two_btn, sound_three_btn]
 
 def pause_game():
     global paused
@@ -128,6 +136,11 @@ def sound_one():
     global sound_level
     sound_level = 1
     print("Sound: ONE")
+
+def sound_two():
+    global sound_level
+    sound_level = 2
+    print("Sound: TWO")
 
 def sound_three():
     global sound_level
