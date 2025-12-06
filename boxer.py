@@ -91,7 +91,7 @@ class Boxer:
         self.DIZZY = Dizzy(self)
         self.KO = Ko(self)
         self.BLOCK_ENTER = BlockEnter(self)
-        self.BLOCK_LOOP = BlockLoop(self)
+        self.BLOCK = Block(self)
         self.BLOCK_EXIT = BlockExit(self)
 
         # 상태머신 이벤트 테이블 분리
@@ -135,8 +135,8 @@ class Boxer:
         }
         self.transitions_wasd[self.IDLE].update({r_down: self.BLOCK_ENTER})
         self.transitions_wasd[self.WALK].update({r_down: self.BLOCK_ENTER})
-        self.transitions_wasd[self.BLOCK_ENTER] = {block_enter_done: self.BLOCK_LOOP, r_up: self.BLOCK_EXIT}
-        self.transitions_wasd[self.BLOCK_LOOP] = {r_up: self.BLOCK_EXIT}
+        self.transitions_wasd[self.BLOCK_ENTER] = {block_enter_done: self.BLOCK, r_up: self.BLOCK_EXIT}
+        self.transitions_wasd[self.BLOCK] = {r_up: self.BLOCK_EXIT}
         self.transitions_wasd[self.BLOCK_EXIT] = {block_exit_done: self.IDLE}
 
         self.transitions_arrows = {
@@ -182,8 +182,8 @@ class Boxer:
 
         self.transitions_arrows[self.IDLE].update({semicolon_down: self.BLOCK_ENTER})
         self.transitions_arrows[self.WALK].update({semicolon_down: self.BLOCK_ENTER})
-        self.transitions_arrows[self.BLOCK_ENTER] = {block_enter_done: self.BLOCK_LOOP, semicolon_up: self.BLOCK_EXIT}
-        self.transitions_arrows[self.BLOCK_LOOP] = {semicolon_up: self.BLOCK_EXIT}
+        self.transitions_arrows[self.BLOCK_ENTER] = {block_enter_done: self.BLOCK, semicolon_up: self.BLOCK_EXIT}
+        self.transitions_arrows[self.BLOCK] = {semicolon_up: self.BLOCK_EXIT}
         self.transitions_arrows[self.BLOCK_EXIT] = {block_exit_done: self.IDLE}
 
         # controls에 따라 상태머신 선택
@@ -322,12 +322,7 @@ class Boxer:
     def handle_event(self, event):
         if self.pushback_time > 0:
             return
-
-        if isinstance(self.state_machine.cur_state, Ko):
-            return
-        if isinstance(self.state_machine.cur_state, Dizzy):
-            return
-        if isinstance(self.state_machine.cur_state, (BlockEnter, BlockLoop, BlockExit)):
+        if isinstance(self.state_machine.cur_state, (BlockEnter, Block, BlockExit)):
             if event.type in (SDL_KEYDOWN, SDL_KEYUP):
                 if self.controls == 'wasd':
                     if event.key != SDLK_r:
@@ -335,6 +330,10 @@ class Boxer:
                 else:
                     if event.key != SDLK_SEMICOLON:
                         return
+        if isinstance(self.state_machine.cur_state, Ko):
+            return
+        if isinstance(self.state_machine.cur_state, Dizzy):
+            return
 
         if event.type == SDL_KEYDOWN:
             if self.controls == 'wasd':
@@ -468,7 +467,7 @@ class Boxer:
         # KO 상태 충돌 무시
         if isinstance(self.state_machine.cur_state, Ko):
             return
-        if isinstance(self.state_machine.cur_state, (BlockEnter, BlockLoop)):
+        if isinstance(self.state_machine.cur_state, (BlockEnter, Block)):
             # Block 중 데미지 0
             self.last_hit_time = now
 
@@ -537,14 +536,14 @@ class Boxer:
                 else:
                     print("P1 HP:", self.hp)
 
-
 class Idle:
     def __init__(self, boxer):
         self.boxer = boxer
 
     def enter(self, e):
-        # Idle 상태에 진입할 때 idle 시트로 변경
         self.boxer.use_sheet(self.boxer.cfg['idle'])
+        self.boxer.xdir = 0
+        self.boxer.ydir = 0
 
     def exit(self, e):
         pass
@@ -670,22 +669,20 @@ class BlockEnter:
         # 프레임 증가
         self.boxer.frame += FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
 
-        # 마지막 프레임 넘어가면 BlockLoop로 자동 전환
-        if self.boxer.frame >= self.boxer.cols:
+        if self.boxer.frame >= self.boxer.cols - 1:
+            self.boxer.frame = self.boxer.cols - 1
             self.boxer.state_machine.handle_state_event(('BLOCK_ENTER_DONE', None))
 
     def draw(self):
         self.boxer.draw_current()
 
-class BlockLoop:
+class Block:
     def __init__(self, boxer):
         self.boxer = boxer
 
     def enter(self, e):
-        self.boxer.frame = 0
-        self.boxer.use_sheet(self.boxer.cfg['blocking'])
-
-        # 이동 금지
+        self.boxer.use_sheet(self.boxer.cfg['blocking'])  # 가드 유지 포즈
+        self.boxer.frame = self.boxer.cols - 1  # 마지막 프레임 고정
         self.boxer.xdir = 0
         self.boxer.ydir = 0
 
@@ -693,8 +690,7 @@ class BlockLoop:
         pass
 
     def do(self):
-        # 반복 애니메이션
-        self.boxer.frame = (self.boxer.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % self.boxer.cols
+        self.boxer.frame = self.boxer.cols - 1
 
     def draw(self):
         self.boxer.draw_current()
@@ -704,10 +700,9 @@ class BlockExit:
         self.boxer = boxer
 
     def enter(self, e):
-        self.boxer.frame = 0
         self.boxer.use_sheet(self.boxer.cfg['blocking'])
+        self.boxer.frame = self.boxer.cols - 1
 
-        # 이동 금지
         self.boxer.xdir = 0
         self.boxer.ydir = 0
 
@@ -715,10 +710,10 @@ class BlockExit:
         pass
 
     def do(self):
-        # 한번 재생
-        self.boxer.frame += FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
+        self.boxer.frame -= FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
 
-        if self.boxer.frame >= self.boxer.cols:
+        if self.boxer.frame <= 0:
+            self.boxer.frame = 0
             self.boxer.state_machine.handle_state_event(('BLOCK_EXIT_DONE', None))
 
     def draw(self):
