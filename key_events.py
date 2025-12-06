@@ -40,10 +40,10 @@ def h_down(e): # 어퍼
 def h_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_h
 
-def space_down(e): # 가드
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SPACE
-def space_up(e):
-    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_SPACE
+def r_down(e):        # P1 block
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_r
+def r_up(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_r
 
 
 
@@ -67,14 +67,13 @@ def up_down(e):
 def up_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_UP
 
-
 def down_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_DOWN
 def down_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_DOWN
 
 # ===========================================================
-# 플레이어2 공격 (앞손: 콤마, 뒷손: 피리어드, 앞손 어펴: 슬래시)
+# 플레이어2 공격 (앞손: 콤마, 뒷손: 피리어드, 앞손 어펴: 슬래시, 가드: 세미콜론)
 # ===========================================================
 
 def comma_down(e): # 앞손
@@ -91,6 +90,11 @@ def slash_down(e): # 어퍼
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SLASH
 def slash_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_SLASH
+
+def semicolon_down(e):  # P2 block
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_SEMICOLON
+def semicolon_up(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_SEMICOLON
 
 # ===================
 # 게임 상태 이벤트
@@ -109,4 +113,10 @@ def event_dizzy_done(e):
 
 def event_ko(e):
     return e[0] == 'KO'
+
+def block_enter_done(e):
+    return e[0] == 'BLOCK_ENTER_DONE'
+
+def block_exit_done(e):
+    return e[0] == 'BLOCK_EXIT_DONE'
 
