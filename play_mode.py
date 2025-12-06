@@ -20,9 +20,9 @@ P1 = {
     "spawn": {"x": 300, "y": 300, "base_face": 1},
     "walk_backward": {"image":"resource/player1/player1_Walk_Backward.png", "cols": 10, "w": 499, "h": 489, "scale": 0.9},
     "walk_forward":  {"image":"resource/player1/player1_Walk_Forward.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "front_hand": {"image":"resource/player1/player1_FrontHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "uppercut": {"image":"resource/player1/player1_Uppercut.png",  "cols": 7, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "rear_hand": {"image":"resource/player1/player1_RearHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
+    "front_hand": {"image":"resource/player1/player1_FrontHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 0.9, "base_face": 1, "forward_movement": {3 : 2}},
+    "uppercut": {"image":"resource/player1/player1_Uppercut.png",  "cols": 7, "w": 499, "h": 489, "scale": 0.9, "base_face": 1, "forward_movement": {4: 4}},
+    "rear_hand": {"image":"resource/player1/player1_RearHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 0.9, "base_face": 1, "forward_movement": {3: 3}},
     "blocking": {"image":"resource/player1/player1_Blocking.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
     "dizzy": {"image":"resource/player1/player1_Dizzy.png",  "cols": 8, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
     "ko": {"image":"resource/player1/player1_KO.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1}
@@ -37,9 +37,9 @@ P2 = {
     "spawn": {"x": 700, "y": 300, "base_face": -1},
     "walk_backward": {"image":"resource/player2/player2_Walk_Backward.png", "cols": 10, "w":746, "h":713, "scale":0.5},
     "walk_forward":  {"image":"resource/player2/player2_Walk_Forward.png",  "cols": 10, "w":746, "h":713, "scale":0.5, "base_face": -1},
-    "front_hand": {"image":"resource/player2/player2_FrontHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1},
-    "uppercut": {"image":"resource/player2/player2_Uppercut.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1},
-    "rear_hand": {"image":"resource/player2/player2_RearHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1},
+    "front_hand": {"image":"resource/player2/player2_FrontHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1, "forward_movement": {3 : 2}},
+    "uppercut": {"image":"resource/player2/player2_Uppercut.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1, "forward_movement": {4: 4}},
+    "rear_hand": {"image":"resource/player2/player2_RearHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1, "forward_movement": {3: 3}},
     "blocking": {"image":"resource/player2/player2_Block.png",  "cols": 10, "w":744, "h":713, "scale":0.5, "base_face": -1},
     "dizzy": {"image":"resource/player2/player2_Dizzy.png",  "cols": 10, "w":744, "h":711, "scale":0.5, "base_face": -1},
     "ko": {"image":"resource/player2/player2_KO.png",  "cols": 8, "w":744, "h":711, "scale":0.5, "base_face": -1}
@@ -96,7 +96,7 @@ def build_pause_menu():
     # Sound ONE 버튼
     sound_one_btn = Button(
         "resource\Prinbles_YetAnotherIcons\png\White-Icon\Sound-One.png",
-        x=get_canvas_width() // 2,
+        x=get_canvas_width() // 2 - 50,
         y = screen_h * 0.75,
         scale=1.0,
         on_click=lambda: sound_one()
@@ -104,7 +104,7 @@ def build_pause_menu():
 
     sound_two_btn = Button(
         "resource\Prinbles_YetAnotherIcons\png\White-Icon\Sound-Two.png",
-        x=get_canvas_width() // 2 + 50,
+        x=get_canvas_width() // 2,
         y = screen_h * 0.75,
         scale=1.0,
         on_click=lambda: sound_two()
@@ -113,13 +113,29 @@ def build_pause_menu():
     # Sound THREE 버튼
     sound_three_btn = Button(
         "resource\Prinbles_YetAnotherIcons\png\White-Icon\Sound-Three.png",
-        x=get_canvas_width() // 2 + 100,
+        x=get_canvas_width() // 2 + 50,
         y = screen_h * 0.75,
         scale=1.0,
         on_click=lambda: sound_three()
     )
+    music_one_btn = Button(
+        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Music-On.png",
+        x=get_canvas_width() // 2 - 100,
+        y = screen_h * 0.6,
+        scale=1.0,
+        on_click=lambda: music_on()
+    )
+    music_off_btn = Button(
+        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Music-Off.png",
+        x=get_canvas_width() // 2 - 50,
+        y = screen_h * 0.6,
+        scale=1.0,
+        on_click=lambda: music_off()
+    )
 
-    pause_ui = [resume_btn, main_btn, back_btn, sound_none_btn, sound_one_btn, sound_two_btn, sound_three_btn]
+    pause_ui = [resume_btn, main_btn, back_btn,
+                sound_none_btn, sound_one_btn, sound_two_btn, sound_three_btn,
+                music_one_btn, music_off_btn]
 
 def pause_game():
     global paused
@@ -146,6 +162,11 @@ def sound_three():
     global sound_level
     sound_level = 3
     print("Sound: THREE")
+
+def music_on():
+    pass
+def music_off():
+    pass
 
 
 def init():
