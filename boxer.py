@@ -336,6 +336,15 @@ class Boxer:
         if group == 'P1_attack:P2':
             old_hp = self.hp
             self.hp = max(0, self.hp - 10) # 체력은 0 미만으로 떨어지지 않음
+
+            if self.hp <= 0:
+                self.state_machine.handle_state_event(('KO', None))
+                return
+            if self.hp <= self.max_hp * 0.3:
+                self.state_machine.handle_state_event(('DIZZY', None))
+                return
+            self.state_machine.handle_state_event(('HURT', None))
+
             self.last_hit_time = now
             if old_hp != self.hp:
                 print("P2 HP:", self.hp)
@@ -343,6 +352,19 @@ class Boxer:
         elif group == 'P2_attack:P1':
             old_hp = self.hp
             self.hp = max(0, self.hp - 10)
+            # KO
+            if self.hp <= 0:
+                self.state_machine.handle_state_event(('KO', None))
+                return
+
+            # Dizzy 조건 (예: hp 절반 이하)
+            if self.hp <= self.max_hp * 0.3:
+                self.state_machine.handle_state_event(('DIZZY', None))
+                return
+
+            # 기본 피격 → Hurt
+            self.state_machine.handle_state_event(('HURT', None))
+
             self.last_hit_time = now
             if old_hp != self.hp:
                 print("P1 HP:", self.hp)
