@@ -9,6 +9,7 @@ from behavior_tree import BehaviorTree, Selector, Sequence, Condition, Action
 
 import game_framework
 import game_world
+import random
 
 # boxer 속도 단위 환산
 PIXEL_PER_METER = (10.0 / 0.3)  # 10 pixel 30 cm
@@ -779,5 +780,187 @@ class BlockExit:
 
     def draw(self):
         self.boxer.draw_current()
+
+    # =====================================================================================
+    # AI 유틸 함수들 (가짜 키 이벤트, 이동 제어, 상태 체크 등)
+    # =====================================================================================
+    class _AIKeyEvent:
+        """AI가 상태머신에 넣기 위한 가짜 키 이벤트"""
+        def __init__(self, key_type, key_code):
+            self.type = key_type
+            self.key = key_code
+
+    def ai_press_key(self, key_code):
+        """KEYDOWN 가짜 이벤트를 만들어 상태머신에 보냄"""
+        e = Boxer._AIKeyEvent(SDL_KEYDOWN, key_code)
+        self.state_machine.handle_state_event(('INPUT', e))
+
+    def ai_release_key(self, key_code):
+        """KEYUP 가짜 이벤트를 만들어 상태머신에 보냄"""
+        e = Boxer._AIKeyEvent(SDL_KEYUP, key_code)
+        self.state_machine.handle_state_event(('INPUT', e))
+
+    def ai_stop_move(self):
+        """이동 정지 (xdir 0 + STOP 이벤트)"""
+        if self.ai_move_dir != 0:
+            self.ai_move_dir = 0
+            self.xdir = 0
+            self.state_machine.handle_state_event(('STOP', None))
+
+    def ai_move_towards(self, dir):
+        """
+        dir: -1(왼쪽으로 상대에게 접근), 1(오른쪽으로 상대에게 접근)
+        이동 이벤트는 WALK 이벤트로만 보냄 (키이벤트 대신)
+        """
+        if dir == 0:
+            self.ai_stop_move()
+            return
+
+        # 이미 그 방향이면 그대로 두고, 아니면 방향 바꾸기
+        if self.ai_move_dir != dir:
+            self.ai_move_dir = dir
+            self.xdir = dir
+            self.face_dir = dir
+            self.state_machine.handle_state_event(('WALK', None))
+
+    def ai_can_act(self):
+        """KO / DIZZY / HURT 상태면 행동 불가 처리"""
+        cur = self.state_machine.cur_state
+        KOType = type(self.KO)
+        DizzyType = type(self.DIZZY)
+        HurtType = type(self.HURT)
+
+        if isinstance(cur, (KOType, DizzyType, HurtType)):
+            self.ai_stop_move()
+            return False
+        return True
+
+    def ai_distance_to_opponent(self):
+        """상대와의 x 거리 (상대가 없으면 None)"""
+        if self.opponent is None:
+            return None
+        return self.opponent.x - self.x  # (양수: 상대가 오른쪽, 음수: 왼쪽)
+
+    def ai_in_attack_range(self):
+        """난이도에 따라 공격 사거리 판정"""
+        d = self.ai_distance_to_opponent()
+        if d is None:
+            return False
+
+        dx = abs(d)
+
+        if self.ai_level == 'easy':
+            max_range = 170
+        elif self.ai_level == 'medium':
+            max_range = 210
+        else:  # hard
+            max_range = 240
+
+        return dx <= max_range
+
+    def ai_attack_random(self):
+        """
+        front / rear / upper 중 하나 랜덤 공격.
+        쿨다운(난이도별) / 현재 상태 체크.
+        """
+        now = get_time()
+
+        if self.ai_level == 'easy':
+            base_cd = 0.9
+        elif self.ai_level == 'medium':
+            base_cd = 0.6
+        else:  # hard
+            base_cd = 0.35
+
+        if now - self.ai_last_attack_time < base_cd:
+            return BehaviorTree.FAIL
+
+        # 공격/블록/피격/KO 중이면 새 공격 금지
+        cur = self.state_machine.cur_state
+        bad_types = (
+            type(self.FRONT_HAND), type(self.REAR_HAND), type(self.UPPERCUT),
+            type(self.BLOCK), type(self.BLOCK_ENTER), type(self.BLOCK_EXIT),
+            type(self.HURT), type(self.DIZZY), type(self.KO)
+        )
+        if isinstance(cur, bad_types):
+            return BehaviorTree.FAIL
+
+        # 컨트롤 스킴에 따라 공격 키 코드 선택
+        if self.controls == 'wasd':
+            front_key, rear_key, upper_key = SDLK_f, SDLK_g, SDLK_h
+        else:
+            front_key, rear_key, upper_key = SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH
+
+        choice = random.choice(['front', 'rear', 'upper'])
+        if choice == 'front':
+            self.ai_press_key(front_key)
+        elif choice == 'rear':
+            self.ai_press_key(rear_key)
+        else:
+            self.ai_press_key(upper_key)
+
+        self.ai_last_attack_time = now
+        return BehaviorTree.SUCCESS
+
+    def ai_should_guard(self):
+        """상대가 공격 중인가? (가드 조건)"""
+        if self.opponent is None:
+            return False
+
+        opp_state = self.opponent.state_machine.cur_state
+        FHType = type(self.opponent.FRONT_HAND)
+        RHType = type(self.opponent.REAR_HAND)
+        UType = type(self.opponent.UPPERCUT)
+
+        # 상대의 공격 모션 중으로 간주
+        if isinstance(opp_state, (FHType, RHType, UType)):
+            return True
+        return False
+
+    def ai_do_guard(self):
+        """
+        가드 동작: 일정 시간 동안만 블록 버튼을 눌렀다가 떼기.
+        난이도별로 가드 유지 시간 다르게.
+        """
+        if self.controls == 'wasd':
+            block_key = SDLK_r
+        else:
+            block_key = SDLK_SEMICOLON
+
+        now = get_time()
+
+        if not self.ai_blocking:
+            # 새로 가드 시작
+            # 난이도별로 "가드할지 말지" 확률도 반영 (easy는 잘 안 막고, hard는 잘 막음)
+            if self.ai_level == 'easy':
+                guard_prob = 0.3
+                hold_time = 0.3
+            elif self.ai_level == 'medium':
+                guard_prob = 0.6
+                hold_time = 0.35
+            else:
+                guard_prob = 0.9
+                hold_time = 0.4
+
+            # 확률적으로 가드할지 결정
+            if random.random() > guard_prob:
+                return BehaviorTree.FAIL
+
+            self.ai_blocking = True
+            self.ai_block_start_time = now
+            self.ai_block_hold_time = hold_time
+
+            # 이동 멈추고 가드 키 누르기
+            self.ai_stop_move()
+            self.ai_press_key(block_key)
+            return BehaviorTree.RUNNING
+        else:
+            # 이미 가드 중이면 유지 시간 체크 후 키 떼기
+            if now - self.ai_block_start_time >= self.ai_block_hold_time:
+                self.ai_blocking = False
+                self.ai_release_key(block_key)
+                return BehaviorTree.SUCCESS
+            else:
+                return BehaviorTree.RUNNING
 
 
