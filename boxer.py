@@ -4,16 +4,12 @@ from state_machine import StateMachine
 from hitbox_data import HITBOX_DATA
 from hitbox import HitBox
 from attack_state import AttackState
+from behavior_tree import BehaviorTree, Selector, Sequence, Condition, Action
 # from walk_backward import WalkBackward
 
 import game_framework
 import game_world
 
-def event_stop(e):
-    return e[0] == 'STOP'
-
-def event_walk(e):
-    return e[0] == 'WALK'
 # boxer 속도 단위 환산
 PIXEL_PER_METER = (10.0 / 0.3)  # 10 pixel 30 cm
 WALK_SPEED_KMPH = 20.0  # Km / Hour
