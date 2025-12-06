@@ -50,7 +50,7 @@ class Boxer:
         self.pushback_duration = 0
 
         # 중력 계수
-        self.pushback_gravity = -600  # 튕김 후 아래로 떨어지는 힘
+        self.gravity = -600  # 튕김 후 아래로 떨어지는 힘
 
         self.hits = 0
         self.max_hp = cfg["max_hp"]  # 값 복사
@@ -197,26 +197,21 @@ class Boxer:
         return base_knockback * scale
 
     def start_pushback(self, attacker, amount=40, duration=0.18):
-        # 공격자 → 피격자 벡터
         dx = self.x - attacker.x
         dy = self.y - attacker.y
-
         length = max((dx * dx + dy * dy) ** 0.5, 0.001)
-        nx = dx / length
-        ny = dy / length
+        nx, ny = dx / length, dy / length
 
         # 넉백 속도 (y는 너무 튀지 않게 약하게)
         power = amount / duration
         self.pushback_velocity_x = nx * power
         self.pushback_velocity_y = ny * power * 0.25
 
-        # 중력
-        self.pushback_gravity = -900
-
-        # 넉백 시간
+        self.gravity = -2000
         self.pushback_time = duration
         self.pushback_duration = duration
 
+        self.hit_floor_y = self.y
         # 넉백 중 이동 입력 완전 무시
         self.xdir = 0
         self.ydir = 0
@@ -264,48 +259,46 @@ class Boxer:
     def update(self):
         dt = game_framework.frame_time
 
-        # ================
-        # 넉백 처리
-        # ================
         if self.pushback_time > 0:
-            # X 이동
+            dt = game_framework.frame_time
+
+            # X 넉백 이동
             self.x += self.pushback_velocity_x * dt
 
-            # Y 이동 + 중력
-            self.pushback_velocity_y += self.pushback_gravity * dt
+            # Y 넉백 + 중력
+            self.pushback_velocity_y += self.gravity * dt
             self.y += self.pushback_velocity_y * dt
 
-            # 경기장 경계 처리
+            # ★ 피격 레벨 착지 처리
+            if self.y <= self.hit_floor_y:
+                self.y = self.hit_floor_y
+                self.pushback_velocity_y = 0
+                self.pushback_time = 0
+                self.pushback_velocity_x = 0
+                return
+
             LEFT_WALL = 50
             RIGHT_WALL = 750
-            FLOOR_Y = 90
             CEILING_Y = 500
 
             if self.x < LEFT_WALL:
                 self.x = LEFT_WALL
+                self.pushback_velocity_x = 0  # ★ 여기
             elif self.x > RIGHT_WALL:
                 self.x = RIGHT_WALL
-
-            if self.y < FLOOR_Y:
-                self.y = FLOOR_Y
-                self.pushback_velocity_y = 0
+                self.pushback_velocity_x = 0  # ★ 여기
 
             if self.y > CEILING_Y:
                 self.y = CEILING_Y
 
-            # 넉백 시간 감소
+            # ★ 넉백 시간 감소
             self.pushback_time -= dt
             if self.pushback_time <= 0:
                 self.pushback_time = 0
                 self.pushback_velocity_x = 0
                 self.pushback_velocity_y = 0
-
-            # 넉백 중엔 상태머신 움직임 차단
             return
 
-        # ========================
-        # 넉백이 아닐 때 정상 상태머신
-        # ========================
         self.state_machine.update()
 
     def draw(self):
@@ -510,7 +503,6 @@ class Boxer:
                     print("P2 HP:", self.hp)
                 else:
                     print("P1 HP:", self.hp)
-
 
 class Idle:
     def __init__(self, boxer):
