@@ -46,136 +46,28 @@ P2 = {
 }
 
 buttons = []
+
 paused = False
 pause_ui = []
-sound_level = 0   # 0=None, 1=One, 3=Three
 
+gear_open = False
+gear_ui = []
 
-def resume_game():
-    global paused, pause_ui
-    print("RESUME GAME")
-    paused = False
-    pause_ui.clear()
-
-def go_to_main_menu():
-    print("MAIN MENU")
-    game_framework.change_mode(lobby_mode)
-
-def build_pause_menu():
-    global pause_ui, screen_w, screen_h, buttons
-
-    resume_btn = SpriteSheetButton(
-        "resource/buttons_spritesheet_Photoroom.png",
-        row = 7,
-        x = screen_w//2, y = screen_h * 0.9,
-        scale=6,
-        on_click = resume_game
-    )
-    main_btn = SpriteSheetButton(
-        "resource/buttons_spritesheet_Photoroom.png",
-        row = 10,
-        x = screen_w//2, y = screen_h * 0.7,
-        scale=6,
-        on_click = go_to_main_menu
-    )
-    back_btn = SpriteSheetButton(
-        "resource/buttons_spritesheet_Photoroom.png",
-        row = 1 ,
-        x = screen_w//2, y = screen_h * 0.5,
-        scale=6,
-        on_click = resume_game
-    )
-    sound_none_btn = Button(
-        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Sound-None.png",
-        x=get_canvas_width() // 2 - 100,
-        y = screen_h * 0.75,
-        scale=1.0,
-        on_click=lambda: sound_none()
-    )
-
-    # Sound ONE 버튼
-    sound_one_btn = Button(
-        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Sound-One.png",
-        x=get_canvas_width() // 2 - 50,
-        y = screen_h * 0.75,
-        scale=1.0,
-        on_click=lambda: sound_one()
-    )
-
-    sound_two_btn = Button(
-        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Sound-Two.png",
-        x=get_canvas_width() // 2,
-        y = screen_h * 0.75,
-        scale=1.0,
-        on_click=lambda: sound_two()
-    )
-
-    # Sound THREE 버튼
-    sound_three_btn = Button(
-        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Sound-Three.png",
-        x=get_canvas_width() // 2 + 50,
-        y = screen_h * 0.75,
-        scale=1.0,
-        on_click=lambda: sound_three()
-    )
-    music_one_btn = Button(
-        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Music-On.png",
-        x=get_canvas_width() // 2 - 100,
-        y = screen_h * 0.6,
-        scale=1.0,
-        on_click=lambda: music_on()
-    )
-    music_off_btn = Button(
-        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Music-Off.png",
-        x=get_canvas_width() // 2 - 50,
-        y = screen_h * 0.6,
-        scale=1.0,
-        on_click=lambda: music_off()
-    )
-
-    pause_ui = [resume_btn, main_btn, back_btn,
-                sound_none_btn, sound_one_btn, sound_two_btn, sound_three_btn,
-                music_one_btn, music_off_btn]
-
-def pause_game():
-    global paused
-    print("GAME PAUSED")
-    paused = True
-    build_pause_menu()
-
-def sound_none():
-    global sound_level
-    sound_level = 0
-    print("Sound: NONE")
-
-def sound_one():
-    global sound_level
-    sound_level = 1
-    print("Sound: ONE")
-
-def sound_two():
-    global sound_level
-    sound_level = 2
-    print("Sound: TWO")
-
-def sound_three():
-    global sound_level
-    sound_level = 3
-    print("Sound: THREE")
-
-def music_on():
-    pass
-def music_off():
-    pass
-
+sound_level = 0
 
 def init():
-    global p1, p2, hpui, boxing_ring, buttons, paused, pause_ui, screen_w, screen_h
+    global p1, p2, hpui, boxing_ring
+    global buttons, paused, pause_ui, gear_open, gear_ui
+    global screen_w, screen_h
 
     screen_w = get_canvas_width()
     screen_h = get_canvas_height()
 
     paused = False
+    gear_open = False
+    buttons = []
+    pause_ui = []
+    gear_ui = []
 
     boxing_ring = BoxingRing()
     game_world.add_object(boxing_ring, 0)
@@ -199,13 +91,182 @@ def init():
         scale=1.0,
         on_click=lambda: pause_game()
     )
+    gear_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Gear.png",
+        x=screen_w // 2 + 60,
+        y=screen_h * 0.95,
+        scale=1.0,
+        on_click=lambda: build_gear_menu()
+    )
 
+    buttons.append(gear_btn)
     buttons.append(pause_btn)
 
     game_world.add_collision_pair('body:block', p1, p2) # 서로의 몸통끼리 충돌
 
+def build_gear_menu():
+    global gear_open, gear_ui, screen_w, screen_h
+
+    gear_open = True
+    gear_ui = []
+
+    cx = screen_w // 2
+    cy = screen_h // 2
+    spacing = 50
+    btn_y = cy + 40
+
+    close_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Cross.png",
+        x=cx + 140,
+        y=cy + 90,
+        scale=1.0,
+        on_click=lambda: close_gear_menu()
+    )
+
+    sound_none_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Sound-None.png",
+        x=cx - spacing * 2,
+        y=btn_y,
+        scale=1.0,
+        on_click=sound_none
+    )
+    sound_one_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Sound-One.png",
+        x=cx - spacing,
+        y=btn_y,
+        scale=1.0,
+        on_click=sound_one
+    )
+    sound_two_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Sound-Two.png",
+        x=cx,
+        y=btn_y,
+        scale=1.0,
+        on_click=sound_two
+    )
+    sound_three_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Sound-Three.png",
+        x=cx + spacing,
+        y=btn_y,
+        scale=1.0,
+        on_click=sound_three
+    )
+
+    music_on_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Music-On.png",
+        x=cx - 40,
+        y=cy - 20,
+        scale=1.0,
+        on_click=music_on
+    )
+    music_off_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Music-Off.png",
+        x=cx + 40,
+        y=cy - 20,
+        scale=1.0,
+        on_click=music_off
+    )
+
+    gear_ui = [sound_none_btn, sound_one_btn, sound_two_btn, sound_three_btn,
+               music_on_btn, music_off_btn,
+               close_btn
+               ]
+
+def build_pause_menu():
+    global pause_ui, screen_w, screen_h
+
+    resume_btn = SpriteSheetButton(
+        "resource/buttons_spritesheet_Photoroom.png",
+        row = 7,
+        x = screen_w//2, y = screen_h * 0.9,
+        scale=6,
+        on_click = resume_game
+    )
+    main_btn = SpriteSheetButton(
+        "resource/buttons_spritesheet_Photoroom.png",
+        row = 10,
+        x = screen_w//2, y = screen_h * 0.7,
+        scale=6,
+        on_click = go_to_main_menu
+    )
+    back_btn = SpriteSheetButton(
+        "resource/buttons_spritesheet_Photoroom.png",
+        row = 1 ,
+        x = screen_w//2, y = screen_h * 0.5,
+        scale=6,
+        on_click = resume_game
+    )
+
+    pause_ui = [resume_btn, main_btn, back_btn]
+
+def resume_game():
+    global paused, pause_ui
+    print("RESUME GAME")
+    paused = False
+    pause_ui.clear()
+
+def pause_game():
+    global paused
+    print("GAME PAUSED")
+    paused = True
+    build_pause_menu()
+
+def go_to_main_menu():
+    print("MAIN MENU")
+    game_framework.change_mode(lobby_mode)
+
+def close_gear_menu():
+    global gear_open, gear_ui
+    gear_open = False
+    gear_ui.clear()
+
+def sound_none():
+    global sound_level
+    sound_level = 0
+    print("Sound: NONE")
+
+def sound_one():
+    global sound_level
+    sound_level = 1
+    print("Sound: ONE")
+
+def sound_two():
+    global sound_level
+    sound_level = 2
+    print("Sound: TWO")
+
+def sound_three():
+    global sound_level
+    sound_level = 3
+    print("Sound: THREE")
+
+def draw_gear_popup_panel():
+    # 중앙 흰색 패널 테두리
+    w, h = 360, 220
+    cx = screen_w // 2
+    cy = screen_h // 2
+
+    x1 = cx - w // 2
+    y1 = cy - h // 2
+    x2 = cx + w // 2
+    y2 = cy + h // 2
+
+    draw_rectangle(x1, y1, x2, y2)
+
+
+def music_on():
+    pass
+def music_off():
+    pass
+
+
 def update():
     mx, my = mouse.get_pos()
+
+    if gear_open:
+        for b in gear_ui:
+            b.update(mx, my)
+        return
 
     if paused:
         for b in pause_ui:
@@ -216,7 +277,6 @@ def update():
         b.update(mx, my)
 
     game_world.update()
-
 
     limit_boxer_in_boxing_ring(p1)
     limit_boxer_in_boxing_ring(p2)
@@ -231,14 +291,18 @@ def draw():
     clear_canvas()
     game_world.render()
 
-    if not paused:
-        for b in buttons:
-            b.draw()
+    for b in buttons:
+        b.draw()
 
     hpui.draw()
 
     if paused:
         for b in pause_ui:
+            b.draw()
+
+    if gear_open:
+        draw_gear_popup_panel()
+        for b in gear_ui:
             b.draw()
 
     if hitbox_edit.edit_mode:
