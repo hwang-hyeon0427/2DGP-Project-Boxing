@@ -48,6 +48,8 @@ P2 = {
 buttons = []
 paused = False
 pause_ui = []
+sound_level = 0   # 0=None, 1=One, 3=Three
+
 
 def resume_game():
     global paused, pause_ui
@@ -60,31 +62,56 @@ def go_to_main_menu():
     game_framework.change_mode(lobby_mode)
 
 def build_pause_menu():
-    global pause_ui, screen_w, screen_h
+    global pause_ui, screen_w, screen_h, buttons
 
     resume_btn = SpriteSheetButton(
         "resource/buttons_spritesheet_Photoroom.png",
-        row=7,
+        row = 7,
         x = screen_w//2, y = screen_h * 0.9,
         scale=6,
         on_click = resume_game
     )
     main_btn = SpriteSheetButton(
         "resource/buttons_spritesheet_Photoroom.png",
-        row=8,
+        row = 10,
         x = screen_w//2, y = screen_h * 0.7,
         scale=6,
         on_click = go_to_main_menu
     )
     back_btn = SpriteSheetButton(
         "resource/buttons_spritesheet_Photoroom.png",
-        row=9,
+        row = 1 ,
         x = screen_w//2, y = screen_h * 0.5,
         scale=6,
         on_click = resume_game
     )
+    sound_none_btn = Button(
+        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Sound-None.png",
+        x=get_canvas_width() // 2 - 100,
+        y = screen_h * 0.75,
+        scale=1.0,
+        on_click=lambda: sound_none()
+    )
 
-    pause_ui = [resume_btn, main_btn, back_btn]
+    # Sound ONE 버튼
+    sound_one_btn = Button(
+        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Sound-One.png",
+        x=get_canvas_width() // 2,
+        y = screen_h * 0.75,
+        scale=1.0,
+        on_click=lambda: sound_one()
+    )
+
+    # Sound THREE 버튼
+    sound_three_btn = Button(
+        "resource\Prinbles_YetAnotherIcons\png\White-Icon\Sound-Three.png",
+        x=get_canvas_width() // 2 + 100,
+        y = screen_h * 0.75,
+        scale=1.0,
+        on_click=lambda: sound_three()
+    )
+
+    pause_ui = [resume_btn, main_btn, back_btn, sound_none_btn, sound_one_btn, sound_three_btn]
 
 def pause_game():
     global paused
@@ -92,9 +119,25 @@ def pause_game():
     paused = True
     build_pause_menu()
 
+def sound_none():
+    global sound_level
+    sound_level = 0
+    print("Sound: NONE")
+
+def sound_one():
+    global sound_level
+    sound_level = 1
+    print("Sound: ONE")
+
+def sound_three():
+    global sound_level
+    sound_level = 3
+    print("Sound: THREE")
+
+
 def init():
     global p1, p2, hpui, boxing_ring, buttons, paused, pause_ui, screen_w, screen_h
-    
+
     screen_w = get_canvas_width()
     screen_h = get_canvas_height()
 
