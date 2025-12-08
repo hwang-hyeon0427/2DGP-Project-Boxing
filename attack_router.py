@@ -3,7 +3,7 @@ class AttackRouter:
         self.boxer = boxer
 
     def enter(self, e):
-        # e = ('ATTACK', attack_name)
+        """e = ('ATTACK', attack_name)"""
         attack_name = e[1]
 
         # 어떤 공격인지 분기
