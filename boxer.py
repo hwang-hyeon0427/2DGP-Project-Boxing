@@ -783,16 +783,39 @@ class Boxer:
             l1, b1, r1, t1 = self.get_bb()
             l2, b2, r2, t2 = other.get_bb()
 
-            overlap = min(r1 - l2, r2 - l1)
+            # 수평 겹침량 (왼/오)
+            overlap_x1 = r1 - l2  # self의 오른쪽이 other의 왼쪽을 침범
+            overlap_x2 = r2 - l1  # other의 오른쪽이 self의 왼쪽을 침범
+            overlap_x = min(overlap_x1, overlap_x2)
 
-            if overlap > 0:
-                push = overlap / 2
-                if self.x < other.x:
-                    self.x -= push
-                    other.x += push
+            # 수직 겹침량 (위/아래)
+            overlap_y1 = t1 - b2  # self의 위가 other의 아래를 침범
+            overlap_y2 = t2 - b1  # other의 위가 self의 아래를 침범
+            overlap_y = min(overlap_y1, overlap_y2)
+
+            # 겹침이 실제로 발생했는지 체크
+            if overlap_x > 0 and overlap_y > 0:
+
+                # 더 작은 축으로 밀어냄 (MTV 방식)
+                if overlap_x < overlap_y:
+                    # 좌/우로 밀기
+                    push = overlap_x / 2
+                    if self.x < other.x:
+                        self.x -= push
+                        other.x += push
+                    else:
+                        self.x += push
+                        other.x -= push
                 else:
-                    self.x += push
-                    other.x -= push
+                    # 위/아래로 밀기
+                    push = overlap_y / 2
+                    if self.y < other.y:
+                        self.y -= push
+                        other.y += push
+                    else:
+                        self.y += push
+                        other.y -= push
+
             return
 
         if group in ('P1_attack:P2', 'P2_attack:P1'):
