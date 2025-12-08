@@ -2,6 +2,7 @@ import lobby_mode
 import game_framework
 import game_world
 import hitbox_edit
+import sound_manager
 
 from pico2d import *
 from boxer import Boxer
@@ -152,28 +153,28 @@ def build_gear_menu():
         x=cx - spacing * 2,
         y=btn_y,
         scale=1.0,
-        on_click=sound_none
+        on_click = sound_none
     )
     sound_one_btn = Button(
         "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Sound-One.png",
         x=cx - spacing,
         y=btn_y,
         scale=1.0,
-        on_click=sound_one
+        on_click = sound_one
     )
     sound_two_btn = Button(
         "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Sound-Two.png",
         x=cx,
         y=btn_y,
         scale=1.0,
-        on_click=sound_two
+        on_click = sound_two
     )
     sound_three_btn = Button(
         "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Sound-Three.png",
         x=cx + spacing,
         y=btn_y,
         scale=1.0,
-        on_click=sound_three
+        on_click = sound_three
     )
 
     music_on_btn = Button(
@@ -202,7 +203,7 @@ def build_pause_menu():
     resume_btn = SpriteSheetButton(
         "resource/buttons_spritesheet_Photoroom.png",
         row = 7,
-        x = screen_w//2, y = screen_h * 1.0,
+        x = screen_w//2, y = screen_h * 0.8,
         scale=6,
         on_click = resume_game
     )
@@ -247,21 +248,25 @@ def close_gear_menu():
 def sound_none():
     global sound_level
     sound_level = 0
+    sound_manager.set_sfx_volume(sound_level)
     print("Sound: NONE")
 
 def sound_one():
     global sound_level
     sound_level = 1
+    sound_manager.set_sfx_volume(sound_level)
     print("Sound: ONE")
 
 def sound_two():
     global sound_level
     sound_level = 2
+    sound_manager.set_sfx_volume(sound_level)
     print("Sound: TWO")
 
 def sound_three():
     global sound_level
     sound_level = 3
+    sound_manager.set_sfx_volume(sound_level)
     print("Sound: THREE")
 
 def draw_gear_popup_panel():
