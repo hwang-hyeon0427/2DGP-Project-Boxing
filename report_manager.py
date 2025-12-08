@@ -1,0 +1,48 @@
+# 전체 공격 사거리 자동 기록 & 보고서 출력 기능
+
+# 공격 사거리 저장소:
+# { (attack_name, frame): { "P1": distance, "P2": distance } }
+report_buffer = {}
+
+
+def record_hitbox(attack, frame, player_id, distance):
+    """P1/P2 사거리 기록. 최근값으로 덮어씀."""
+    key = (attack, frame)
+
+    if key not in report_buffer:
+        report_buffer[key] = {}
+
+    report_buffer[key][player_id] = distance
+
+
+def print_report():
+    """F10 입력 시 전체 공격 사거리 보고서 출력"""
+    print("\n========================================")
+    print("        ATTACK RANGE REPORT")
+    print("========================================\n")
+
+    # 공격 그룹별 정렬
+    sorted_keys = sorted(report_buffer.keys(), key=lambda x: (x[0], x[1]))
+
+    current_attack = None
+
+    for (attack, frame) in sorted_keys:
+        # 공격 이름이 바뀌면 섹션 헤더 출력
+        if current_attack != attack:
+            current_attack = attack
+            print(f"[{attack}]")
+
+        data = report_buffer[(attack, frame)]
+        p1 = data.get("P1", None)
+        p2 = data.get("P2", None)
+
+        if p1 is None or p2 is None:
+            print(f"  frame {frame}: (데이터 부족)")
+            continue
+
+        diff = p2 - p1
+        diff_text = f"{diff:+.1f}"
+
+        print(f"  frame {frame}: P1={p1:.1f} | P2={p2:.1f}  diff={diff_text}")
+
+    print("\n============== END REPORT ==============\n")
