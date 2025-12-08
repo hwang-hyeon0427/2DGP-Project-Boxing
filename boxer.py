@@ -10,6 +10,7 @@ from behavior_tree import BehaviorTree, Selector, Sequence, Condition, Action
 import game_framework
 import game_world
 import random
+import sound_manager
 
 # boxer 속도 단위 환산
 PIXEL_PER_METER = (10.0 / 0.3)  # 10 pixel 30 cm
@@ -756,7 +757,7 @@ class Boxer:
         if isinstance(self.state_machine.cur_state, (BlockEnter, Block)):
             if not hasattr(other, 'owner'):
                 return
-            # Block 중 데미지 0
+            sound_manager.play("blocking")
             self.last_hit_time = now
 
             # 넉백 50% 적용
@@ -805,6 +806,8 @@ class Boxer:
             old_hp = self.hp
             self.hp = max(0, self.hp - 10)
             self.last_hit_time = now
+
+            sound_manager.play(attacker.current_attack_type)
 
             if self.hp <= 0:
                 self.state_machine.handle_state_event(('KO', None))
