@@ -60,6 +60,11 @@ class Boxer:
         self.hits = 0
         self.max_hp = cfg["max_hp"]  # 값 복사
         self.hp = self.max_hp  # hp는 무조건 새로 생성
+
+        self.input_buffer = []  # 공격 입력을 저장하는 버퍼
+        self.buffer_time = 0.25  # 입력 유효시간 (0.25초 권장)
+        self.last_input_time = 0  # 마지막 입력 기록시간
+
         self.opponent = None
 
         self.hit_cool = 0.3
@@ -145,6 +150,8 @@ class Boxer:
         self.transitions_wasd[self.BLOCK_ENTER] = {block_enter_done: self.BLOCK, r_up: self.BLOCK_EXIT}
         self.transitions_wasd[self.BLOCK] = {r_up: self.BLOCK_EXIT}
         self.transitions_wasd[self.BLOCK_EXIT] = {block_exit_done: self.IDLE}
+        self.transitions_wasd[self.IDLE][event_attack] = lambda e: self._select_attack_state(e[1])
+        self.transitions_wasd[self.WALK][event_attack] = lambda e: self._select_attack_state(e[1])
 
         self.transitions_arrows = {
             self.IDLE: {
@@ -187,6 +194,7 @@ class Boxer:
             self.HURT: {event_hurt_done: self.IDLE,event_ko: self.KO},
             self.DIZZY: {event_dizzy_done: self.IDLE,event_ko: self.KO},
             self.KO: {}
+
         }
 
         self.transitions_arrows[self.IDLE].update({semicolon_down: self.BLOCK_ENTER})
@@ -194,7 +202,8 @@ class Boxer:
         self.transitions_arrows[self.BLOCK_ENTER] = {block_enter_done: self.BLOCK, semicolon_up: self.BLOCK_EXIT}
         self.transitions_arrows[self.BLOCK] = {semicolon_up: self.BLOCK_EXIT}
         self.transitions_arrows[self.BLOCK_EXIT] = {block_exit_done: self.IDLE}
-
+        self.transitions_arrows[self.IDLE][event_attack] = lambda e: self._select_attack_state(e[1])
+        self.transitions_arrows[self.WALK][event_attack] = lambda e: self._select_attack_state(e[1])
         # controls에 따라 상태머신 선택
         if self.controls == 'wasd':
             transitions = self.transitions_wasd
@@ -578,15 +587,21 @@ class Boxer:
               f"type={event.type}, key={getattr(event, 'key', None)}, "
               f"xdir={self.xdir}, ydir={self.ydir}")
 
+        # CPU 조작이면 사람 입력 무시
         if self.is_cpu or self.controls == 'cpu':
             return
 
+        # 키보드 입력이 아니면 무시
         if event.type not in (SDL_KEYDOWN, SDL_KEYUP):
             return
 
+        # 넉백 중에는 입력 무시
         if self.pushback_time > 0:
             return
 
+        # --------------------------------
+        # 이 Boxer 가 처리할 키만 허용
+        # --------------------------------
         if self.controls == 'wasd':
             # P1: 이동 + 공격 + 가드 키만
             allowed_keys = {
@@ -600,10 +615,14 @@ class Boxer:
                 SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH,
                 SDLK_SEMICOLON
             }
+
         if event.key not in allowed_keys:
             # 이 Boxer 관할이 아닌 키는 완전히 무시
             return
 
+        # --------------------------------
+        # Block 상태일 때: 가드 키 외 입력 필터
+        # --------------------------------
         if isinstance(self.state_machine.cur_state, (BlockEnter, Block, BlockExit)):
             if event.type == SDL_KEYDOWN:
                 if self.controls == 'wasd':
@@ -616,11 +635,16 @@ class Boxer:
                         print(f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
                               f"IGNORED key={event.key}")
                         return
+
+        # KO / Dizzy 상태는 입력 무시
         if isinstance(self.state_machine.cur_state, Ko):
             return
         if isinstance(self.state_machine.cur_state, Dizzy):
             return
 
+        # --------------------------------
+        # 좌/우 바라보는 방향 업데이트
+        # --------------------------------
         if event.type == SDL_KEYDOWN:
             if self.controls == 'wasd':
                 if event.key == SDLK_a:
@@ -633,6 +657,41 @@ class Boxer:
                 elif event.key == SDLK_RIGHT:
                     self.face_dir = +1  # 오른쪽
 
+        # --------------------------------
+        # ★ 공격 입력 처리 (Input Buffer)
+        #  - 공격 중이면: 버퍼에 저장하고 return
+        #  - 공격 중이 아니면: 그냥 통과 → 맨 아래 INPUT 이벤트에서 처리
+        # --------------------------------
+        attack_key_map = {}
+
+        if self.controls == 'wasd':  # P1
+            attack_key_map = {
+                SDLK_f: 'front_hand',
+                SDLK_g: 'rear_hand',
+                SDLK_h: 'uppercut'
+            }
+        else:  # P2
+            attack_key_map = {
+                SDLK_COMMA: 'front_hand',
+                SDLK_PERIOD: 'rear_hand',
+                SDLK_SLASH: 'uppercut'
+            }
+
+        if event.type == SDL_KEYDOWN and event.key in attack_key_map:
+            from attack_state import AttackState
+            # 현재 상태가 공격 상태라면 → 버퍼에만 저장하고, 이번 입력은 state_machine 에 보내지 않음
+            if isinstance(self.state_machine.cur_state, AttackState):
+                attack_name = attack_key_map[event.key]
+                self.input_buffer.append(attack_name)
+                self.last_input_time = get_time()
+                print(f"[BUFFER] store attack: {attack_name}, buffer={self.input_buffer}")
+                return
+            # 공격 상태가 아닐 때는: 아무 것도 안 하고 아래로 흘려보냄
+            # (맨 아래의 ('INPUT', event) 에서 기존처럼 처리됨)
+
+        # --------------------------------
+        # 이동키 처리
+        # --------------------------------
         if event.type in (SDL_KEYDOWN, SDL_KEYUP):
 
             if self.controls == 'wasd':
@@ -659,7 +718,7 @@ class Boxer:
                     print(f"[PATCH] BlockExit ignores move key: {event.key}")
                     return
 
-                # 이동키에 따른 바라보는 방향 변경
+                # 이동키에 따른 바라보는 방향 변경 & xdir/ydir 업데이트
                 if event.type == SDL_KEYDOWN:
                     if self.controls == 'wasd':
                         if event.key == SDLK_a:   self.xdir = -1
@@ -703,7 +762,19 @@ class Boxer:
                         print("[PATCH] => WALK")
                         self.state_machine.handle_state_event(('WALK', None))
 
+        # --------------------------------
+        # 나머지 입력은 그대로 상태머신에 전달
+        # (공격키 & 이동키 모두 포함)
+        # --------------------------------
         self.state_machine.handle_state_event(('INPUT', event))
+
+    def _select_attack_state(self, attack_name):
+        if attack_name == 'front_hand':
+            return self.FRONT_HAND
+        elif attack_name == 'rear_hand':
+            return self.REAR_HAND
+        elif attack_name == 'uppercut':
+            return self.UPPERCUT
 
     def get_bb(self):
         bb_cfg = self.cfg["bb"]
