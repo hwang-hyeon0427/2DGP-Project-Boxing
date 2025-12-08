@@ -11,10 +11,11 @@ from button import Button, SpriteSheetButton
 from mouse import update as mouse_update
 from mouse import get_pos as mouse_get_pos
 
-cpu_mode = False        # True면 CPU 모드, False면 2P 모드
-cpu_level = 'easy'      # default difficulty
-cpu_player = 'P2'       # 'P1' 또는 'P2'
-
+p1_character = "P1"
+p2_character = "P2"
+cpu_mode = False
+cpu_level = None
+cpu_player = None
 
 P1 = {
     "face_map": {"left": -1, "right": 1},
@@ -76,26 +77,31 @@ def init():
     pause_ui = []
     gear_ui = []
 
+    game_world.clear()
+
     boxing_ring = BoxingRing()
     game_world.add_object(boxing_ring, 0)
 
-    p1 = Boxer(P1)
-    game_world.add_object(p1, 1)
-    p2 = Boxer(P2)
-    game_world.add_object(p2, 1)
+    cfg1 = P1 if p1_character == "P1" else P2
+    cfg2 = P1 if p2_character == "P1" else P2
+
+    p1 = Boxer(cfg1)
+    p2 = Boxer(cfg2)
 
     p1.opponent = p2
     p2.opponent = p1
 
-    if cpu_mode:  # 1P vs CPU 모드
-        if cpu_player == 'P2':
-            p2.enable_ai(cpu_level)
-        else:
+    if cpu_mode:
+        if cpu_player == "P1":
+            p1.controls = "cpu"
             p1.enable_ai(cpu_level)
-    else:
-        # 둘 다 직접 조작
-        p1.is_cpu = False
-        p2.is_cpu = False
+        else:
+            p2.controls = "cpu"
+            p2.enable_ai(cpu_level)
+
+    game_world.add_object(p1, 1)
+    game_world.add_object(p2, 1)
+    game_world.add_collision_pair('body:block', p1, p2)
 
     hpui = HpUi(p1, p2, x = screen_w // 2, y = screen_h * 0.9, scale=4)
     game_world.add_object(hpui, 2)
