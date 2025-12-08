@@ -126,3 +126,5 @@ def block_enter_done(e):
 def block_exit_done(e):
     return e[0] == 'BLOCK_EXIT_DONE'
 
+def event_attack(e):
+    return e[0] == 'ATTACK'
