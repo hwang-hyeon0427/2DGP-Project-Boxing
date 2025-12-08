@@ -17,11 +17,15 @@ font = None
 
 def init():
     global background, buttons, stage, p1_choice, p2_choice, font
+    global screen_w, screen_h
 
-    font = load_font("Consolea.ttf", 24)
-    print(f"[CHAR SELECT] init() | mode = {select_mode}")
+    font = load_font('ENCR10B.TTF', 30)
+    print("[CHARACTER SELECT] init")
 
     game_world.clear()
+
+    screen_w = get_canvas_width()
+    screen_h = get_canvas_height()
 
     # 상태 초기화
     stage = 1
@@ -34,17 +38,17 @@ def init():
 
     buttons = [
         Button(
-            image_path="resource/player1/player1_Idle.png",
-            x=300,
+            image_path="resource/player1/player1_button.png",
+            x= screen_w / 2 - 400,
             y=300,
-            scale=0.4,
+            scale= 1.0,
             on_click=lambda: character_selected("P1")
         ),
         Button(
-            image_path="resource/player2/player2_Idle.png",
-            x=500,
+            image_path="resource/player2/player2_button.png",
+            x= screen_w / 2 + 400,
             y=300,
-            scale=0.4,
+            scale= 0.6,
             on_click=lambda: character_selected("P2")
         )
     ]
@@ -126,12 +130,14 @@ def draw():
     update_canvas()
 
 def draw_text_centered(text, x, y):
-    font.draw(x - len(text) * 5, y, text, (255, 255, 255))
+    font.draw(screen_w / 2 - 200, screen_h / 3, text, (255, 255, 255))
 
 def handle_events():
     events = get_events()
     for e in events:
         if e.type == SDL_QUIT:
+            game_framework.quit()
+        if e.type == SDL_KEYDOWN and e.key == SDLK_ESCAPE:
             game_framework.quit()
         elif e.type == SDL_MOUSEMOTION:
             mouse_update(e)
