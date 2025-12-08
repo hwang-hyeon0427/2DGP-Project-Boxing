@@ -88,9 +88,9 @@ def init():
     cfg2 = P1 if p2_character == "P1" else P2
 
     p1 = Boxer(cfg1)
-    p1.config_id = "P1"
     p2 = Boxer(cfg2)
-    p2.config_id = "P2"
+    p1.config_id = p1_character
+    p2.config_id = p2_character
 
     print("[DEBUG SETUP] p1 config_id =", p1.config_id)
     print("[DEBUG SETUP] p2 config_id =", p2.config_id)
