@@ -11,18 +11,14 @@ from mouse import get_pos as mouse_get_pos
 select_mode = 'cpu'
 
 selected_level = None
-
-# 2P 모드용 단계
-stage = 1             # 1 = P1 선택, 2 = P2 선택
-p1_choice = None      # 'P1' or 'P2'
-p2_choice = None      # 'P1' or 'P2'
-
 buttons = []
 background = None
+font = None
 
 def init():
-    global background, buttons, stage, p1_choice, p2_choice
+    global background, buttons, stage, p1_choice, p2_choice, font
 
+    font = load_font("Consolea.ttf", 24)
     print(f"[CHAR SELECT] init() | mode = {select_mode}")
 
     game_world.clear()
@@ -52,7 +48,6 @@ def init():
             on_click=lambda: character_selected("P2")
         )
     ]
-
 
 def character_selected(ch):
     global stage, p1_choice, p2_choice, selected_level
@@ -130,9 +125,7 @@ def draw():
 
     update_canvas()
 
-
 def draw_text_centered(text, x, y):
-    font = load_font("Consolas.ttf", 24)
     font.draw(x - len(text) * 5, y, text, (255, 255, 255))
 
 def handle_events():
