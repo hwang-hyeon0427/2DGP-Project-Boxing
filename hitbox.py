@@ -26,10 +26,8 @@ class HitBox:
         if player_id not in ("P1", "P2"):
             return
 
-        print("[DEBUG FRAME CHECK]",
-              "attack =", attack_name,
-              "frame_idx =", frame_idx,
-              "offset keys =", list(frame_offsets.keys()) if frame_offsets else None)
+        print("[DEBUG FRAME CHECK]", "attack =", attack_name, "frame_idx =", frame_idx, "offset keys =",
+              list(frame_offsets.keys()) if frame_offsets else None)
 
         # 히트박스 데이터 존재 여부
         if frame_offsets and frame_idx in frame_offsets:
