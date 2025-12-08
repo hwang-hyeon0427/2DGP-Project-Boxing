@@ -208,298 +208,231 @@ class Boxer:
         # 이동 제어용
         self.ai_move_dir = 0
 
-    class _AIKeyEvent:
-        """AI가 상태머신에 넣기 위한 가짜 키 이벤트"""
 
+    class _AIKeyEvent:
         def __init__(self, key_type, key_code):
             self.type = key_type
             self.key = key_code
 
-        def ai_press_key(self, key_code):
-            """KEYDOWN 가짜 이벤트를 만들어 상태머신에 보냄"""
-            e = Boxer._AIKeyEvent(SDL_KEYDOWN, key_code)
-            self.state_machine.handle_state_event(('INPUT', e))
 
-        def ai_release_key(self, key_code):
-            """KEYUP 가짜 이벤트를 만들어 상태머신에 보냄"""
-            e = Boxer._AIKeyEvent(SDL_KEYUP, key_code)
-            self.state_machine.handle_state_event(('INPUT', e))
+    def ai_press_key(self, key_code):
+        e = Boxer._AIKeyEvent(SDL_KEYDOWN, key_code)
+        self.state_machine.handle_state_event(('INPUT', e))
 
-        def ai_stop_move(self):
-            """이동 정지 (xdir 0 + STOP 이벤트)"""
-            if self.ai_move_dir != 0:
-                self.ai_move_dir = 0
-                self.xdir = 0
-                self.state_machine.handle_state_event(('STOP', None))
+    def ai_release_key(self, key_code):
+        e = Boxer._AIKeyEvent(SDL_KEYUP, key_code)
+        self.state_machine.handle_state_event(('INPUT', e))
 
-        def ai_move_towards(self, dir):
-            """
-            dir: -1(왼쪽으로 상대에게 접근), 1(오른쪽으로 상대에게 접근)
-            이동 이벤트는 WALK 이벤트로만 보냄 (키이벤트 대신)
-            """
-            if dir == 0:
-                self.ai_stop_move()
-                return
+    def ai_stop_move(self):
+        if self.ai_move_dir != 0:
+            self.ai_move_dir = 0
+            self.xdir = 0
+            self.state_machine.handle_state_event(('STOP', None))
 
-            # 이미 그 방향이면 그대로 두고, 아니면 방향 바꾸기
-            if self.ai_move_dir != dir:
-                self.ai_move_dir = dir
-                self.xdir = dir
-                self.face_dir = dir
-                self.state_machine.handle_state_event(('WALK', None))
+    def ai_move_towards(self, dir):
+        if dir == 0:
+            self.ai_stop_move()
+            return
 
-        def ai_can_act(self):
-            """KO / DIZZY / HURT 상태면 행동 불가 처리"""
-            cur = self.state_machine.cur_state
-            KOType = type(self.KO)
-            DizzyType = type(self.DIZZY)
-            HurtType = type(self.HURT)
+        if self.ai_move_dir != dir:
+            self.ai_move_dir = dir
+            self.xdir = dir
+            self.face_dir = dir
+            self.state_machine.handle_state_event(('WALK', None))
 
-            if isinstance(cur, (KOType, DizzyType, HurtType)):
-                self.ai_stop_move()
-                return False
-            return True
+    def ai_can_act(self):
+        cur = self.state_machine.cur_state
+        KOType = type(self.KO)
+        DizzyType = type(self.DIZZY)
+        HurtType = type(self.HURT)
 
-        def ai_distance_to_opponent(self):
-            """상대와의 x 거리 (상대가 없으면 None)"""
-            if self.opponent is None:
-                return None
-            return self.opponent.x - self.x  # (양수: 상대가 오른쪽, 음수: 왼쪽)
+        if isinstance(cur, (KOType, DizzyType, HurtType)):
+            self.ai_stop_move()
+            return False
+        return True
 
-        def ai_in_attack_range(self):
-            """난이도에 따라 공격 사거리 판정"""
-            d = self.ai_distance_to_opponent()
-            if d is None:
-                return False
+    def ai_distance_to_opponent(self):
+        if self.opponent is None:
+            return None
+        return self.opponent.x - self.x
 
-            dx = abs(d)
-
-            if self.ai_level == 'easy':
-                max_range = 170
-            elif self.ai_level == 'medium':
-                max_range = 210
-            else:  # hard
-                max_range = 240
-
-            return dx <= max_range
-
-        def ai_attack_random(self):
-            """
-            front / rear / upper 중 하나 랜덤 공격.
-            쿨다운(난이도별) / 현재 상태 체크.
-            """
-            now = get_time()
-
-            if self.ai_level == 'easy':
-                base_cd = 0.9
-            elif self.ai_level == 'medium':
-                base_cd = 0.6
-            else:  # hard
-                base_cd = 0.35
-
-            if now - self.ai_last_attack_time < base_cd:
-                return BehaviorTree.FAIL
-
-            # 공격/블록/피격/KO 중이면 새 공격 금지
-            cur = self.state_machine.cur_state
-            bad_types = (
-                type(self.FRONT_HAND), type(self.REAR_HAND), type(self.UPPERCUT),
-                type(self.BLOCK), type(self.BLOCK_ENTER), type(self.BLOCK_EXIT),
-                type(self.HURT), type(self.DIZZY), type(self.KO)
-            )
-            if isinstance(cur, bad_types):
-                return BehaviorTree.FAIL
-
-            # 컨트롤 스킴에 따라 공격 키 코드 선택
-            if self.controls == 'wasd':
-                front_key, rear_key, upper_key = SDLK_f, SDLK_g, SDLK_h
-            else:
-                front_key, rear_key, upper_key = SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH
-
-            choice = random.choice(['front', 'rear', 'upper'])
-            if choice == 'front':
-                self.ai_press_key(front_key)
-            elif choice == 'rear':
-                self.ai_press_key(rear_key)
-            else:
-                self.ai_press_key(upper_key)
-
-            self.ai_last_attack_time = now
-            return BehaviorTree.SUCCESS
-
-        def ai_should_guard(self):
-            """상대가 공격 중인가? (가드 조건)"""
-            if self.opponent is None:
-                return False
-
-            opp_state = self.opponent.state_machine.cur_state
-            FHType = type(self.opponent.FRONT_HAND)
-            RHType = type(self.opponent.REAR_HAND)
-            UType = type(self.opponent.UPPERCUT)
-
-            # 상대의 공격 모션 중으로 간주
-            if isinstance(opp_state, (FHType, RHType, UType)):
-                return True
+    def ai_in_attack_range(self):
+        d = self.ai_distance_to_opponent()
+        if d is None:
             return False
 
-        def ai_do_guard(self):
-            """
-            가드 동작: 일정 시간 동안만 블록 버튼을 눌렀다가 떼기.
-            난이도별로 가드 유지 시간 다르게.
-            """
-            if self.controls == 'wasd':
-                block_key = SDLK_r
+        dx = abs(d)
+
+        if self.ai_level == 'easy':
+            max_range = 170
+        elif self.ai_level == 'medium':
+            max_range = 210
+        else:
+            max_range = 240
+
+        return dx <= max_range
+
+    def ai_attack_random(self):
+        now = get_time()
+
+        if self.ai_level == 'easy':
+            base_cd = 0.9
+        elif self.ai_level == 'medium':
+            base_cd = 0.6
+        else:
+            base_cd = 0.35
+
+        if now - self.ai_last_attack_time < base_cd:
+            return BehaviorTree.FAIL
+
+        cur = self.state_machine.cur_state
+        bad_types = (
+            type(self.FRONT_HAND), type(self.REAR_HAND), type(self.UPPERCUT),
+            type(self.BLOCK), type(self.BLOCK_ENTER), type(self.BLOCK_EXIT),
+            type(self.HURT), type(self.DIZZY), type(self.KO)
+        )
+        if isinstance(cur, bad_types):
+            return BehaviorTree.FAIL
+
+        if self.controls == 'wasd':
+            front_key, rear_key, upper_key = SDLK_f, SDLK_g, SDLK_h
+        else:
+            front_key, rear_key, upper_key = SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH
+
+        choice = random.choice(['front', 'rear', 'upper'])
+        if choice == 'front':
+            self.ai_press_key(front_key)
+        elif choice == 'rear':
+            self.ai_press_key(rear_key)
+        else:
+            self.ai_press_key(upper_key)
+
+        self.ai_last_attack_time = now
+        return BehaviorTree.SUCCESS
+
+    def ai_should_guard(self):
+        if self.opponent is None:
+            return False
+
+        opp_state = self.opponent.state_machine.cur_state
+        FHType = type(self.opponent.FRONT_HAND)
+        RHType = type(self.opponent.REAR_HAND)
+        UType = type(self.opponent.UPPERCUT)
+
+        if isinstance(opp_state, (FHType, RHType, UType)):
+            return True
+        return False
+
+    def ai_do_guard(self):
+        if self.controls == 'wasd':
+            block_key = SDLK_r
+        else:
+            block_key = SDLK_SEMICOLON
+
+        now = get_time()
+
+        if not self.ai_blocking:
+            if self.ai_level == 'easy':
+                guard_prob = 0.3
+                hold_time = 0.3
+            elif self.ai_level == 'medium':
+                guard_prob = 0.6
+                hold_time = 0.35
             else:
-                block_key = SDLK_SEMICOLON
+                guard_prob = 0.9
+                hold_time = 0.4
 
-            now = get_time()
+            if random.random() > guard_prob:
+                return BehaviorTree.FAIL
 
-            if not self.ai_blocking:
-                # 새로 가드 시작
-                # 난이도별로 "가드할지 말지" 확률도 반영 (easy는 잘 안 막고, hard는 잘 막음)
-                if self.ai_level == 'easy':
-                    guard_prob = 0.3
-                    hold_time = 0.3
-                elif self.ai_level == 'medium':
-                    guard_prob = 0.6
-                    hold_time = 0.35
-                else:
-                    guard_prob = 0.9
-                    hold_time = 0.4
+            self.ai_blocking = True
+            self.ai_block_start_time = now
+            self.ai_block_hold_time = hold_time
 
-                # 확률적으로 가드할지 결정
-                if random.random() > guard_prob:
-                    return BehaviorTree.FAIL
-
-                self.ai_blocking = True
-                self.ai_block_start_time = now
-                self.ai_block_hold_time = hold_time
-
-                # 이동 멈추고 가드 키 누르기
-                self.ai_stop_move()
-                self.ai_press_key(block_key)
+            self.ai_stop_move()
+            self.ai_press_key(block_key)
+            return BehaviorTree.RUNNING
+        else:
+            if now - self.ai_block_start_time >= self.ai_block_hold_time:
+                self.ai_blocking = False
+                self.ai_release_key(block_key)
+                return BehaviorTree.SUCCESS
+            else:
                 return BehaviorTree.RUNNING
-            else:
-                # 이미 가드 중이면 유지 시간 체크 후 키 떼기
-                if now - self.ai_block_start_time >= self.ai_block_hold_time:
-                    self.ai_blocking = False
-                    self.ai_release_key(block_key)
-                    return BehaviorTree.SUCCESS
-                else:
-                    return BehaviorTree.RUNNING
 
-        # =====================================================================================
-        # BehaviorTree Condition 함수들
-        # =====================================================================================
-        def bt_is_ko(self):
-            """현재 내가 KO 상태인가?"""
-            cur = self.state_machine.cur_state
-            if isinstance(cur, type(self.KO)):
-                return BehaviorTree.SUCCESS
+    def bt_is_ko(self):
+        if isinstance(self.state_machine.cur_state, type(self.KO)):
+            return BehaviorTree.SUCCESS
+        return BehaviorTree.FAIL
+
+    def bt_in_attack_range(self):
+        if not self.ai_can_act():
+            return BehaviorTree.FAIL
+        return BehaviorTree.SUCCESS if self.ai_in_attack_range() else BehaviorTree.FAIL
+
+    def bt_opponent_attacking(self):
+        if not self.ai_can_act():
+            return BehaviorTree.FAIL
+        return BehaviorTree.SUCCESS if self.ai_should_guard() else BehaviorTree.FAIL
+
+    def bt_do_nothing(self):
+        self.ai_stop_move()
+        return BehaviorTree.SUCCESS
+
+    def bt_attack_random(self):
+        if not self.ai_can_act():
+            return BehaviorTree.FAIL
+        if not self.ai_in_attack_range():
+            return BehaviorTree.FAIL
+        return self.ai_attack_random()
+
+    def bt_guard(self):
+        if not self.ai_can_act():
+            return BehaviorTree.FAIL
+        return self.ai_do_guard()
+
+    def bt_chase(self):
+        if not self.ai_can_act():
             return BehaviorTree.FAIL
 
-        def bt_in_attack_range(self):
-            """공격 사거리 안인가? (그리고 행동 가능 상태인가?)"""
-            if not self.ai_can_act():
-                return BehaviorTree.FAIL
-            if self.ai_in_attack_range():
-                return BehaviorTree.SUCCESS
+        d = self.ai_distance_to_opponent()
+        if d is None:
+            self.ai_stop_move()
             return BehaviorTree.FAIL
 
-        def bt_opponent_attacking(self):
-            """상대가 공격 모션 중인가? (그리고 내가 행동 가능 상태인가?)"""
-            if not self.ai_can_act():
-                return BehaviorTree.FAIL
-            if self.ai_should_guard():
-                return BehaviorTree.SUCCESS
-            return BehaviorTree.FAIL
-
-        # =====================================================================================
-        # BehaviorTree Action 함수들
-        # =====================================================================================
-        def bt_do_nothing(self):
-            """KO 상태일 때 선택되는 액션: 그냥 아무것도 안 함"""
+        dx = abs(d)
+        if dx < 80:
             self.ai_stop_move()
             return BehaviorTree.SUCCESS
 
-        def bt_attack_random(self):
-            """랜덤 공격 시도"""
-            if not self.ai_can_act():
-                return BehaviorTree.FAIL
+        if d > 0:
+            self.ai_move_towards(1)
+        else:
+            self.ai_move_towards(-1)
+        return BehaviorTree.RUNNING
 
-            # 사거리 안이 아니라면 실패
-            if not self.ai_in_attack_range():
-                return BehaviorTree.FAIL
+    def build_bt(self):
+        ko_seq = Sequence("KO Seq",
+                          Condition("Is KO", self.bt_is_ko),
+                          Action("Do Nothing", self.bt_do_nothing))
 
-            return self.ai_attack_random()
+        attack_seq = Sequence("Attack Seq",
+                              Condition("In Attack Range", self.bt_in_attack_range),
+                              Action("Attack Random", self.bt_attack_random))
 
-        def bt_guard(self):
-            """가드 액션"""
-            if not self.ai_can_act():
-                return BehaviorTree.FAIL
+        guard_seq = Sequence("Guard Seq",
+                             Condition("Opponent Attacking", self.bt_opponent_attacking),
+                             Action("Guard", self.bt_guard))
 
-            return self.ai_do_guard()
+        chase_act = Action("Chase", self.bt_chase)
 
-        def bt_chase(self):
-            """상대를 향해 가까이 다가가는 액션"""
-            if not self.ai_can_act():
-                return BehaviorTree.FAIL
+        root = Selector("AI Root", ko_seq, attack_seq, guard_seq, chase_act)
+        self.bt = BehaviorTree(root)
 
-            d = self.ai_distance_to_opponent()
-            if d is None:
-                self.ai_stop_move()
-                return BehaviorTree.FAIL
-
-            dx = abs(d)
-
-            # 너무 가까우면 살짝 멈추기
-            if dx < 80:
-                self.ai_stop_move()
-                return BehaviorTree.SUCCESS
-
-            # 아직 공격 사거리 밖이면 상대 방향으로 이동
-            if d > 0:
-                self.ai_move_towards(1)  # 상대가 오른쪽
-            elif d < 0:
-                self.ai_move_towards(-1)  # 상대가 왼쪽
-            else:
-                self.ai_stop_move()
-
-            return BehaviorTree.RUNNING
-
-        # =====================================================================================
-        # BehaviorTree 구성 & AI 활성화
-        # =====================================================================================
-        def build_bt(self):
-            """
-            Selector ROOT
-             ├─ Sequence( KO 상태이면 → do_nothing )
-             ├─ Sequence( 공격 사거리면 → attack_random )
-             ├─ Sequence( 상대 공격 중이면 → guard )
-             └─ Action( chase )
-            """
-            ko_seq = Sequence("KO Seq",
-                              Condition("Is KO", self.bt_is_ko),
-                              Action("Do Nothing", self.bt_do_nothing))
-
-            attack_seq = Sequence("Attack Seq",
-                                  Condition("In Attack Range", self.bt_in_attack_range),
-                                  Action("Attack Random", self.bt_attack_random))
-
-            guard_seq = Sequence("Guard Seq",
-                                 Condition("Opponent Attacking", self.bt_opponent_attacking),
-                                 Action("Guard", self.bt_guard))
-
-            chase_act = Action("Chase", self.bt_chase)
-
-            root = Selector("AI Root", ko_seq, attack_seq, guard_seq, chase_act)
-            self.bt = BehaviorTree(root)
-
-        def enable_ai(self, level='easy'):
-            """외부에서 CPU로 만들 때 호출: 난이도 설정 + 트리 생성"""
-            self.is_cpu = True
-            self.ai_level = level
-            self.build_bt()
+    def enable_ai(self, level='easy'):
+        self.is_cpu = True
+        self.ai_level = level
+        self.build_bt()
 
     def adjust_knockback_based_on_distance(self, attacker, base_knockback):
         distance = abs(self.x - attacker.x)
@@ -546,7 +479,7 @@ class Boxer:
         self.frame_h = sheet['h']
 
         self.scale = sheet.get('scale', 1.0)
-        
+
         self.base_face = sheet.get('base_face', 1)
 
     def draw_current(self):
@@ -634,6 +567,9 @@ class Boxer:
         print(f"[EVENT] state={self.state_machine.cur_state.__class__.__name__}, "
               f"type={event.type}, key={getattr(event, 'key', None)}, "
               f"xdir={self.xdir}, ydir={self.ydir}")
+
+        if self.is_cpu or self.controls == 'cpu':
+            return
 
         if event.type not in (SDL_KEYDOWN, SDL_KEYUP):
             return
@@ -1076,5 +1012,3 @@ class BlockExit:
 
     def draw(self):
         self.boxer.draw_current()
-
-
