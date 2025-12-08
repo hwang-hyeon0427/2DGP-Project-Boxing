@@ -1,6 +1,8 @@
 from pico2d import *
+
 import game_framework
 import lobby_mode
+import sound_manager
 
 image= None
 
@@ -29,6 +31,8 @@ def init():
     global image, logo_start_time, frame_index
     image = load_image('resource/image/intro.png')
     frame_index = 0
+
+    sound_manager.play_bgm("hip-hop_music")
     logo_start_time = get_time()
 
 def finish():
@@ -58,6 +62,5 @@ def draw():
     update_canvas()
 
 def handle_events(): pass
-def pause(): pass
 def pause(): pass
 def resume(): pass
