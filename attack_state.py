@@ -34,8 +34,11 @@ class AttackState:
         if self.done:
             return
 
-        # ★ 프레임 속도 (초당 10프레임 재생 정도)
-        frame_speed = 10 * game_framework.frame_time
+        # ★ 공격별 속도로 프레임 증가
+        attack_speed = self.boxer.cfg[self.attack_type].get("speed", 20)
+        frame_speed = attack_speed * game_framework.frame_time
+        self.boxer.frame += frame_speed
+        cur_frame = int(self.boxer.frame)
 
         # 프레임 증가
         self.boxer.frame += frame_speed
