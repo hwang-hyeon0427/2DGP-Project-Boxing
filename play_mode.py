@@ -11,6 +11,9 @@ from button import Button, SpriteSheetButton
 from mouse import update as mouse_update
 from mouse import get_pos as mouse_get_pos
 
+cpu_mode = False        # True면 CPU 모드, False면 2P 모드
+cpu_level = 'easy'      # default difficulty
+cpu_player = 'P2'       # 'P1' 또는 'P2'
 
 
 P1 = {
@@ -83,6 +86,16 @@ def init():
 
     p1.opponent = p2
     p2.opponent = p1
+
+    if cpu_mode:  # 1P vs CPU 모드
+        if cpu_player == 'P2':
+            p2.enable_ai(cpu_level)
+        else:
+            p1.enable_ai(cpu_level)
+    else:
+        # 둘 다 직접 조작
+        p1.is_cpu = False
+        p2.is_cpu = False
 
     hpui = HpUi(p1, p2, x = screen_w // 2, y = screen_h * 0.9, scale=4)
     game_world.add_object(hpui, 2)
