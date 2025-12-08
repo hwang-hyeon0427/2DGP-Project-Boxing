@@ -125,9 +125,9 @@ class Boxer:
                 s_down: self.WALK,
 
                 r_down: self.BLOCK_ENTER,
-                f_down: lambda e: ('ATTACK', 'front_hand'),
-                g_down: lambda e: ('ATTACK', 'rear_hand'),
-                h_down: lambda e: ('ATTACK', 'uppercut'),
+                f_down: self.FRONT_HAND,
+                g_down: self.REAR_HAND,
+                h_down: self.UPPERCUT,
 
             },
             self.WALK: {
@@ -138,9 +138,9 @@ class Boxer:
                 event_ko: self.KO,
 
                 r_down: self.BLOCK_ENTER,
-                f_down: lambda e: ('ATTACK', 'front_hand'),
-                g_down: lambda e: ('ATTACK', 'rear_hand'),
-                h_down: lambda e: ('ATTACK', 'uppercut'),
+                f_down: self.FRONT_HAND,
+                g_down: self.REAR_HAND,
+                h_down: self.UPPERCUT,
 
             },
             self.FRONT_HAND: {
@@ -191,9 +191,9 @@ class Boxer:
                 down_down: self.WALK,
 
                 semicolon_down: self.BLOCK_ENTER,
-                comma_down: lambda e: ('ATTACK', 'front_hand'),
-                period_down: lambda e: ('ATTACK', 'rear_hand'),
-                slash_down: lambda e: ('ATTACK', 'uppercut'),
+                comma_down: self.FRONT_HAND,
+                period_down: self.REAR_HAND,
+                slash_down: self.UPPERCUT,
 
             },
             self.WALK: {
@@ -204,9 +204,10 @@ class Boxer:
                 event_ko: self.KO,
 
                 semicolon_down: self.BLOCK_ENTER,
-                comma_down: lambda e: ('ATTACK', 'front_hand'),
-                period_down: lambda e: ('ATTACK', 'rear_hand'),
-                slash_down: lambda e: ('ATTACK', 'uppercut'),
+                comma_down: self.FRONT_HAND,
+                period_down: self.REAR_HAND,
+                slash_down: self.UPPERCUT,
+
             },
             self.FRONT_HAND: {
                 event_attack: self.FRONT_HAND, # 체인 공격
@@ -311,6 +312,9 @@ class Boxer:
             return None
         return self.opponent.x - self.x
 
+    # =======================
+    # 난이도 기반 공격 빈도
+    # =======================
     def ai_attack_random(self):
         now = get_time()
 
@@ -365,6 +369,9 @@ class Boxer:
             return True
         return False
 
+    # =======================
+    # 난이도 기반 가드 성능
+    # =======================
     def ai_do_guard(self):
         if self.controls == 'wasd':
             block_key = SDLK_r
@@ -411,6 +418,9 @@ class Boxer:
             return BehaviorTree.SUCCESS
         return BehaviorTree.FAIL
 
+    # =======================
+    # 난이도 기반 공격 사거리
+    # =======================
     def ai_in_attack_range(self):
         d = self.ai_distance_to_opponent()
         if d is None:
@@ -428,10 +438,10 @@ class Boxer:
 
         return dx <= max_range
 
+    # BT Condition Wrapper: In Attack Range
     def bt_in_attack_range(self):
         if not self.ai_can_act():
             return BehaviorTree.FAIL
-
         return BehaviorTree.SUCCESS if self.ai_in_attack_range() else BehaviorTree.FAIL
 
     def bt_opponent_attacking(self):
@@ -443,19 +453,10 @@ class Boxer:
         self.ai_stop_move()
         return BehaviorTree.SUCCESS
 
-    def bt_attack_random(self):
-        if not self.ai_can_act():
-            return BehaviorTree.FAIL
-        if not self.ai_in_attack_range():
-            return BehaviorTree.FAIL
-        return self.ai_attack_random()
-
-    def bt_guard(self):
-        if not self.ai_can_act():
-            return BehaviorTree.FAIL
-        return self.ai_do_guard()
-
-    def bt_chase(self):
+    # =======================
+    # 난이도 기반 추격 압박 (AI 본체)
+    # =======================
+    def ai_chase(self):
         if not self.ai_can_act():
             return BehaviorTree.FAIL
 
@@ -466,20 +467,20 @@ class Boxer:
 
         dx = abs(d)
 
-        # 난이도별 밀착도 조정
+        # 난이도별 적정 거리 유지
         if self.ai_level == 'easy':
             stop_dist = 110
         elif self.ai_level == 'medium':
             stop_dist = 70
         else:
-            stop_dist = 35   # hard: 붙어서 압박
+            stop_dist = 35  # hard: 붙어서 압박
 
         # 너무 가까우면 멈춤
         if dx < stop_dist:
             self.ai_stop_move()
             return BehaviorTree.SUCCESS
 
-        # 좌/우 추적
+        # 방향 결정
         if d > 0:
             self.ai_move_towards(1)
         else:
@@ -487,6 +488,17 @@ class Boxer:
 
         return BehaviorTree.RUNNING
 
+    # ===== BT Action Wrappers =====
+    def bt_attack_random(self):
+        return self.ai_attack_random()
+
+    def bt_guard(self):
+        return self.ai_do_guard()
+
+    def bt_chase(self):
+        return self.ai_chase()
+
+    # ===== Behavior Tree 구성 =====
     def build_bt(self):
         ko_seq = Sequence("KO Seq",
                           Condition("Is KO", self.bt_is_ko),
