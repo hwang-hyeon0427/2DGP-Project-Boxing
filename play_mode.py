@@ -177,23 +177,7 @@ def build_gear_menu():
         on_click = sound_three
     )
 
-    music_on_btn = Button(
-        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Music-On.png",
-        x=cx - 40,
-        y=cy - 20,
-        scale=1.0,
-        on_click=music_on
-    )
-    music_off_btn = Button(
-        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Music-Off.png",
-        x=cx + 40,
-        y=cy - 20,
-        scale=1.0,
-        on_click=music_off
-    )
-
     gear_ui = [sound_none_btn, sound_one_btn, sound_two_btn, sound_three_btn,
-               music_on_btn, music_off_btn,
                close_btn
                ]
 
@@ -281,16 +265,6 @@ def draw_gear_popup_panel():
     y2 = cy + h // 2
 
     draw_rectangle(x1, y1, x2, y2)
-
-
-def music_on():
-    sound_manager.play_bgm("lobby")
-    print("BGM ON")
-
-def music_off():
-    sound_manager.stop_bgm("lobby")
-    print("BGM OFF")
-
 
 def update():
     mx, my = mouse_get_pos()
