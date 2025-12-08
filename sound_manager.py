@@ -19,7 +19,7 @@ def load():
     # 가드 사운드
     sounds["blocking"] = load_wav("resource/sound/boxing_Sound_Effects/WAV_blocking-arm-with-hand.wav")
     # 배경음악
-    bgm["lobby"] = load_music("resource/sound/Boxing_bgm/MP_physical_challenge.mp3")
+    bgm["hip-hop_music"] = load_music("resource/sound/Boxing_bgm/MP_physical_challenge.mp3")
     # bgm["ingame"] = load_music("resource/music/bgm_ingame.mp3")
 
     print("[SoundManager] All sounds loaded.")
