@@ -5,7 +5,7 @@ import play_mode
 import levels_mode
 import sound_manager
 
-from button import SpriteSheetButton
+from button import *
 from boxing_ring import BoxingRing   # ← 최적화된 배경 클래스
 from mouse import update as mouse_update
 from mouse import get_pos as mouse_get_pos
@@ -17,11 +17,15 @@ buttons = []
 
 def init():
     global background, buttons
+    global screen_w, screen_h
 
     game_world.clear()
     sound_manager.play_bgm("lobby")
     background = BoxingRing()
     game_world.add_object(background, 0)   # depth 0에 배경 추가
+
+    screen_w = get_canvas_width()
+    screen_h = get_canvas_height()
 
     sheet = "resource/buttons_spritesheet_Photoroom.png"
 
@@ -40,8 +44,32 @@ def init():
         on_click=lambda: game_framework.change_mode(play_mode)
     )
 
-    buttons = [start_btn, two_player_btn]
+    music_on_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Music-On.png",
+        x=screen_w - 170,
+        y=screen_h * 0.1,
+        scale=1.0,
+        on_click=music_on
+    )
+    music_off_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Music-Off.png",
+        x=screen_w - 100,
+        y=screen_h * 0.1,
+        scale=1.0,
+        on_click=music_off
+    )
 
+    buttons = [start_btn, two_player_btn,
+               music_on_btn, music_off_btn
+               ]
+
+def music_on():
+    sound_manager.play_bgm("lobby")
+    print("BGM ON")
+
+def music_off():
+    sound_manager.stop_bgm("lobby")
+    print("BGM OFF")
 
 def finish():
     sound_manager.stop_bgm("lobby")
