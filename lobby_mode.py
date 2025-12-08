@@ -2,6 +2,8 @@ from pico2d import *
 import game_framework
 import game_world
 import play_mode
+import levels_mode
+import two_player_mode
 
 from button import SpriteSheetButton
 from boxing_ring import BoxingRing   # ← 최적화된 배경 클래스
@@ -32,18 +34,17 @@ def init():
         row = 9,            # START 버튼 row
         x = 400, y = 300,
         scale = 8,
-        on_click=start_game
+        on_click=lambda: game_framework.change_mode(levels_mode)
+    )
+    two_player_btn = SpriteSheetButton(
+        sheet_path=sheet,
+        row=0,  # 2 PLAYER 버튼 row
+        x=400, y=100,
+        scale=8,
+        on_click=lambda: game_framework.change_mode(two_player_mode)
     )
 
-    levels_btn = SpriteSheetButton(
-        sheet_path = sheet,
-        row = 4,           # LEVELS 버튼 row
-        x = 400, y = 200,
-        scale = 8,
-        on_click=lambda: game_framework.change_mode('levels_mode')
-    )
-
-    buttons = [start_btn, levels_btn]
+    buttons = [start_btn, two_player_btn]
 
 
 def finish(): pass
