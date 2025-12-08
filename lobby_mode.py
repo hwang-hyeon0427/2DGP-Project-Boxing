@@ -3,6 +3,7 @@ import game_framework
 import game_world
 import play_mode
 import levels_mode
+import sound_manager
 
 from button import SpriteSheetButton
 from boxing_ring import BoxingRing   # ← 최적화된 배경 클래스
@@ -18,7 +19,7 @@ def init():
     global background, buttons
 
     game_world.clear()
-
+    sound_manager.play_bgm("lobby")
     background = BoxingRing()
     game_world.add_object(background, 0)   # depth 0에 배경 추가
 
@@ -42,7 +43,9 @@ def init():
     buttons = [start_btn, two_player_btn]
 
 
-def finish(): pass
+def finish():
+    sound_manager.stop_bgm("lobby")
+
 def pause(): pass
 def resume(): pass
 
