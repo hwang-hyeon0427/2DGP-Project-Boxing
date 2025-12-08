@@ -1,4 +1,6 @@
 from pico2d import *
+
+import lobby_mode
 from button import SpriteSheetButton
 from mouse import update as mouse_update
 from mouse import get_pos as mouse_get_pos
@@ -58,7 +60,7 @@ def handle_events():
         if e.type == SDL_QUIT:
             game_framework.quit()
         elif e.type == SDL_KEYDOWN and e.key == SDLK_ESCAPE:
-            game_framework.quit()
+            game_framework.change_mode(lobby_mode)
         elif e.type == SDL_MOUSEMOTION:
             mouse_update(e)
         elif e.type == SDL_MOUSEBUTTONDOWN:

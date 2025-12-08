@@ -1,8 +1,8 @@
-from pico2d import *
 import game_framework
 import game_world
-
 import play_mode
+import lobby_mode
+from pico2d import *
 from boxing_ring import BoxingRing
 from button import Button
 from mouse import update as mouse_update
@@ -137,8 +137,8 @@ def handle_events():
     for e in events:
         if e.type == SDL_QUIT:
             game_framework.quit()
-        if e.type == SDL_KEYDOWN and e.key == SDLK_ESCAPE:
-            game_framework.quit()
+        elif e.type == SDL_KEYDOWN and e.key == SDLK_ESCAPE:
+            game_framework.change_mode(lobby_mode)
         elif e.type == SDL_MOUSEMOTION:
             mouse_update(e)
         elif e.type == SDL_MOUSEBUTTONDOWN:
