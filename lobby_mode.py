@@ -8,6 +8,7 @@ from button import *
 from boxing_ring import BoxingRing   # ← 최적화된 배경 클래스
 from mouse import update as mouse_update
 from mouse import get_pos as mouse_get_pos
+from play_mode import sound_none, sound_one, sound_two, sound_three
 
 
 
@@ -57,9 +58,38 @@ def init():
         scale=1.0,
         on_click=music_off
     )
+    sound_none_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Sound-None.png",
+        x=screen_w - 250,
+        y=screen_h * 0.2,
+        scale=1.0,
+        on_click=sound_none
+    )
+    sound_one_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Sound-One.png",
+        x=screen_w - 180,
+        y=screen_h * 0.2,
+        scale=1.0,
+        on_click=sound_one
+    )
+    sound_two_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Sound-Two.png",
+        x=screen_w - 110,
+        y=screen_h * 0.2,
+        scale=1.0,
+        on_click=sound_two
+    )
+    sound_three_btn = Button(
+        "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Sound-Three.png",
+        x=screen_w - 40,
+        y=screen_h * 0.2,
+        scale=1.0,
+        on_click=sound_three
+    )
 
     buttons = [start_btn, two_player_btn,
-               music_on_btn, music_off_btn
+               music_on_btn, music_off_btn,
+                sound_none_btn, sound_one_btn, sound_two_btn, sound_three_btn
                ]
 
 def music_on():
