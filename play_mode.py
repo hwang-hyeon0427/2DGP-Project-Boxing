@@ -21,36 +21,36 @@ P1 = {
     "face_map": {"left": -1, "right": 1},
     "controls": "wasd",
     "max_hp": 100,
-    "bb": {"w": 0.40, "h": 0.55, "x_offset": 55, "y_offset": -30}, # 박스 크기 비율과 오프셋
-    "idle":  {"image":"resource/player1/player1_Idle.png", "cols":10, "w":499, "h":489, "scale":0.9, "base_face": 1},
+    "bb": {"w": 0.40, "h": 0.555, "x_offset": 55, "y_offset": -30}, # 박스 크기 비율과 오프셋
+    "idle":  {"image":"resource/player1/player1_Idle.png", "cols":10, "w":499, "h":489, "scale":1.0, "base_face": 1},
     "spawn": {"x": 300, "y": 300},
-    "walk_backward": {"image":"resource/player1/player1_Walk_Backward.png", "cols": 10, "w": 499, "h": 489, "scale": 0.9},
-    "walk_forward":  {"image":"resource/player1/player1_Walk_Forward.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "front_hand": {"image":"resource/player1/player1_FrontHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 0.9, "base_face": 1, "forward_movement": {3 : 2}},
-    "uppercut": {"image":"resource/player1/player1_Uppercut.png",  "cols": 7, "w": 499, "h": 489, "scale": 0.9, "base_face": 1, "forward_movement": {4: 4}},
-    "rear_hand": {"image":"resource/player1/player1_RearHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 0.9, "base_face": 1, "forward_movement": {3: 3}},
-    "blocking": {"image":"resource/player1/player1_Blocking.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "hurt": {"image":"resource/player1/player1_Hurt.png",  "cols": 8, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "dizzy": {"image":"resource/player1/player1_Dizzy.png",  "cols": 8, "w": 499, "h": 489, "scale": 0.9, "base_face": 1},
-    "ko": {"image":"resource/player1/player1_KO.png",  "cols": 10, "w": 499, "h": 489, "scale": 0.9, "base_face": 1}
+    "walk_backward": {"image":"resource/player1/player1_Walk_Backward.png", "cols": 10, "w": 499, "h": 489, "scale": 1.0},
+    "walk_forward":  {"image":"resource/player1/player1_Walk_Forward.png",  "cols": 10, "w": 499, "h": 489, "scale": 1.0, "base_face": 1},
+    "front_hand": {"image":"resource/player1/player1_FrontHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 1.0, "base_face": 1, "forward_movement": {3 : 2}},
+    "uppercut": {"image":"resource/player1/player1_Uppercut.png",  "cols": 7, "w": 499, "h": 489, "scale": 1.0, "base_face": 1, "forward_movement": {4: 4}},
+    "rear_hand": {"image":"resource/player1/player1_RearHand.png",  "cols": 6, "w": 499, "h": 489, "scale": 1.0, "base_face": 1, "forward_movement": {3: 3}},
+    "blocking": {"image":"resource/player1/player1_Blocking.png",  "cols": 10, "w": 499, "h": 489, "scale": 1.0, "base_face": 1},
+    "hurt": {"image":"resource/player1/player1_Hurt.png",  "cols": 8, "w": 499, "h": 489, "scale": 1.0, "base_face": 1},
+    "dizzy": {"image":"resource/player1/player1_Dizzy.png",  "cols": 8, "w": 499, "h": 489, "scale": 1.0, "base_face": 1},
+    "ko": {"image":"resource/player1/player1_KO.png",  "cols": 10, "w": 499, "h": 489, "scale": 1.0, "base_face": 1}
 }
 
 P2 = {
     "face_map": {"left": -1, "right": 1},
     "controls": "arrows",
     "max_hp": 100,
-    "bb": {"w": 0.55, "h": 0.7, "x_offset": -35, "y_offset": -20},
-    "idle":  {"image":"resource/player2/player2_Idle.png", "cols":10, "w":744, "h":711, "scale":0.5, "base_face": -1},
+    "bb": {"w": 0.555, "h": 0.7, "x_offset": -35, "y_offset": -20},
+    "idle":  {"image":"resource/player2/player2_Idle.png", "cols":10, "w":744, "h":711, "scale":0.55, "base_face": -1},
     "spawn": {"x": 700, "y": 300, "base_face": -1},
-    "walk_backward": {"image":"resource/player2/player2_Walk_Backward.png", "cols": 10, "w":746, "h":713, "scale":0.5},
-    "walk_forward":  {"image":"resource/player2/player2_Walk_Forward.png",  "cols": 10, "w":746, "h":713, "scale":0.5, "base_face": -1},
-    "front_hand": {"image":"resource/player2/player2_FrontHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1, "forward_movement": {3 : 2}},
-    "uppercut": {"image":"resource/player2/player2_Uppercut.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1, "forward_movement": {4: 4}},
-    "rear_hand": {"image":"resource/player2/player2_RearHand.png",  "cols": 8, "w":744, "h":713, "scale":0.5, "base_face": -1, "forward_movement": {3: 3}},
-    "blocking": {"image":"resource/player2/player2_Block.png",  "cols": 10, "w":744, "h":713, "scale":0.5, "base_face": -1},
-    "hurt": {"image":"resource/player2/player2_Hurt.png",  "cols": 8, "w":744, "h":711, "scale":0.5, "base_face": -1},
-    "dizzy": {"image":"resource/player2/player2_Dizzy.png",  "cols": 10, "w":744, "h":711, "scale":0.5, "base_face": -1},
-    "ko": {"image":"resource/player2/player2_KO.png",  "cols": 8, "w":744, "h":711, "scale":0.5, "base_face": -1}
+    "walk_backward": {"image":"resource/player2/player2_Walk_Backward.png", "cols": 10, "w":746, "h":713, "scale":0.55},
+    "walk_forward":  {"image":"resource/player2/player2_Walk_Forward.png",  "cols": 10, "w":746, "h":713, "scale":0.55, "base_face": -1},
+    "front_hand": {"image":"resource/player2/player2_FrontHand.png",  "cols": 8, "w":744, "h":713, "scale":0.55, "base_face": -1, "forward_movement": {3 : 2}},
+    "uppercut": {"image":"resource/player2/player2_Uppercut.png",  "cols": 8, "w":744, "h":713, "scale":0.55, "base_face": -1, "forward_movement": {4: 4}},
+    "rear_hand": {"image":"resource/player2/player2_RearHand.png",  "cols": 8, "w":744, "h":713, "scale":0.55, "base_face": -1, "forward_movement": {3: 3}},
+    "blocking": {"image":"resource/player2/player2_Block.png",  "cols": 10, "w":744, "h":713, "scale":0.55, "base_face": -1},
+    "hurt": {"image":"resource/player2/player2_Hurt.png",  "cols": 8, "w":744, "h":711, "scale":0.55, "base_face": -1},
+    "dizzy": {"image":"resource/player2/player2_Dizzy.png",  "cols": 10, "w":744, "h":711, "scale":0.55, "base_face": -1},
+    "ko": {"image":"resource/player2/player2_KO.png",  "cols": 8, "w":744, "h":711, "scale":0.55, "base_face": -1}
 }
 
 buttons = []
@@ -103,7 +103,7 @@ def init():
     game_world.add_object(p2, 1)
     game_world.add_collision_pair('body:block', p1, p2)
 
-    hpui = HpUi(p1, p2, x = screen_w // 2, y = screen_h * 0.9, scale=4)
+    hpui = HpUi(p1, p2, x = screen_w // 2, y = screen_h * 0.92, scale=4)
     game_world.add_object(hpui, 2)
 
     sheet = "resource/buttons_spritesheet_Photoroom.png"
@@ -111,14 +111,14 @@ def init():
     pause_btn = Button(
         "resource\Prinbles_YetAnotherIcons\png\White-Icon\Pause.png",
         x = screen_w // 2,
-        y = screen_h * 0.95,
+        y = screen_h * 0.97,
         scale=1.0,
         on_click=lambda: pause_game()
     )
     gear_btn = Button(
         "resource\\Prinbles_YetAnotherIcons\\png\\White-Icon\\Gear.png",
         x = screen_w // 2 + 60,
-        y = screen_h * 0.95,
+        y = screen_h * 0.97,
         scale=1.0,
         on_click=lambda: build_gear_menu()
     )
@@ -202,7 +202,7 @@ def build_pause_menu():
     resume_btn = SpriteSheetButton(
         "resource/buttons_spritesheet_Photoroom.png",
         row = 7,
-        x = screen_w//2, y = screen_h * 0.9,
+        x = screen_w//2, y = screen_h * 1.0,
         scale=6,
         on_click = resume_game
     )
@@ -216,7 +216,7 @@ def build_pause_menu():
     back_btn = SpriteSheetButton(
         "resource/buttons_spritesheet_Photoroom.png",
         row = 1 ,
-        x = screen_w//2, y = screen_h * 0.5,
+        x = screen_w//2, y = screen_h * 0.55,
         scale=6,
         on_click = resume_game
     )
@@ -391,7 +391,7 @@ def limit_boxer_in_boxing_ring(boxer):
     BOTTOM_LIMIT = 0 # 바닥
     TOP_LIMIT = h * 0.65 # 최상단 로프
     LEFT_LIMIT = w * 0.05
-    RIGHT_LIMIT = w * 0.95
+    RIGHT_LIMIT = w * 1.0
 
     l, b, r, t = boxer.get_bb()
     center_to_bottom = boxer.y - b
