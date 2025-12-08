@@ -13,7 +13,7 @@ def load():
     sounds["rear_hand"] = load_wav("resource/sound/boxing_Sound_Effects/WAV_Right_Cross.wav")
     sounds["uppercut"] = load_wav("resource/sound/boxing_Sound_Effects/WAV_Upper_Cut.wav")
     # 가드 사운드
-    # sounds["block"] = load_wav("resource/sound/block.wav")
+    sounds["blocking"] = load_wav("resource/sound/boxing_Sound_Effects/WAV_blocking-arm-with-hand.wav")
     # 배경음악
     bgm["lobby"] = load_music("resource/sound/Boxing_bgm/MP_physical_challenge.mp3")
     # bgm["ingame"] = load_music("resource/music/bgm_ingame.mp3")
