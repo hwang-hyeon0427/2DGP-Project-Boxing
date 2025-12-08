@@ -6,6 +6,7 @@ from hitbox import HitBox
 from attack_state import AttackState
 from behavior_tree import BehaviorTree, Selector, Sequence, Condition, Action
 from attack_router import AttackRouter
+from debug_manager import log, DEBUG_EVENT, DEBUG_STATE
 
 # from walk_backward import WalkBackward
 
@@ -584,9 +585,12 @@ class Boxer:
 
     def handle_event(self, event):
         # 디버그 로그: 현재 상태 + 들어온 이벤트
-        print(f"[EVENT] state={self.state_machine.cur_state.__class__.__name__}, "
-              f"type={event.type}, key={getattr(event, 'key', None)}, "
-              f"xdir={self.xdir}, ydir={self.ydir}")
+        log(
+            DEBUG_STATE,
+            f"[EVENT] state={self.state_machine.cur_state.__class__.__name__}, "
+            f"type={event.type}, key={getattr(event, 'key', None)}, "
+            f"xdir={self.xdir}, ydir={self.ydir}"
+        )
 
         # CPU 조작이면 사람 입력 무시
         if self.is_cpu or self.controls == 'cpu':
@@ -622,13 +626,13 @@ class Boxer:
             if event.type == SDL_KEYDOWN:
                 if self.controls == 'wasd':
                     if event.key != SDLK_r:
-                        print(f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
-                              f"IGNORED key={event.key}")
+                        log(DEBUG_STATE,print(f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
+                              f"IGNORED key={event.key}"))
                         return
                 else:
                     if event.key != SDLK_SEMICOLON:
-                        print(f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
-                              f"IGNORED key={event.key}")
+                        log(DEBUG_STATE,print(f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
+                              f"IGNORED key={event.key}"))
                         return
 
         # KO / Dizzy 상태는 입력 무시
@@ -670,12 +674,12 @@ class Boxer:
             if isinstance(self.state_machine.cur_state, AttackState):
                 self.input_buffer.append(attack_name)
                 self.last_input_time = now
-                print(f"[BUFFER-ADD] + {attack_name} | buffer={self.input_buffer}")
+                log(DEBUG_EVENT,print(f"[BUFFER-ADD] + {attack_name} | buffer={self.input_buffer}"))
                 return
 
                 # 공격 중이 아니면 즉시 AttackRouter 실행
             self.last_input_time = now
-            print(f"[ATTACK] immediate → {attack_name}")
+            log(DEBUG_EVENT,print(f"[ATTACK] immediate → {attack_name}"))
             self.ATTACK_ROUTER.enter(('ATTACK', attack_name))
             return
 
@@ -692,20 +696,20 @@ class Boxer:
             if (event.type == SDL_KEYUP
                     and self.ignore_next_move_keyup
                     and event.key in move_keys):
-                print(f"[BLOCK_EXIT] ignore first move KEYUP: key={event.key}")
+                log(DEBUG_EVENT,print(f"[BLOCK_EXIT] ignore first move KEYUP: key={event.key}"))
                 self.ignore_next_move_keyup = False
                 return
 
             if event.key in move_keys:
 
-                print(f"[MOVE_KEYS-BEFORE] state={self.state_machine.cur_state.__class__.__name__}, "
+                log(DEBUG_EVENT,print(f"[MOVE_KEYS-BEFORE] state={self.state_machine.cur_state.__class__.__name__}, "
                       f"event_type={event.type}, key={event.key}, "
-                      f"xdir={self.xdir}, ydir={self.ydir}")
+                      f"xdir={self.xdir}, ydir={self.ydir}"))
 
                 cur_xdir, cur_ydir = self.xdir, self.ydir
 
                 if isinstance(self.state_machine.cur_state, BlockExit):
-                    print(f"[PATCH] BlockExit ignores move key: {event.key}")
+                    log(DEBUG_EVENT,print(f"[PATCH] BlockExit ignores move key: {event.key}"))
                     return
 
                 # 이동키에 따른 바라보는 방향 변경 & xdir/ydir 업데이트
@@ -724,7 +728,7 @@ class Boxer:
                     if event.key in move_keys:
 
                         if self.ignore_next_move_keyup:
-                            print(f"[PATCH] swallow first keyup after BlockExit: {event.key}")
+                            log(DEBUG_EVENT,print(f"[PATCH] swallow first keyup after BlockExit: {event.key}"))
                             self.ignore_next_move_keyup = False
                             return
 
@@ -739,17 +743,17 @@ class Boxer:
                         if event.key == SDLK_UP and self.ydir > 0: self.ydir = 0
                         if event.key == SDLK_DOWN and self.ydir < 0: self.ydir = 0
 
-                print(f"[MOVE_KEYS-AFTER]  state={self.state_machine.cur_state.__class__.__name__}, "
+                log(DEBUG_EVENT,print(f"[MOVE_KEYS-AFTER]  state={self.state_machine.cur_state.__class__.__name__}, "
                       f"event_type={event.type}, key={event.key}, "
-                      f"xdir={self.xdir}, ydir={self.ydir}")
+                      f"xdir={self.xdir}, ydir={self.ydir}"))
 
                 if self.xdir == 0 and self.ydir == 0:
-                    print("[PATCH] => STOP")
+                    log(DEBUG_EVENT,print("[PATCH] => STOP"))
                     self.state_machine.handle_state_event(('STOP', self.face_dir))
                 else:
                     # KEYDOWN일 때만 WALK 발생
                     if event.type == SDL_KEYDOWN:
-                        print("[PATCH] => WALK")
+                        log(DEBUG_EVENT,print("[PATCH] => WALK"))
                         self.state_machine.handle_state_event(('WALK', None))
 
         # --------------------------------
@@ -946,7 +950,7 @@ class Idle:
         self.boxer = boxer
 
     def enter(self, e):
-        print(f"[ENTER] Idle: reset xdir/ydir from {self.boxer.xdir}, {self.boxer.ydir}")
+        log(DEBUG_EVENT, f"[ENTER] Idle: reset xdir/ydir from {self.boxer.xdir}, {self.boxer.ydir}")
         self.boxer.use_sheet(self.boxer.cfg['idle'])
         self.boxer.xdir = 0
         self.boxer.ydir = 0
@@ -961,7 +965,7 @@ class Idle:
             now = get_time()
             if now - self.boxer.last_input_time <= self.boxer.buffer_time:
                 next_attack = self.boxer.input_buffer.pop(0)
-                print(f"[BUFFER-USE] pop='{next_attack}'  buffer={self.boxer.input_buffer}")
+                log(DEBUG_EVENT,f"[BUFFER-USE] pop='{next_attack}'  buffer={self.boxer.input_buffer}")
 
                 # AttackRouter 직접 호출 (state_machine 사용 X)
                 self.boxer.ATTACK_ROUTER.enter(('ATTACK', next_attack))
