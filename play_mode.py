@@ -3,6 +3,7 @@ import game_framework
 import game_world
 import hitbox_edit
 import sound_manager
+import report_manager
 
 from pico2d import *
 from boxer import Boxer
@@ -42,7 +43,7 @@ P2 = {
     "max_hp": 100,
     "bb": {"w": 0.555, "h": 0.7, "x_offset": -35, "y_offset": -20},
     "idle":  {"image":"resource/player2/player2_Idle.png", "cols":10, "w":744, "h":711, "scale":0.55, "base_face": -1},
-    "spawn": {"x": 700, "y": 300, "base_face": -1},
+    "spawn": {"x": 1800, "y": 300, "base_face": -1},
     "walk_backward": {"image":"resource/player2/player2_Walk_Backward.png", "cols": 10, "w":746, "h":713, "scale":0.55},
     "walk_forward":  {"image":"resource/player2/player2_Walk_Forward.png",  "cols": 10, "w":746, "h":713, "scale":0.55, "base_face": -1},
     "front_hand": {"image":"resource/player2/player2_FrontHand.png",  "cols": 8, "w":744, "h":713, "scale":0.55, "base_face": -1, "forward_movement": {3 : 2}},
@@ -87,7 +88,12 @@ def init():
     cfg2 = P1 if p2_character == "P1" else P2
 
     p1 = Boxer(cfg1)
+    p1.config_id = "P1"
     p2 = Boxer(cfg2)
+    p2.config_id = "P2"
+
+    print("[DEBUG SETUP] p1 config_id =", p1.config_id)
+    print("[DEBUG SETUP] p2 config_id =", p2.config_id)
 
     p1.opponent = p2
     p2.opponent = p1
@@ -358,6 +364,9 @@ def handle_events():
             for b in buttons:
                 b.click(mx, my)
 
+        if event.type == SDL_KEYDOWN and event.key == SDLK_F10:
+            report_manager.print_report()
+            continue
 
         if event.type == SDL_KEYDOWN and event.key == SDLK_F1:
             hitbox_edit.edit_mode = not hitbox_edit.edit_mode
@@ -376,7 +385,7 @@ def limit_boxer_in_boxing_ring(boxer):
     BOTTOM_LIMIT = 0 # 바닥
     TOP_LIMIT = h * 0.65 # 최상단 로프
     LEFT_LIMIT = w * 0.05
-    RIGHT_LIMIT = w * 1.0
+    RIGHT_LIMIT = w * 0.95
 
     l, b, r, t = boxer.get_bb()
     center_to_bottom = boxer.y - b
