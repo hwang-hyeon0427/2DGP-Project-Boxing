@@ -961,16 +961,6 @@ class Idle:
     def do(self):
         self.boxer.frame = ( self.boxer.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 10
 
-        if self.boxer.input_buffer:
-            now = get_time()
-            if now - self.boxer.last_input_time <= self.boxer.buffer_time:
-                next_attack = self.boxer.input_buffer.pop(0)
-                log(DEBUG_EVENT,f"[BUFFER-USE] pop='{next_attack}'  buffer={self.boxer.input_buffer}")
-
-                # AttackRouter 직접 호출 (state_machine 사용 X)
-                self.boxer.ATTACK_ROUTER.enter(('ATTACK', next_attack))
-                return
-
     def draw(self):
         self.boxer.draw_current()
 
