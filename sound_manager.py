@@ -7,7 +7,9 @@ def load():
     global sounds, bgm
 
     # 클릭 사운드
-    # sounds["click"] = load_wav("resource/sound/click.wav")
+    sounds["click"] = load_wav("resource/sound/Boxing_UI_sound/WAV_mouse-click.wav")
+    # 호버 사운드
+    sounds["hover"] = load_wav("resource/sound/Boxing_UI_sound/WAV_hover-button.wav")
     # 공격 사운드
     sounds["front_hand"] = load_wav("resource/sound/boxing_Sound_Effects/WAV_punch_light.wav")
     sounds["rear_hand"] = load_wav("resource/sound/boxing_Sound_Effects/WAV_Right_Cross.wav")
@@ -28,7 +30,6 @@ def play(name):
         print(f"[SoundManager] Sound '{name}' not found.")
 
 def get_attack_sound(attack_type):
-    # attack_type: "front_hand", "rear_hand", "uppercut"
     return sounds.get(attack_type, None)
 
 def play_bgm(name):
