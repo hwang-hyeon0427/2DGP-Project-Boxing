@@ -100,10 +100,8 @@ def init():
 
     if cpu_mode:
         if cpu_player == "P1":
-            p1.controls = "cpu"
             p1.enable_ai(cpu_level)
         else:
-            p2.controls = "cpu"
             p2.enable_ai(cpu_level)
 
     game_world.add_object(p1, 1)
