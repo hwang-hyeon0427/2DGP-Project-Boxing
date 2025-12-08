@@ -65,7 +65,7 @@ class Boxer:
         self.hp = self.max_hp  # hp는 무조건 새로 생성
 
         self.input_buffer = []  # 공격 입력을 저장하는 버퍼
-        self.buffer_time = 0.25  # 입력 유효시간 (0.25초 권장)
+        self.buffer_time = 0.45  # 입력 유효시간 (0.25초 권장)
         self.last_input_time = 0  # 마지막 입력 기록시간
 
         self.opponent = None
@@ -125,9 +125,10 @@ class Boxer:
                 s_down: self.WALK,
 
                 r_down: self.BLOCK_ENTER,
-                f_down: self.FRONT_HAND,
-                g_down: self.REAR_HAND,
-                h_down: self.UPPERCUT
+                f_down: lambda e: ('ATTACK', 'front_hand'),
+                g_down: lambda e: ('ATTACK', 'rear_hand'),
+                h_down: lambda e: ('ATTACK', 'uppercut'),
+
             },
             self.WALK: {
                 event_stop: self.IDLE,
@@ -136,16 +137,35 @@ class Boxer:
                 event_dizzy: self.DIZZY,
                 event_ko: self.KO,
 
-                f_down: self.FRONT_HAND,
-                g_down: self.REAR_HAND,
-                h_down: self.UPPERCUT
+                r_down: self.BLOCK_ENTER,
+                f_down: lambda e: ('ATTACK', 'front_hand'),
+                g_down: lambda e: ('ATTACK', 'rear_hand'),
+                h_down: lambda e: ('ATTACK', 'uppercut'),
+
             },
-            self.FRONT_HAND: {event_stop: self.IDLE, event_walk: self.WALK,
-                              event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
-            self.REAR_HAND: {event_stop: self.IDLE, event_walk: self.WALK,
-                             event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
-            self.UPPERCUT: {event_stop: self.IDLE, event_walk: self.WALK,
-                            event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
+            self.FRONT_HAND: {
+                event_attack: self.ATTACK_ROUTER,  # 체인 공격
+                event_attack_end: self.IDLE,  # 버퍼 없을 때 Idle로 복귀
+                event_hurt: self.HURT,
+                event_dizzy: self.DIZZY,
+                event_ko: self.KO
+            },
+
+            self.REAR_HAND: {
+                event_attack: self.ATTACK_ROUTER,
+                event_attack_end: self.IDLE,
+                event_hurt: self.HURT,
+                event_dizzy: self.DIZZY,
+                event_ko: self.KO
+            },
+
+            self.UPPERCUT: {
+                event_attack: self.ATTACK_ROUTER,
+                event_attack_end: self.IDLE,
+                event_hurt: self.HURT,
+                event_dizzy: self.DIZZY,
+                event_ko: self.KO
+            },
             self.HURT: {event_hurt_done: self.IDLE, event_ko: self.KO},
             self.DIZZY: {event_dizzy_done: self.IDLE, event_ko: self.KO},
             self.KO: {}
@@ -171,11 +191,11 @@ class Boxer:
                 down_down: self.WALK,
 
                 semicolon_down: self.BLOCK_ENTER,
-                comma_down: self.FRONT_HAND,
-                period_down: self.REAR_HAND,
-                slash_down: self.UPPERCUT
-            },
+                comma_down: lambda e: ('ATTACK', 'front_hand'),
+                period_down: lambda e: ('ATTACK', 'rear_hand'),
+                slash_down: lambda e: ('ATTACK', 'uppercut'),
 
+            },
             self.WALK: {
                 event_stop: self.IDLE,
 
@@ -183,17 +203,32 @@ class Boxer:
                 event_dizzy: self.DIZZY,
                 event_ko: self.KO,
 
-                comma_down: self.FRONT_HAND,
-                period_down: self.REAR_HAND,
-                slash_down: self.UPPERCUT
+                semicolon_down: self.BLOCK_ENTER,
+                comma_down: lambda e: ('ATTACK', 'front_hand'),
+                period_down: lambda e: ('ATTACK', 'rear_hand'),
+                slash_down: lambda e: ('ATTACK', 'uppercut'),
             },
-
-            self.FRONT_HAND: {event_stop: self.IDLE, event_walk: self.WALK,
-                              event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
-            self.REAR_HAND: {event_stop: self.IDLE, event_walk: self.WALK,
-                             event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
-            self.UPPERCUT: {event_stop: self.IDLE, event_walk: self.WALK,
-                            event_hurt: self.HURT, event_dizzy: self.DIZZY, event_ko: self.KO},
+            self.FRONT_HAND: {
+                event_attack: self.FRONT_HAND, # 체인 공격
+                event_attack_end: self.IDLE,  # 버퍼 없을 때 Idle로 복귀
+                event_hurt: self.HURT,
+                event_dizzy: self.DIZZY,
+                event_ko: self.KO
+            },
+            self.REAR_HAND: {
+                event_attack: self.REAR_HAND,
+                event_attack_end: self.IDLE,
+                event_hurt: self.HURT,
+                event_dizzy: self.DIZZY,
+                event_ko: self.KO
+            },
+            self.UPPERCUT: {
+                event_attack: self.UPPERCUT,
+                event_attack_end: self.IDLE,
+                event_hurt: self.HURT,
+                event_dizzy: self.DIZZY,
+                event_ko: self.KO
+            },
             self.HURT: {event_hurt_done: self.IDLE,event_ko: self.KO},
             self.DIZZY: {event_dizzy_done: self.IDLE,event_ko: self.KO},
             self.KO: {}
@@ -680,7 +715,7 @@ class Boxer:
                 # 공격 중이 아니면 즉시 AttackRouter 실행
             self.last_input_time = now
             log(DEBUG_EVENT,print(f"[ATTACK] immediate → {attack_name}"))
-            self.ATTACK_ROUTER.enter(('ATTACK', attack_name))
+            self.state_machine.handle_state_event(('ATTACK', attack_name))
             return
 
         # --------------------------------
@@ -954,6 +989,8 @@ class Idle:
         self.boxer.use_sheet(self.boxer.cfg['idle'])
         self.boxer.xdir = 0
         self.boxer.ydir = 0
+
+        self.boxer.input_buffer.clear()
 
     def exit(self, e):
         pass
