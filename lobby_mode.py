@@ -3,7 +3,6 @@ import game_framework
 import game_world
 import play_mode
 import levels_mode
-import two_player_mode
 
 from button import SpriteSheetButton
 from boxing_ring import BoxingRing   # ← 최적화된 배경 클래스
@@ -14,10 +13,6 @@ from mouse import get_pos as mouse_get_pos
 
 background = None
 buttons = []
-
-def start_game():
-    print("START GAME")
-    game_framework.change_mode(play_mode)
 
 def init():
     global background, buttons
@@ -41,7 +36,7 @@ def init():
         row=0,  # 2 PLAYER 버튼 row
         x=400, y=100,
         scale=8,
-        on_click=lambda: game_framework.change_mode(two_player_mode)
+        on_click=lambda: game_framework.change_mode(play_mode)
     )
 
     buttons = [start_btn, two_player_btn]
