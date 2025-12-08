@@ -59,50 +59,21 @@ def character_selected(ch):
     print(f"[CHAR SELECT] clicked:", ch)
 
     if select_mode == 'cpu':
-        # 사용자가 ch 선택
         player_choice = ch
-
-        # CPU는 남은 캐릭터 선택
         cpu_choice = 'P2' if player_choice == 'P1' else 'P1'
 
         print(f"[CPU MODE] Player = {player_choice}, CPU = {cpu_choice}")
 
-        # play_mode 설정 전달
+        # play_mode 에 캐릭터 종류 전달
         play_mode.cpu_mode = True
         play_mode.cpu_level = selected_level
-        play_mode.cpu_player = cpu_choice      # CPU가 조종할 캐릭터
-        play_mode.p1_character = player_choice # 유저가 조종할 캐릭터
-        play_mode.p2_character = cpu_choice    # CPU 캐릭터
+        # p1 = 내가 플레이할 캐릭터
+        # p2 = CPU가 플레이할 캐릭터
+        play_mode.p1_character = player_choice
+        play_mode.p2_character = cpu_choice
 
-        # play_mode로 진입
         game_framework.change_mode(play_mode)
         return
-
-    if select_mode == 'two_player':
-
-        # stage 1 → P1 선택
-        if stage == 1:
-            p1_choice = ch
-            stage = 2
-            print(f"[2P MODE] P1 selected: {p1_choice}")
-            return
-
-        # stage 2 → P2 선택
-        elif stage == 2:
-            if ch == p1_choice:
-                print("[2P MODE] P2는 이미 고른 캐릭터를 선택할 수 없음")
-                return
-
-            p2_choice = ch
-            print(f"[2P MODE] P2 selected: {p2_choice}")
-
-            # play_mode로 전달
-            play_mode.cpu_mode = False
-            play_mode.p1_character = p1_choice
-            play_mode.p2_character = p2_choice
-
-            game_framework.change_mode(play_mode)
-            return
 
 def update():
     mx, my = mouse_get_pos()
