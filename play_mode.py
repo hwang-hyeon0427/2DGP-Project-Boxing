@@ -283,8 +283,14 @@ def draw_gear_popup_panel():
     draw_rectangle(x1, y1, x2, y2)
 
 
-def music_on():pass
-def music_off():pass
+def music_on():
+    sound_manager.play_bgm("lobby")
+    print("BGM ON")
+
+def music_off():
+    sound_manager.stop_bgm("lobby")
+    print("BGM OFF")
+
 
 def update():
     mx, my = mouse_get_pos()
