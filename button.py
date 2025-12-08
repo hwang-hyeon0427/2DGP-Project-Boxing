@@ -1,4 +1,5 @@
 from pico2d import *
+import sound_manager
 
 
 class SpriteSheetButton:
@@ -24,14 +25,21 @@ class SpriteSheetButton:
         self.on_click = on_click
 
         self.hover = False
+        self.was_hover = False
 
     def update(self, mx, my):
         w = SpriteSheetButton.CELL_W * self.scale
         h = SpriteSheetButton.CELL_H * self.scale
 
         # hover 여부 판정
-        self.hover = (self.x - w / 2 < mx < self.x + w / 2) and \
+        is_hover_now = (self.x - w / 2 < mx < self.x + w / 2) and \
                      (self.y - h / 2 < my < self.y + h / 2)
+
+        if is_hover_now and not self.was_hover:
+            sound_manager.play("hover")
+
+        self.was_hover = is_hover_now
+        self.hover = is_hover_now
 
     def draw(self):
         col = self.hover_col if self.hover else self.normal_col
@@ -54,8 +62,10 @@ class SpriteSheetButton:
         inside = (self.x - w / 2 < mx < self.x + w / 2) and \
                  (self.y - h / 2 < my < self.y + h / 2)
 
-        if inside and self.on_click:
-            self.on_click()
+        if inside:
+            sound_manager.play("click")  # ★ 클릭 사운드
+            if self.on_click:
+                self.on_click()
 
 class Button:
     def __init__(self, image_path, x, y, scale=1.0, on_click=None):
@@ -65,12 +75,21 @@ class Button:
         self.on_click = on_click
         self.hover = False
 
+        self.hover = False
+        self.was_hover = False
+
         self.w = self.image.w * scale
         self.h = self.image.h * scale
 
     def update(self, mx, my):
-        self.hover = (self.x - self.w/2 < mx < self.x + self.w/2 and
+        is_hover_now = (self.x - self.w/2 < mx < self.x + self.w/2 and
                       self.y - self.h/2 < my < self.y + self.h/2)
+
+        if is_hover_now and not self.was_hover:
+            sound_manager.play("hover")
+
+        self.hover = is_hover_now
+        self.was_hover = is_hover_now
 
     def draw(self):
         # hover 시 약간 크게
@@ -81,5 +100,10 @@ class Button:
                         self.image.h * draw_scale)
 
     def click(self, mx, my):
-        if self.hover and self.on_click:
-            self.on_click()
+        inside = (self.x - self.w / 2 < mx < self.x + self.w / 2 and
+                  self.y - self.h / 2 < my < self.y + self.h / 2)
+
+        if inside:
+            sound_manager.play("click")
+            if self.on_click:
+                self.on_click()
