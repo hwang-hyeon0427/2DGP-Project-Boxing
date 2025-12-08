@@ -5,6 +5,8 @@ from hitbox_data import HITBOX_DATA
 from hitbox import HitBox
 from attack_state import AttackState
 from behavior_tree import BehaviorTree, Selector, Sequence, Condition, Action
+from attack_router import AttackRouter
+
 # from walk_backward import WalkBackward
 
 import game_framework
@@ -104,6 +106,8 @@ class Boxer:
         self.BLOCK = Block(self)
         self.BLOCK_EXIT = BlockExit(self)
 
+        self.ATTACK_ROUTER = AttackRouter(self)
+
         # 상태머신 이벤트 테이블 분리
         self.transitions_wasd = {
             self.IDLE: {
@@ -150,8 +154,6 @@ class Boxer:
         self.transitions_wasd[self.BLOCK_ENTER] = {block_enter_done: self.BLOCK, r_up: self.BLOCK_EXIT}
         self.transitions_wasd[self.BLOCK] = {r_up: self.BLOCK_EXIT}
         self.transitions_wasd[self.BLOCK_EXIT] = {block_exit_done: self.IDLE}
-        self.transitions_wasd[self.IDLE][event_attack] = lambda e: self._select_attack_state(e[1])
-        self.transitions_wasd[self.WALK][event_attack] = lambda e: self._select_attack_state(e[1])
 
         self.transitions_arrows = {
             self.IDLE: {
@@ -202,8 +204,7 @@ class Boxer:
         self.transitions_arrows[self.BLOCK_ENTER] = {block_enter_done: self.BLOCK, semicolon_up: self.BLOCK_EXIT}
         self.transitions_arrows[self.BLOCK] = {semicolon_up: self.BLOCK_EXIT}
         self.transitions_arrows[self.BLOCK_EXIT] = {block_exit_done: self.IDLE}
-        self.transitions_arrows[self.IDLE][event_attack] = lambda e: self._select_attack_state(e[1])
-        self.transitions_arrows[self.WALK][event_attack] = lambda e: self._select_attack_state(e[1])
+
         # controls에 따라 상태머신 선택
         if self.controls == 'wasd':
             transitions = self.transitions_wasd
@@ -599,9 +600,6 @@ class Boxer:
         if self.pushback_time > 0:
             return
 
-        # --------------------------------
-        # 이 Boxer 가 처리할 키만 허용
-        # --------------------------------
         if self.controls == 'wasd':
             # P1: 이동 + 공격 + 가드 키만
             allowed_keys = {
@@ -620,9 +618,6 @@ class Boxer:
             # 이 Boxer 관할이 아닌 키는 완전히 무시
             return
 
-        # --------------------------------
-        # Block 상태일 때: 가드 키 외 입력 필터
-        # --------------------------------
         if isinstance(self.state_machine.cur_state, (BlockEnter, Block, BlockExit)):
             if event.type == SDL_KEYDOWN:
                 if self.controls == 'wasd':
@@ -642,9 +637,6 @@ class Boxer:
         if isinstance(self.state_machine.cur_state, Dizzy):
             return
 
-        # --------------------------------
-        # 좌/우 바라보는 방향 업데이트
-        # --------------------------------
         if event.type == SDL_KEYDOWN:
             if self.controls == 'wasd':
                 if event.key == SDLK_a:
@@ -656,13 +648,6 @@ class Boxer:
                     self.face_dir = -1  # 왼쪽
                 elif event.key == SDLK_RIGHT:
                     self.face_dir = +1  # 오른쪽
-
-        # --------------------------------
-        # ★ 공격 입력 처리 (Input Buffer)
-        #  - 공격 중이면: 버퍼에 저장하고 return
-        #  - 공격 중이 아니면: 그냥 통과 → 맨 아래 INPUT 이벤트에서 처리
-        # --------------------------------
-        attack_key_map = {}
 
         if self.controls == 'wasd':  # P1
             attack_key_map = {
@@ -678,16 +663,21 @@ class Boxer:
             }
 
         if event.type == SDL_KEYDOWN and event.key in attack_key_map:
-            from attack_state import AttackState
-            # 현재 상태가 공격 상태라면 → 버퍼에만 저장하고, 이번 입력은 state_machine 에 보내지 않음
+            attack_name = attack_key_map[event.key]
+            now = get_time()
+
+            # 공격 중 → 버퍼 저장
             if isinstance(self.state_machine.cur_state, AttackState):
-                attack_name = attack_key_map[event.key]
                 self.input_buffer.append(attack_name)
-                self.last_input_time = get_time()
-                print(f"[BUFFER] store attack: {attack_name}, buffer={self.input_buffer}")
+                self.last_input_time = now
+                print(f"[BUFFER-ADD] + {attack_name} | buffer={self.input_buffer}")
                 return
-            # 공격 상태가 아닐 때는: 아무 것도 안 하고 아래로 흘려보냄
-            # (맨 아래의 ('INPUT', event) 에서 기존처럼 처리됨)
+
+                # 공격 중이 아니면 즉시 AttackRouter 실행
+            self.last_input_time = now
+            print(f"[ATTACK] immediate → {attack_name}")
+            self.ATTACK_ROUTER.enter(('ATTACK', attack_name))
+            return
 
         # --------------------------------
         # 이동키 처리
@@ -969,11 +959,13 @@ class Idle:
 
         if self.boxer.input_buffer:
             now = get_time()
-
             if now - self.boxer.last_input_time <= self.boxer.buffer_time:
                 next_attack = self.boxer.input_buffer.pop(0)
-                print(f"[BUFFER] auto attack: {next_attack}")
-                self.boxer.state_machine.handle_state_event(('ATTACK', next_attack))
+                print(f"[BUFFER-USE] pop='{next_attack}'  buffer={self.boxer.input_buffer}")
+
+                # AttackRouter 직접 호출 (state_machine 사용 X)
+                self.boxer.ATTACK_ROUTER.enter(('ATTACK', next_attack))
+                return
 
     def draw(self):
         self.boxer.draw_current()
