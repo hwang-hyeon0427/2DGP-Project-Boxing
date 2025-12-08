@@ -2,6 +2,8 @@ from pico2d import load_wav, load_music
 
 sounds = {}
 bgm = {}
+sfx_volume = 128   # 기본값 (0~128)
+
 
 def load():
     global sounds, bgm
@@ -22,6 +24,9 @@ def load():
 
     print("[SoundManager] All sounds loaded.")
 
+    for s in sounds.values():
+        s.set_volume(sfx_volume)
+
 def play(name):
     sound = sounds.get(name, None)
     if sound:
@@ -39,3 +44,20 @@ def play_bgm(name):
 def stop_bgm(name):
     if name in bgm:
         bgm[name].stop()
+
+def set_sfx_volume(level):
+    global sfx_volume
+
+    # level → 0/1/2/3을 실제 0~128 볼륨으로 변환
+    volume_map = {
+        0: 0,
+        1: 42,
+        2: 85,
+        3: 128
+    }
+
+    sfx_volume = volume_map.get(level, 128)
+
+    # 모든 효과음에 반영
+    for s in sounds.values():
+        s.set_volume(sfx_volume)
