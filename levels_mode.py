@@ -43,9 +43,11 @@ def update():
     mx, my = mouse_get_pos()
     for b in buttons:
         b.update(mx, my)
+    game_world.update()
 
 def draw():
     clear_canvas()
+    game_world.render()
     for b in buttons:
         b.draw()
     update_canvas()
