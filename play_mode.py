@@ -388,16 +388,24 @@ def handle_events():
 def limit_boxer_in_boxing_ring(boxer):
     w, h = get_canvas_width(), get_canvas_height()
 
-    # 양쪽 코너 기둥 위치에 맞춘 정확한 벽 값
-    LEFT_LIMIT = w * 0.13
-    RIGHT_LIMIT = w * 0.87
+    BOTTOM_LIMIT = 0 # 바닥
+    TOP_LIMIT = h * 0.65 # 최상단 로프
+    LEFT_LIMIT = w * 0.05
+    RIGHT_LIMIT = w * 0.95
 
-    # 바닥/천장도 이전과 동일하게 적용 가능
-    BOTTOM_LIMIT = h * 0.15
-    TOP_LIMIT = h * 0.55
+    l, b, r, t = boxer.get_bb()
+    center_to_bottom = boxer.y - b
+    center_to_top = t - boxer.y
+    center_to_left = boxer.x - l
+    center_to_right = r - boxer.x
 
-    boxer.x = clamp(LEFT_LIMIT, boxer.x, RIGHT_LIMIT)
-    boxer.y = clamp(BOTTOM_LIMIT, boxer.y, TOP_LIMIT)
+    min_y = BOTTOM_LIMIT + center_to_bottom
+    max_y = TOP_LIMIT - center_to_top
+    boxer.y = clamp(min_y, boxer.y, max_y)
+
+    min_x = LEFT_LIMIT + center_to_left
+    max_x = RIGHT_LIMIT - center_to_right
+    boxer.x = clamp(min_x, boxer.x, max_x)
 
 def handle_hitbox_editor_event(event):
     canvas_h = get_canvas_height()
