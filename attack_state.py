@@ -59,12 +59,7 @@ class AttackState:
         # === 공격 종료 ===
         if cur_frame >= self.total_frames:
             self.done = True
-
-            # STOP 이벤트 → AttackState 종료 → Idle 전환
             self.boxer.state_machine.handle_state_event(('STOP', None))
-
-            # === ★ 버퍼 자동 발동을 AttackState에서 하지 않는다 ★ ===
-            # Idle 상태로 돌아간 후, Idle 쪽에서 buffer 처리하도록 설계해야 한다.
             return
 
     def draw(self):
