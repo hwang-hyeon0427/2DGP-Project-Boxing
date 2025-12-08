@@ -31,9 +31,14 @@ class Boxer:
     ACTION_PER_TIME = ACTION_PER_TIME
     # 공격 종류별 넉백 세기(픽셀)
     KNOCKBACK_POWER = {
-        'front_hand': 100,  # 잽
-        'rear_hand': 130,  # 스트레이트
-        'uppercut': 160  # 어퍼컷
+        'front_hand': 150,  # 잽
+        'rear_hand': 300,  # 스트레이트
+        'uppercut': 400  # 어퍼컷
+    }
+    DAMAGE_TABLE = {
+        'front_hand': 10,
+        'rear_hand': 15,
+        'uppercut': 30
     }
 
     def __init__(self, cfg: dict):
@@ -209,13 +214,17 @@ class Boxer:
         # 이동 제어용
         self.ai_move_dir = 0
 
-
+    # ----------------------------
+    # AI용 가짜 키 이벤트 클래스
+    # ----------------------------
     class _AIKeyEvent:
         def __init__(self, key_type, key_code):
             self.type = key_type
             self.key = key_code
 
-
+    # ----------------------------
+    # AI 입력 함수들 (★ Boxer 메서드)
+    # ----------------------------
     def ai_press_key(self, key_code):
         e = Boxer._AIKeyEvent(SDL_KEYDOWN, key_code)
         self.state_machine.handle_state_event(('INPUT', e))
@@ -750,9 +759,14 @@ class Boxer:
 
     def handle_collision(self, group, other):
         now = get_time()
+        # 피격 쿨타임(1초) 지나면 연속 피격 카운트 초기화
+        if now - self.last_hit_time > 1.0:
+            self.hits = 0
 
         # KO 상태 충돌 무시
         if isinstance(self.state_machine.cur_state, Ko):
+            return
+        if isinstance(self.state_machine.cur_state, Dizzy):
             return
         if isinstance(self.state_machine.cur_state, (BlockEnter, Block)):
             if not hasattr(other, 'owner'):
@@ -824,30 +838,42 @@ class Boxer:
                 return
 
             attacker = other.owner
+            attack_type = attacker.current_attack_type
+
+            # ★ 공격 타입별 피해량 계산
+            damage = Boxer.DAMAGE_TABLE.get(attack_type, 10)
 
             # 체력 감소
             old_hp = self.hp
-            self.hp = max(0, self.hp - 10)
+            self.hp = max(0, self.hp - damage)
             self.last_hit_time = now
 
-            sound_manager.play(attacker.current_attack_type)
+            # 사운드: 공격 타입 이름으로 재생
+            sound_manager.play(attack_type)
 
+            # KO / DIZZY 판정
             if self.hp <= 0:
                 self.state_machine.handle_state_event(('KO', None))
                 return
-            if self.hp <= self.max_hp * 0.3:
+            # === 연속 피격 카운트 증가 ===
+            self.hits += 1
+
+            # === 3번 연속 피격 → DIZZY ===
+            if self.hits >= 3:
+                self.hits = 0  # 초기화
                 self.state_machine.handle_state_event(('DIZZY', None))
                 return
 
-            # ====== 넉백 호출 ======
-            attack_type = attacker.current_attack_type
+            # ====== 넉백 호출 (공격 타입 기반) ======
             base_knock = Boxer.KNOCKBACK_POWER.get(attack_type, 20)
             knockback = self.adjust_knockback_based_on_distance(attacker, base_knock)
 
             self.start_pushback(attacker, amount=knockback, duration=0.18)
 
+            # 피격 상태로 전환
             self.state_machine.handle_state_event(('HURT', None))
 
+            # 디버그용 HP 출력
             if old_hp != self.hp:
                 if group == 'P1_attack:P2':
                     print("P2 HP:", self.hp)
