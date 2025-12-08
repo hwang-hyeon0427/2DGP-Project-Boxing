@@ -311,31 +311,16 @@ class Boxer:
             return None
         return self.opponent.x - self.x
 
-    def ai_in_attack_range(self):
-        d = self.ai_distance_to_opponent()
-        if d is None:
-            return False
-
-        dx = abs(d)
-
-        if self.ai_level == 'easy':
-            max_range = 170
-        elif self.ai_level == 'medium':
-            max_range = 210
-        else:
-            max_range = 240
-
-        return dx <= max_range
-
     def ai_attack_random(self):
         now = get_time()
 
+        # 난이도별 공격 쿨타임 조정
         if self.ai_level == 'easy':
-            base_cd = 0.9
+            base_cd = 1.0     # 매우 느림
         elif self.ai_level == 'medium':
-            base_cd = 0.6
+            base_cd = 0.45    # 중간
         else:
-            base_cd = 0.35
+            base_cd = 0.22    # hard, 공격 압박 강함
 
         if now - self.ai_last_attack_time < base_cd:
             return BehaviorTree.FAIL
@@ -346,9 +331,11 @@ class Boxer:
             type(self.BLOCK), type(self.BLOCK_ENTER), type(self.BLOCK_EXIT),
             type(self.HURT), type(self.DIZZY), type(self.KO)
         )
+
         if isinstance(cur, bad_types):
             return BehaviorTree.FAIL
 
+        # 난이도 상관 없이 버튼 매핑 동일
         if self.controls == 'wasd':
             front_key, rear_key, upper_key = SDLK_f, SDLK_g, SDLK_h
         else:
@@ -386,17 +373,19 @@ class Boxer:
 
         now = get_time()
 
-        if not self.ai_blocking:
-            if self.ai_level == 'easy':
-                guard_prob = 0.3
-                hold_time = 0.3
-            elif self.ai_level == 'medium':
-                guard_prob = 0.6
-                hold_time = 0.35
-            else:
-                guard_prob = 0.9
-                hold_time = 0.4
+        # 난이도별 가드 반응 및 유지시간
+        if self.ai_level == 'easy':
+            guard_prob = 0.20
+            hold_time = 0.20
+        elif self.ai_level == 'medium':
+            guard_prob = 0.55
+            hold_time = 0.30
+        else:
+            guard_prob = 0.90
+            hold_time = 0.50  # hard일 경우 거의 반응형 가드
 
+        # 가드 시작
+        if not self.ai_blocking:
             if random.random() > guard_prob:
                 return BehaviorTree.FAIL
 
@@ -407,6 +396,8 @@ class Boxer:
             self.ai_stop_move()
             self.ai_press_key(block_key)
             return BehaviorTree.RUNNING
+
+        # 가드 유지 중
         else:
             if now - self.ai_block_start_time >= self.ai_block_hold_time:
                 self.ai_blocking = False
@@ -420,9 +411,27 @@ class Boxer:
             return BehaviorTree.SUCCESS
         return BehaviorTree.FAIL
 
+    def ai_in_attack_range(self):
+        d = self.ai_distance_to_opponent()
+        if d is None:
+            return False
+
+        dx = abs(d)
+
+        # 난이도별 공격 사거리
+        if self.ai_level == 'easy':
+            max_range = 150
+        elif self.ai_level == 'medium':
+            max_range = 240
+        else:
+            max_range = 300   # hard: 멀리 있어도 습격 느낌
+
+        return dx <= max_range
+
     def bt_in_attack_range(self):
         if not self.ai_can_act():
             return BehaviorTree.FAIL
+
         return BehaviorTree.SUCCESS if self.ai_in_attack_range() else BehaviorTree.FAIL
 
     def bt_opponent_attacking(self):
@@ -456,14 +465,26 @@ class Boxer:
             return BehaviorTree.FAIL
 
         dx = abs(d)
-        if dx < 80:
+
+        # 난이도별 밀착도 조정
+        if self.ai_level == 'easy':
+            stop_dist = 110
+        elif self.ai_level == 'medium':
+            stop_dist = 70
+        else:
+            stop_dist = 35   # hard: 붙어서 압박
+
+        # 너무 가까우면 멈춤
+        if dx < stop_dist:
             self.ai_stop_move()
             return BehaviorTree.SUCCESS
 
+        # 좌/우 추적
         if d > 0:
             self.ai_move_towards(1)
         else:
             self.ai_move_towards(-1)
+
         return BehaviorTree.RUNNING
 
     def build_bt(self):
