@@ -1,13 +1,14 @@
 from pico2d import *
 import game_world
 import report_manager
+from debug_manager import log, DEBUG_HITBOX
 
 _DEBUG_FONT = None
 compare_buffer = {}   # 예: { ("front_hand", 4): {"P1": 거리값, "P2": 거리값} }
 
 class HitBox:
     def __init__(self, owner, frame_offsets, duration=0.15):
-        print("[DEBUG HITBOX OWNER]", owner, "config_id=", getattr(owner, "config_id", None),
+        log(DEBUG_HITBOX,f"[DEBUG HITBOX OWNER]", owner, "config_id=", getattr(owner, "config_id", None),
               "controls=", owner.controls if hasattr(owner, "controls") else None)
 
         self.owner = owner
@@ -26,7 +27,7 @@ class HitBox:
         if player_id not in ("P1", "P2"):
             return
 
-        print("[DEBUG FRAME CHECK]", "attack =", attack_name, "frame_idx =", frame_idx, "offset keys =",
+        log(DEBUG_HITBOX, f"[DEBUG FRAME CHECK]", "attack =", attack_name, "frame_idx =", frame_idx, "offset keys =",
               list(frame_offsets.keys()) if frame_offsets else None)
 
         # 히트박스 데이터 존재 여부
