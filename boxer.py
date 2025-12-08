@@ -168,13 +168,13 @@ class Boxer:
             },
             self.HURT: {event_hurt_done: self.IDLE, event_ko: self.KO},
             self.DIZZY: {event_dizzy_done: self.IDLE, event_ko: self.KO},
-            self.KO: {}
+            self.KO: {},
+            self.BLOCK_ENTER: {block_enter_done: self.BLOCK, r_up: self.BLOCK_EXIT},
+            self.BLOCK: {r_up: self.BLOCK_EXIT},
+            self.BLOCK_EXIT: {block_exit_done: self.IDLE}
         }
         self.transitions_wasd[self.IDLE].update({r_down: self.BLOCK_ENTER})
         self.transitions_wasd[self.WALK].update({r_down: self.BLOCK_ENTER})
-        self.transitions_wasd[self.BLOCK_ENTER] = {block_enter_done: self.BLOCK, r_up: self.BLOCK_EXIT}
-        self.transitions_wasd[self.BLOCK] = {r_up: self.BLOCK_EXIT}
-        self.transitions_wasd[self.BLOCK_EXIT] = {block_exit_done: self.IDLE}
 
         self.transitions_arrows = {
             self.IDLE: {
@@ -231,15 +231,14 @@ class Boxer:
             },
             self.HURT: {event_hurt_done: self.IDLE,event_ko: self.KO},
             self.DIZZY: {event_dizzy_done: self.IDLE,event_ko: self.KO},
-            self.KO: {}
-
+            self.KO: {},
+            self.BLOCK_ENTER: {block_enter_done: self.BLOCK, semicolon_up: self.BLOCK_EXIT},
+            self.BLOCK: {semicolon_up: self.BLOCK_EXIT},
+            self.BLOCK_EXIT: {block_exit_done: self.IDLE}
         }
 
         self.transitions_arrows[self.IDLE].update({semicolon_down: self.BLOCK_ENTER})
         self.transitions_arrows[self.WALK].update({semicolon_down: self.BLOCK_ENTER})
-        self.transitions_arrows[self.BLOCK_ENTER] = {block_enter_done: self.BLOCK, semicolon_up: self.BLOCK_EXIT}
-        self.transitions_arrows[self.BLOCK] = {semicolon_up: self.BLOCK_EXIT}
-        self.transitions_arrows[self.BLOCK_EXIT] = {block_exit_done: self.IDLE}
 
         # controls에 따라 상태머신 선택
         if self.controls == 'wasd':
