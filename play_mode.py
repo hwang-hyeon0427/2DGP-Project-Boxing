@@ -386,9 +386,18 @@ def handle_events():
         p2.handle_event(event)
 
 def limit_boxer_in_boxing_ring(boxer):
-    l, b, r, t = boxing_ring.get_bb()
-    boxer.x = clamp(l + 40, boxer.x, r - 40)
-    boxer.y = clamp(b + 40, boxer.y, t - 40)
+    w, h = get_canvas_width(), get_canvas_height()
+
+    # 양쪽 코너 기둥 위치에 맞춘 정확한 벽 값
+    LEFT_LIMIT = w * 0.13
+    RIGHT_LIMIT = w * 0.87
+
+    # 바닥/천장도 이전과 동일하게 적용 가능
+    BOTTOM_LIMIT = h * 0.15
+    TOP_LIMIT = h * 0.55
+
+    boxer.x = clamp(LEFT_LIMIT, boxer.x, RIGHT_LIMIT)
+    boxer.y = clamp(BOTTOM_LIMIT, boxer.y, TOP_LIMIT)
 
 def handle_hitbox_editor_event(event):
     canvas_h = get_canvas_height()
