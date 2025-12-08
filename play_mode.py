@@ -333,6 +333,8 @@ def handle_events():
         if event.type == SDL_QUIT:
             game_framework.quit()
             return
+        elif event.type == SDL_KEYDOWN and event.key == SDLK_F5:
+            report_manager.toggle()
         if event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             if gear_open:
                 close_gear_menu()
