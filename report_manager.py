@@ -4,8 +4,36 @@
 # { (attack_name, frame): { "P1": distance, "P2": distance } }
 report_buffer = {}
 
+# ---------------------------------------
+#  리포트 ON/OFF 전역 스위치
+# ---------------------------------------
+_REPORT_ENABLED = False  # 기본값: 끔(False)
+
+def enable():
+    """리포트 기록 기능 켜기"""
+    global _REPORT_ENABLED
+    _REPORT_ENABLED = True
+    print("[REPORT] Hitbox report ENABLED")
+
+def disable():
+    """리포트 기록 기능 끄기"""
+    global _REPORT_ENABLED
+    _REPORT_ENABLED = False
+    print("[REPORT] Hitbox report DISABLED")
+
+def toggle():
+    """리포트 기능 토글 (켜져 있으면 끄고, 꺼져 있으면 켜기)"""
+    global _REPORT_ENABLED
+    _REPORT_ENABLED = not _REPORT_ENABLED
+    print(f"[REPORT] Hitbox report TOGGLED → now = {_REPORT_ENABLED}")
+
+def is_enabled():
+    """현재 리포트 기능이 켜져 있는지 확인용 (True/False 반환)"""
+    return _REPORT_ENABLED
 
 def record_hitbox(attack, frame, player_id, distance):
+    if not is_enabled():
+        return
     """P1/P2 사거리 기록. 최근값으로 덮어씀."""
     key = (attack, frame)
 
@@ -13,7 +41,6 @@ def record_hitbox(attack, frame, player_id, distance):
         report_buffer[key] = {}
 
     report_buffer[key][player_id] = distance
-
 
 def print_report():
     """F10 입력 시 전체 공격 사거리 보고서 출력"""
