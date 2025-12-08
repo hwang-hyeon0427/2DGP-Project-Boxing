@@ -59,7 +59,17 @@ class AttackState:
         # === 공격 종료 ===
         if cur_frame >= self.total_frames:
             self.done = True
-            self.boxer.state_machine.handle_state_event(('STOP', None))
+
+            # 1) 버퍼에 공격이 남아 있으면 바로 다음 공격 실행 (Idle 금지)
+            if self.boxer.attack_router.has_buffer():
+                next_attack = self.boxer.attack_router.pop_buffer()
+
+                # 공격 체인: Idle로 가지 않고 바로 AttackState 다시 시작
+                self.boxer.state_machine.handle_state_event(('ATTACK', next_attack))
+                return
+
+            # 2) 버퍼가 없으면 Idle로 이동
+            self.boxer.state_machine.handle_state_event(('ATTACK_END', None))
             return
 
     def draw(self):
