@@ -967,6 +967,14 @@ class Idle:
     def do(self):
         self.boxer.frame = ( self.boxer.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 10
 
+        if self.boxer.input_buffer:
+            now = get_time()
+
+            if now - self.boxer.last_input_time <= self.boxer.buffer_time:
+                next_attack = self.boxer.input_buffer.pop(0)
+                print(f"[BUFFER] auto attack: {next_attack}")
+                self.boxer.state_machine.handle_state_event(('ATTACK', next_attack))
+
     def draw(self):
         self.boxer.draw_current()
 
