@@ -48,7 +48,7 @@ class Boxer:
         self.current_attack_type = None
         self.base_face = None
         self.cfg = cfg
-
+        self.resume_move_dir = 0
         # 넉백 상태 변수
         self.pushback_velocity_x = 0
         self.pushback_velocity_y = 0
@@ -56,6 +56,7 @@ class Boxer:
         self.pushback_duration = 0
 
         self.ignore_next_move_keyup = False
+        self.move_key_down = False
 
         # 중력 계수
         self.gravity = -600  # 튕김 후 아래로 떨어지는 힘
@@ -175,6 +176,7 @@ class Boxer:
         }
         self.transitions_wasd[self.IDLE].update({r_down: self.BLOCK_ENTER})
         self.transitions_wasd[self.WALK].update({r_down: self.BLOCK_ENTER})
+        self.transitions_wasd[self.WALK][event_attack_end] = self.WALK
 
         self.transitions_arrows = {
             self.IDLE: {
@@ -237,9 +239,9 @@ class Boxer:
             self.BLOCK: {semicolon_up: self.BLOCK_EXIT},
             self.BLOCK_EXIT: {block_exit_done: self.IDLE}
         }
-
         self.transitions_arrows[self.IDLE].update({semicolon_down: self.BLOCK_ENTER})
         self.transitions_arrows[self.WALK].update({semicolon_down: self.BLOCK_ENTER})
+        self.transitions_arrows[self.WALK][event_attack_end] = self.WALK
 
         # controls에 따라 상태머신 선택
         if self.controls == 'wasd':
@@ -284,6 +286,8 @@ class Boxer:
             self.ai_move_dir = 0
             self.xdir = 0
             self.state_machine.handle_state_event(('STOP', None))
+
+            self.move_key_down = False
 
     def ai_move_towards(self, dir):
         if dir == 0:
@@ -558,6 +562,8 @@ class Boxer:
         self.xdir = 0
         self.ydir = 0
 
+        self.move_key_down = False
+
     def use_sheet(self, sheet: dict):
         path = sheet['image']
         self.image = Boxer._img_cache.setdefault(path, load_image(path))
@@ -744,6 +750,11 @@ class Boxer:
                 log(DEBUG_EVENT,print(f"[BUFFER-ADD] + {attack_name} | buffer={self.input_buffer}"))
                 return
 
+            if self.xdir != 0:
+                self.resume_move_dir = self.xdir
+            else:
+                self.resume_move_dir = 0
+
                 # 공격 중이 아니면 즉시 AttackRouter 실행
             self.last_input_time = now
             log(DEBUG_EVENT,print(f"[ATTACK] immediate → {attack_name}"))
@@ -813,6 +824,8 @@ class Boxer:
                 log(DEBUG_EVENT,print(f"[MOVE_KEYS-AFTER]  state={self.state_machine.cur_state.__class__.__name__}, "
                       f"event_type={event.type}, key={event.key}, "
                       f"xdir={self.xdir}, ydir={self.ydir}"))
+
+                self.move_key_down = (self.xdir != 0 or self.ydir != 0)
 
                 if self.xdir == 0 and self.ydir == 0:
                     log(DEBUG_EVENT,print("[PATCH] => STOP"))
@@ -1017,12 +1030,37 @@ class Idle:
         self.boxer = boxer
 
     def enter(self, e):
-        log(DEBUG_EVENT, f"[ENTER] Idle: reset xdir/ydir from {self.boxer.xdir}, {self.boxer.ydir}")
+        log(DEBUG_EVENT,
+            f"[ENTER] Idle: reset xdir/ydir from {self.boxer.xdir}, {self.boxer.ydir}")
+
+        # e 는 ('ATTACK_END', None) 같은 튜플 형태
+        from_attack = (isinstance(e, tuple) and e[0] == 'ATTACK_END')
+
+        # 공격 끝나고 들어온 Idle이고, 그 전에 걷고 있었다면
+        if from_attack and self.boxer.resume_move_dir != 0:
+            dir = self.boxer.resume_move_dir
+
+            # 한 번 쓰고 초기화
+            self.boxer.resume_move_dir = 0
+
+            # 걷기 애니메이션으로 전환
+            self.boxer.use_sheet(self.boxer.cfg['walk_forward'])
+            self.boxer.xdir = dir
+            self.boxer.ydir = 0
+            self.boxer.face_dir = dir
+
+            # ★ Idle로 왔다가 바로 Walk 상태로 강제 전환
+            self.boxer.state_machine.cur_state = self.boxer.WALK
+            self.boxer.WALK.enter(('RESUME_MOVE', None))
+            log(DEBUG_EVENT, f"[RESUME MOVE] Idle→Walk dir={dir} after ATTACK_END")
+            return
+
+        # 그 외(진짜로 멈춘 Idle, STOP, HURT_DONE 등) 은 기존 Idle 로직
         self.boxer.use_sheet(self.boxer.cfg['idle'])
         self.boxer.xdir = 0
         self.boxer.ydir = 0
-
         self.boxer.input_buffer.clear()
+
 
     def exit(self, e):
         pass
