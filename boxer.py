@@ -4,7 +4,6 @@ from state_machine import StateMachine
 from hitbox_data import HITBOX_DATA
 from hitbox import HitBox
 from attack_state import AttackState
-from behavior_tree import BehaviorTree, Selector, Sequence, Condition, Action
 from attack_router import AttackRouter
 from debug_manager import log, DEBUG_EVENT, DEBUG_STATE
 
@@ -16,36 +15,46 @@ from block import Block
 from block_exit import BlockExit
 from walk import Walk
 from idle import Idle
-# from walk_backward import WalkBackward
 
 import game_framework
 import game_world
-import random
 import sound_manager
 
-# boxer 속도 단위 환산
+from boxer_ai import BoxerAI
+
+# ----------------------------
+# 상수들
+# ----------------------------
 PIXEL_PER_METER = (10.0 / 0.3)  # 10 pixel 30 cm
-WALK_SPEED_KMPH = 20.0  # Km / Hour
+WALK_SPEED_KMPH = 20.0          # Km / Hour
 WALK_SPEED_MPM = (WALK_SPEED_KMPH * 1000.0 / 60.0)
 WALK_SPEED_MPS = (WALK_SPEED_MPM / 60.0)
 WALK_SPEED_PPS = (WALK_SPEED_MPS * PIXEL_PER_METER)
 
-# Boxer Action Speed
 TIME_PER_ACTION = 0.5
 ACTION_PER_TIME = 1.0 / TIME_PER_ACTION
 FRAMES_PER_ACTION = 8
 
+
 class Boxer:
+    """
+    플레이어/CPU 공용 Boxer 캐릭터
+    - 상태머신 기반 이동/공격/가드/피격/KO
+    - AI는 BoxerAI(별도 파일)로 분리
+    """
     _img_cache = {}
 
     FRAMES_PER_ACTION = FRAMES_PER_ACTION
     ACTION_PER_TIME = ACTION_PER_TIME
+
     # 공격 종류별 넉백 세기(픽셀)
     KNOCKBACK_POWER = {
-        'front_hand': 150,  # 잽
-        'rear_hand': 300,  # 스트레이트
-        'uppercut': 400  # 어퍼컷
+        'front_hand': 150,   # 잽
+        'rear_hand': 300,    # 스트레이트
+        'uppercut': 400      # 어퍼컷
     }
+
+    # 공격 종류별 데미지
     DAMAGE_TABLE = {
         'front_hand': 10,
         'rear_hand': 15,
@@ -53,19 +62,34 @@ class Boxer:
     }
 
     def __init__(self, cfg: dict):
-        self.current_attack_type = None # 현재 공격 종류
-        self.base_face = None           # 기본 바라보는 방향
-        self.on_ko_end = None           # KO 종료 콜백 함수
-        self.cfg = cfg                  # 설정 딕셔너리
-        self.resume_move_dir = 0        # 공격 후 이동 재개 방향
+        # ----------------------------
+        # 기본 설정/상태
+        # ----------------------------
+        self.cfg = cfg
+        self.current_attack_type = None   # 현재 공격 종류
+        self.base_face = None             # 스프라이트 기준 바라보는 방향
+        self.on_ko_end = None             # KO 종료 콜백 (필요 시)
 
-        # 넉백 상태 변수
-        self.pushback_velocity_x = 0   # 넉백 속도 X
-        self.pushback_velocity_y = 0   # 넉백 속도 Y
-        self.pushback_time = 0         # 넉백 남은 시간
-        self.pushback_duration = 0     # 넉백 총 시간
+        # 이동/방향
+        spawn = cfg.get('spawn', {})
+        self.x = spawn.get('x', 400)
+        self.y = spawn.get('y', 90)
+        self.face_dir = spawn.get("base_face", 1)
+        self.xdir, self.ydir = 0, 0
 
-        self.ignore_next_move_keyup = False   # 다음 이동키 업 이벤트 무시 플래그
+        self.dir = 0                      # 예전 코드 호환용
+        self.resume_move_dir = 0          # 공격 후 재개할 방향
+
+        # 넉백
+        self.pushback_velocity_x = 0
+        self.pushback_velocity_y = 0
+        self.pushback_time = 0
+        self.pushback_duration = 0
+        self.gravity = -600               # 기본 중력 계수
+        self.hit_floor_y = self.y
+
+        # 키 상태 관리
+        self.ignore_next_move_keyup = False
         self.move_key_down = {
             'left': False,
             'right': False,
@@ -79,64 +103,77 @@ class Boxer:
             'uppercut': False
         }
 
-        # 중력 계수
-        self.gravity = -600           # 튕김 후 아래로 떨어지는 힘
+        # 체력/피격
+        self.hits = 0
+        self.max_hp = cfg["max_hp"]
+        self.hp = self.max_hp
+        self.hit_cool = 0.3
+        self.last_hit_time = 0.0
 
-        self.hits = 0                 # 맞은 횟수
-        self.max_hp = cfg["max_hp"]   # 값 복사
-        self.hp = self.max_hp         # hp는 무조건 새로 생성
+        # 공격 버퍼
+        self.input_buffer = []
+        self.buffer_time = 0.45
+        self.last_input_time = 0
 
-        self.input_buffer = []        # 공격 입력을 저장하는 버퍼
-        self.buffer_time = 0.45       # 입력 유효시간
-        self.last_input_time = 0      # 마지막 입력 기록시간
+        # 상대
+        self.opponent = None
 
-        self.opponent = None          # 상대 Boxer 객체 (나중에 설정)
+        # 조작 타입
+        self.controls = cfg.get('controls', 'both')  # 'wasd' or 'arrows' etc.
+        self.is_cpu = False                          # 기본: 사람 조작
+        self.ai = None                               # BoxerAI 인스턴스
 
-        self.hit_cool = 0.3           # 피격 쿨타임
-        self.last_hit_time = 0.0      # 마지막 피격 시간
-
-        spawn = cfg.get('spawn', {})               # 스폰 위치
-        self.x = spawn.get('x', 400)               # 스폰 기본값 중앙
-        self.y = spawn.get('y', 90)                # 스폰 기본값 바닥
-        self.face_dir = spawn.get("base_face", 1)  # 바라보는 방향
-        self.xdir, self.ydir = 0, 0                # 이동 방향
-
-        self.controls = cfg.get('controls', 'both')
-
-        idle = cfg['idle']                         # idle 시트 정보
-
-        img_path = idle['image']                   # 이미지 경로
-        self.image = None                          # 이미지 객체
+        # 스프라이트/이미지 세팅
+        idle_sheet = cfg['idle']
+        self.image = None
         self.cols = 0
         self.frame_w = 0
         self.frame_h = 0
         self.scale = 1.0
-        self.use_sheet(idle)
-
         self.frame = 0
-        self.dir = 0                                # 이동 방향
+        self.use_sheet(idle_sheet)
 
-        # 상태머신 상태 객체들 생성
+        # ----------------------------
+        # 상태 객체들 생성
+        # ----------------------------
         self.IDLE = Idle(self)
         self.WALK = Walk(self)
-        # self.WALK_BACKWARD = WalkBackward(self)
-        self.FRONT_HAND = AttackState(self, 'front_hand')  # 잽
-        self.REAR_HAND = AttackState(self, 'rear_hand')    # 스트레이트
-        self.UPPERCUT = AttackState(self, 'uppercut')      # 어퍼컷
-        self.HURT = Hurt(self)                                       # 피격 상태
-        self.DIZZY = Dizzy(self)                                     # 어질 상태
-        self.KO = Ko(self)                                           # KO 상태
-        self.BLOCK_ENTER = BlockEnter(self)                          # 가드 진입
-        self.BLOCK = Block(self)                                     # 가드 상태
-        self.BLOCK_EXIT = BlockExit(self)                            # 가드 종료
+        self.FRONT_HAND = AttackState(self, 'front_hand')
+        self.REAR_HAND = AttackState(self, 'rear_hand')
+        self.UPPERCUT = AttackState(self, 'uppercut')
+        self.HURT = Hurt(self)
+        self.DIZZY = Dizzy(self)
+        self.KO = Ko(self)
+        self.BLOCK_ENTER = BlockEnter(self)
+        self.BLOCK = Block(self)
+        self.BLOCK_EXIT = BlockExit(self)
 
-        self.ATTACK_ROUTER = AttackRouter(self)                     # 공격 라우터
+        # 공격 라우터 (event_attack → 다음 AttackState)
+        self.ATTACK_ROUTER = AttackRouter(self)
 
-        # 상태머신 이벤트 테이블 분리
+        # ----------------------------
+        # 상태 전이 테이블
+        # ----------------------------
+        self._build_transitions()
+
+        # controls에 따라 전이 테이블 선택
+        if self.controls == 'wasd':
+            transitions = self.transitions_wasd
+        else:
+            transitions = self.transitions_arrows
+
+        # 상태머신 생성 (초기 상태: IDLE)
+        self.state_machine = StateMachine(self.IDLE, transitions)
+
+    # ----------------------------
+    # 상태 전이 테이블 구성
+    # ----------------------------
+    def _build_transitions(self):
+        # --- WASD (P1) ---
         self.transitions_wasd = {
             self.IDLE: {
-                event_walk: self.WALK, # 이동 시작
-                event_stop: self.IDLE, # 정지 (무시)
+                event_walk: self.WALK,
+                event_stop: self.IDLE,
 
                 event_hurt: self.HURT,
                 event_dizzy: self.DIZZY,
@@ -151,7 +188,6 @@ class Boxer:
                 f_down: self.FRONT_HAND,
                 g_down: self.REAR_HAND,
                 h_down: self.UPPERCUT,
-
             },
             self.WALK: {
                 event_stop: self.IDLE,
@@ -164,16 +200,14 @@ class Boxer:
                 f_down: self.FRONT_HAND,
                 g_down: self.REAR_HAND,
                 h_down: self.UPPERCUT,
-
             },
             self.FRONT_HAND: {
-                event_attack: self.ATTACK_ROUTER,           # 체인 공격
-                event_attack_end: self.IDLE,                # 버퍼 없을 때 Idle로 복귀
+                event_attack: self.ATTACK_ROUTER,
+                event_attack_end: self.IDLE,
                 event_hurt: self.HURT,
                 event_dizzy: self.DIZZY,
                 event_ko: self.KO
             },
-
             self.REAR_HAND: {
                 event_attack: self.ATTACK_ROUTER,
                 event_attack_end: self.IDLE,
@@ -181,7 +215,6 @@ class Boxer:
                 event_dizzy: self.DIZZY,
                 event_ko: self.KO
             },
-
             self.UPPERCUT: {
                 event_attack: self.ATTACK_ROUTER,
                 event_attack_end: self.IDLE,
@@ -194,12 +227,16 @@ class Boxer:
             self.KO: {},
             self.BLOCK_ENTER: {block_enter_done: self.BLOCK, r_up: self.BLOCK_EXIT},
             self.BLOCK: {r_up: self.BLOCK_EXIT},
-            self.BLOCK_EXIT: {block_exit_done: self.IDLE}
+            self.BLOCK_EXIT: {block_exit_done: self.IDLE},
         }
-        self.transitions_wasd[self.IDLE].update({r_down: self.BLOCK_ENTER}) # 가드 진입
-        self.transitions_wasd[self.WALK].update({r_down: self.BLOCK_ENTER}) # 가드 진입
-        self.transitions_wasd[self.WALK][event_attack_end] = self.WALK      # 이동 중 공격 후 복귀
 
+        # 가드 진입 중복 안전
+        self.transitions_wasd[self.IDLE].update({r_down: self.BLOCK_ENTER})
+        self.transitions_wasd[self.WALK].update({r_down: self.BLOCK_ENTER})
+        # 이동 중 공격 후 같은 WALK로 복귀
+        self.transitions_wasd[self.WALK][event_attack_end] = self.WALK
+
+        # --- 방향키 (P2) ---
         self.transitions_arrows = {
             self.IDLE: {
                 event_walk: self.WALK,
@@ -218,7 +255,6 @@ class Boxer:
                 comma_down: self.FRONT_HAND,
                 period_down: self.REAR_HAND,
                 slash_down: self.UPPERCUT,
-
             },
             self.WALK: {
                 event_stop: self.IDLE,
@@ -231,322 +267,566 @@ class Boxer:
                 comma_down: self.FRONT_HAND,
                 period_down: self.REAR_HAND,
                 slash_down: self.UPPERCUT,
-
             },
             self.FRONT_HAND: {
-                event_attack: self.FRONT_HAND, # 체인 공격
-                event_attack_end: self.IDLE,  # 버퍼 없을 때 Idle로 복귀
+                event_attack: self.ATTACK_ROUTER,
+                event_attack_end: self.IDLE,
                 event_hurt: self.HURT,
                 event_dizzy: self.DIZZY,
                 event_ko: self.KO
             },
             self.REAR_HAND: {
-                event_attack: self.REAR_HAND,
+                event_attack: self.ATTACK_ROUTER,
                 event_attack_end: self.IDLE,
                 event_hurt: self.HURT,
                 event_dizzy: self.DIZZY,
                 event_ko: self.KO
             },
             self.UPPERCUT: {
-                event_attack: self.UPPERCUT,
+                event_attack: self.ATTACK_ROUTER,
                 event_attack_end: self.IDLE,
                 event_hurt: self.HURT,
                 event_dizzy: self.DIZZY,
                 event_ko: self.KO
             },
-            self.HURT: {event_hurt_done: self.IDLE,event_ko: self.KO},
-            self.DIZZY: {event_dizzy_done: self.IDLE,event_ko: self.KO},
+            self.HURT: {event_hurt_done: self.IDLE, event_ko: self.KO},
+            self.DIZZY: {event_dizzy_done: self.IDLE, event_ko: self.KO},
             self.KO: {},
             self.BLOCK_ENTER: {block_enter_done: self.BLOCK, semicolon_up: self.BLOCK_EXIT},
             self.BLOCK: {semicolon_up: self.BLOCK_EXIT},
-            self.BLOCK_EXIT: {block_exit_done: self.IDLE}
+            self.BLOCK_EXIT: {block_exit_done: self.IDLE},
         }
+
         self.transitions_arrows[self.IDLE].update({semicolon_down: self.BLOCK_ENTER})
         self.transitions_arrows[self.WALK].update({semicolon_down: self.BLOCK_ENTER})
-        self.transitions_arrows[self.WALK][event_attack_end] = self.WALK              # 이동 중 공격 후 복귀
-
-        # controls에 따라 상태머신 선택
-        if self.controls == 'wasd':
-            transitions = self.transitions_wasd
-        else:
-            transitions = self.transitions_arrows
-
-        self.state_machine = StateMachine(self.IDLE, transitions)                     # 초기 상태는 IDLE
-
-        self.is_cpu = False  # 기본은 사람 조작
-        self.ai_level = 'easy'  # 'easy' / 'medium' / 'hard'
-        self.bt = None  # BehaviorTree 객체 (나중에 build_bt에서 설정)
-
-        self.ai_last_attack_time = 0.0 # 마지막 공격 시도 시간
-        self.ai_blocking = False       # 가드 중 플래그
-        self.ai_block_start_time = 0.0 # 가드 시작 시간
-
-        # 이동 제어용
-        self.ai_move_dir = 0
+        self.transitions_arrows[self.WALK][event_attack_end] = self.WALK
 
     # ----------------------------
-    # AI용 가짜 키 이벤트 클래스
+    # AI 활성화
     # ----------------------------
-    class _AIKeyEvent:
-        def __init__(self, key_type, key_code):
-            self.type = key_type
-            self.key = key_code
-
-    # ----------------------------
-    # AI 입력 함수들 (★ Boxer 메서드)
-    # ----------------------------
-    def ai_press_key(self, key_code):
-        e = Boxer._AIKeyEvent(SDL_KEYDOWN, key_code)
-        self.state_machine.handle_state_event(('INPUT', e))
-
-    def ai_release_key(self, key_code):
-        e = Boxer._AIKeyEvent(SDL_KEYUP, key_code)
-        self.state_machine.handle_state_event(('INPUT', e))
-
-    def ai_stop_move(self):
-        if self.ai_move_dir != 0:
-            self.ai_move_dir = 0
-            self.xdir = 0
-            self.state_machine.handle_state_event(('STOP', None))
-
-            self.move_key_down = False
-
-    def ai_move_towards(self, dir):
-        if dir == 0:
-            self.ai_stop_move()
-            return
-
-        if self.ai_move_dir != dir:
-            self.ai_move_dir = dir
-            self.xdir = dir
-            self.face_dir = dir
-            self.state_machine.handle_state_event(('WALK', None))
-
-    def ai_can_act(self):
-        cur = self.state_machine.cur_state
-        KOType = type(self.KO)
-        DizzyType = type(self.DIZZY)
-        HurtType = type(self.HURT)
-
-        if isinstance(cur, (KOType, DizzyType, HurtType)):
-            self.ai_stop_move()
-            return False
-        return True
-
-    def ai_distance_to_opponent(self):
-        if self.opponent is None:
-            return None
-        return self.opponent.x - self.x
-
-    # =======================
-    # 난이도 기반 공격 빈도
-    # =======================
-    def ai_attack_random(self):
-        now = get_time()
-
-        # 난이도별 공격 쿨타임 조정
-        if self.ai_level == 'easy':
-            base_cd = 1.0     # 매우 느림
-        elif self.ai_level == 'medium':
-            base_cd = 0.45    # 중간
-        else:
-            base_cd = 0.22    # hard, 공격 압박 강함
-
-        if now - self.ai_last_attack_time < base_cd:
-            return BehaviorTree.FAIL
-
-        cur = self.state_machine.cur_state
-        bad_types = (
-            type(self.FRONT_HAND), type(self.REAR_HAND), type(self.UPPERCUT),
-            type(self.BLOCK), type(self.BLOCK_ENTER), type(self.BLOCK_EXIT),
-            type(self.HURT), type(self.DIZZY), type(self.KO)
-        )
-
-        if isinstance(cur, bad_types):
-            return BehaviorTree.FAIL
-
-        # 난이도 상관 없이 버튼 매핑 동일
-        if self.controls == 'wasd':
-            front_key, rear_key, upper_key = SDLK_f, SDLK_g, SDLK_h
-        else:
-            front_key, rear_key, upper_key = SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH
-
-        choice = random.choice(['front', 'rear', 'upper'])
-        if choice == 'front':
-            self.ai_press_key(front_key)
-        elif choice == 'rear':
-            self.ai_press_key(rear_key)
-        else:
-            self.ai_press_key(upper_key)
-
-        self.ai_last_attack_time = now
-        return BehaviorTree.SUCCESS
-
-    def ai_should_guard(self):
-        if self.opponent is None:
-            return False
-
-        opp_state = self.opponent.state_machine.cur_state
-        FHType = type(self.opponent.FRONT_HAND)
-        RHType = type(self.opponent.REAR_HAND)
-        UType = type(self.opponent.UPPERCUT)
-
-        if isinstance(opp_state, (FHType, RHType, UType)):
-            return True
-        return False
-
-    # =======================
-    # 난이도 기반 가드 성능
-    # =======================
-    def ai_do_guard(self):
-        if self.controls == 'wasd':
-            block_key = SDLK_r
-        else:
-            block_key = SDLK_SEMICOLON
-
-        now = get_time()
-
-        # 난이도별 가드 반응 및 유지시간
-        if self.ai_level == 'easy':
-            guard_prob = 0.20
-            hold_time = 0.20
-        elif self.ai_level == 'medium':
-            guard_prob = 0.55
-            hold_time = 0.30
-        else:
-            guard_prob = 0.90
-            hold_time = 0.50  # hard일 경우 거의 반응형 가드
-
-        # 가드 시작
-        if not self.ai_blocking:
-            if random.random() > guard_prob:
-                return BehaviorTree.FAIL
-
-            self.ai_blocking = True
-            self.ai_block_start_time = now
-            self.ai_block_hold_time = hold_time
-
-            self.ai_stop_move()
-            self.ai_press_key(block_key)
-            return BehaviorTree.RUNNING
-
-        # 가드 유지 중
-        else:
-            if now - self.ai_block_start_time >= self.ai_block_hold_time:
-                self.ai_blocking = False
-                self.ai_release_key(block_key)
-                return BehaviorTree.SUCCESS
-            else:
-                return BehaviorTree.RUNNING
-
-    def bt_is_ko(self):
-        if isinstance(self.state_machine.cur_state, type(self.KO)):
-            return BehaviorTree.SUCCESS
-        return BehaviorTree.FAIL
-
-    # =======================
-    # 난이도 기반 공격 사거리
-    # =======================
-    def ai_in_attack_range(self):
-        d = self.ai_distance_to_opponent()
-        if d is None:
-            return False
-
-        dx = abs(d)
-
-        # 난이도별 공격 사거리
-        if self.ai_level == 'easy':
-            max_range = 150
-        elif self.ai_level == 'medium':
-            max_range = 240
-        else:
-            max_range = 300   # hard: 멀리 있어도 습격 느낌
-
-        return dx <= max_range
-
-    # BT Condition Wrapper: In Attack Range
-    def bt_in_attack_range(self):
-        if not self.ai_can_act():
-            return BehaviorTree.FAIL
-        return BehaviorTree.SUCCESS if self.ai_in_attack_range() else BehaviorTree.FAIL
-
-    def bt_opponent_attacking(self):
-        if not self.ai_can_act():
-            return BehaviorTree.FAIL
-        return BehaviorTree.SUCCESS if self.ai_should_guard() else BehaviorTree.FAIL
-
-    def bt_do_nothing(self):
-        self.ai_stop_move()
-        return BehaviorTree.SUCCESS
-
-    # =======================
-    # 난이도 기반 추격 압박 (AI 본체)
-    # =======================
-    def ai_chase(self):
-        if not self.ai_can_act():
-            return BehaviorTree.FAIL
-
-        d = self.ai_distance_to_opponent()
-        if d is None:
-            self.ai_stop_move()
-            return BehaviorTree.FAIL
-
-        dx = abs(d)
-
-        # 난이도별 적정 거리 유지
-        if self.ai_level == 'easy':
-            stop_dist = 110
-        elif self.ai_level == 'medium':
-            stop_dist = 70
-        else:
-            stop_dist = 35  # hard: 붙어서 압박
-
-        # 너무 가까우면 멈춤
-        if dx < stop_dist:
-            self.ai_stop_move()
-            return BehaviorTree.SUCCESS
-
-        # 방향 결정
-        if d > 0:
-            self.ai_move_towards(1)
-        else:
-            self.ai_move_towards(-1)
-
-        return BehaviorTree.RUNNING
-
-    # ===== BT Action Wrappers =====
-    def bt_attack_random(self):
-        return self.ai_attack_random()
-
-    def bt_guard(self):
-        return self.ai_do_guard()
-
-    def bt_chase(self):
-        return self.ai_chase()
-
-    # ===== Behavior Tree 구성 =====
-    def build_bt(self):
-        ko_seq = Sequence("KO Seq",
-                          Condition("Is KO", self.bt_is_ko),
-                          Action("Do Nothing", self.bt_do_nothing))
-
-        attack_seq = Sequence("Attack Seq",
-                              Condition("In Attack Range", self.bt_in_attack_range),
-                              Action("Attack Random", self.bt_attack_random))
-
-        guard_seq = Sequence("Guard Seq",
-                             Condition("Opponent Attacking", self.bt_opponent_attacking),
-                             Action("Guard", self.bt_guard))
-
-        chase_act = Action("Chase", self.bt_chase)
-
-        root = Selector("AI Root", ko_seq, attack_seq, guard_seq, chase_act)
-        self.bt = BehaviorTree(root)
-
     def enable_ai(self, level='easy'):
         self.is_cpu = True
-        self.ai_level = level
-        self.build_bt()
+        if self.ai is None:
+            self.ai = BoxerAI(self, level)
+        else:
+            self.ai.set_level(level)
+
+    # ----------------------------
+    # 렌더링 관련
+    # ----------------------------
+    def use_sheet(self, sheet: dict):
+        path = sheet['image']
+        self.image = Boxer._img_cache.setdefault(path, load_image(path))
+
+        self.cols = sheet['cols']
+        self.frame_w = sheet['w']
+        self.frame_h = sheet['h']
+
+        self.scale = sheet.get('scale', 1.0)
+        self.base_face = sheet.get('base_face', 1)
+
+    def draw_current(self):
+        if not self.image:
+            return
+
+        frame = int(self.frame) % self.cols
+
+        src_x = frame * self.frame_w
+        src_y = 0
+        src_w = self.frame_w
+        src_h = self.frame_h
+
+        draw_w = int(self.frame_w * self.scale)
+        draw_h = int(self.frame_h * self.scale)
+
+        if self.face_dir == self.base_face:
+            self.image.clip_draw(
+                src_x, src_y, src_w, src_h,
+                self.x, self.y,
+                draw_w, draw_h
+            )
+        else:
+            self.image.clip_composite_draw(
+                src_x, src_y, src_w, src_h,
+                0, 'h',
+                self.x, self.y,
+                draw_w, draw_h
+            )
+
+    # ----------------------------
+    # 매 프레임 업데이트
+    # ----------------------------
+    def update(self):
+        log(
+            DEBUG_STATE,
+            f"[UPDATE] cur_state={self.state_machine.cur_state.__class__.__name__}, "
+            f"x={self.x}, y={self.y}"
+        )
+
+        dt = game_framework.frame_time
+
+        # 넉백 처리
+        if self.pushback_time > 0:
+            dt = game_framework.frame_time
+
+            # X 넉백 이동
+            self.x += self.pushback_velocity_x * dt
+
+            # Y 넉백 + 중력
+            self.pushback_velocity_y += self.gravity * dt
+            self.y += self.pushback_velocity_y * dt
+
+            # 착지 처리
+            if self.y <= self.hit_floor_y:
+                self.y = self.hit_floor_y
+                self.pushback_velocity_y = 0
+                self.pushback_time = 0
+                self.pushback_velocity_x = 0
+                return
+
+            LEFT_WALL = 50
+            RIGHT_WALL = 750
+            CEILING_Y = 500
+
+            if self.x < LEFT_WALL:
+                self.x = LEFT_WALL
+                self.pushback_velocity_x = 0
+            elif self.x > RIGHT_WALL:
+                self.x = RIGHT_WALL
+                self.pushback_velocity_x = 0
+
+            if self.y > CEILING_Y:
+                self.y = CEILING_Y
+
+            self.pushback_time -= dt
+            if self.pushback_time <= 0:
+                self.pushback_time = 0
+                self.pushback_velocity_x = 0
+                self.pushback_velocity_y = 0
+            return
+
+        # 상태머신 로직
+        self.state_machine.update()
+
+        # AI 동작
+        if self.is_cpu and self.ai is not None:
+            self.ai.update()
+
+    def draw(self):
+        self.state_machine.draw()
+        draw_rectangle(*self.get_bb())
+
+    # ----------------------------
+    # 입력 처리
+    # ----------------------------
+    def handle_event(self, event):
+        # CPU 조작이면 사람 입력 무시
+        if self.is_cpu or self.controls == 'cpu':
+            return
+
+        # SDL 키 이벤트만 처리
+        if event.type not in (SDL_KEYDOWN, SDL_KEYUP):
+            return
+
+        log(
+            DEBUG_STATE,
+            f"[EVENT] state={self.state_machine.cur_state.__class__.__name__}, "
+            f"type={event.type}, key={getattr(event, 'key', None)}, "
+            f"xdir={self.xdir}, ydir={self.ydir}"
+        )
+
+        # 넉백 중에는 입력 무시
+        if self.pushback_time > 0:
+            return
+
+        # 1) 이 캐릭터 관할 키만 허용
+        if self.controls == 'wasd':
+            allowed_keys = {
+                SDLK_a, SDLK_d, SDLK_w, SDLK_s,      # 이동
+                SDLK_f, SDLK_g, SDLK_h,              # 공격
+                SDLK_r                               # 가드
+            }
+        else:
+            allowed_keys = {
+                SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN,  # 이동
+                SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH,        # 공격
+                SDLK_SEMICOLON                              # 가드
+            }
+
+        if event.key not in allowed_keys:
+            return
+
+        # 2) Block 상태에서 불필요 키 필터링
+        if isinstance(self.state_machine.cur_state, (BlockEnter, Block, BlockExit)):
+            if event.type == SDL_KEYDOWN:
+                attack_keys_wasd = (SDLK_f, SDLK_g, SDLK_h)
+                attack_keys_arrow = (SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH)
+
+                if self.controls == 'wasd':
+                    if event.key not in (SDLK_r,) + attack_keys_wasd:
+                        log(DEBUG_STATE, print(
+                            f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
+                            f"IGNORED key={event.key}"
+                        ))
+                        return
+                else:
+                    if event.key not in (SDLK_SEMICOLON,) + attack_keys_arrow:
+                        log(DEBUG_STATE, print(
+                            f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
+                            f"IGNORED key={event.key}"
+                        ))
+                        return
+
+        # 3) KO / Dizzy 입력 무시
+        if isinstance(self.state_machine.cur_state, Ko):
+            return
+        if isinstance(self.state_machine.cur_state, Dizzy):
+            return
+
+        # 4) 이동키 눌림/해제 플래그 업데이트
+        if self.controls == 'wasd':
+            left_key, right_key, up_key, down_key = SDLK_a, SDLK_d, SDLK_w, SDLK_s
+        else:
+            left_key, right_key, up_key, down_key = SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN
+
+        if event.type == SDL_KEYDOWN:
+            if event.key == left_key:
+                self.face_dir = -1
+                self.move_key_down['left'] = True
+            elif event.key == right_key:
+                self.face_dir = +1
+                self.move_key_down['right'] = True
+            elif event.key == up_key:
+                self.move_key_down['up'] = True
+            elif event.key == down_key:
+                self.move_key_down['down'] = True
+
+        elif event.type == SDL_KEYUP:
+            if event.key == left_key:
+                self.move_key_down['left'] = False
+            elif event.key == right_key:
+                self.move_key_down['right'] = False
+            elif event.key == up_key:
+                self.move_key_down['up'] = False
+            elif event.key == down_key:
+                self.move_key_down['down'] = False
+
+        # 5) 공격키 매핑
+        if self.controls == 'wasd':
+            attack_key_map = {
+                SDLK_f: 'front_hand',
+                SDLK_g: 'rear_hand',
+                SDLK_h: 'uppercut'
+            }
+        else:
+            attack_key_map = {
+                SDLK_COMMA: 'front_hand',
+                SDLK_PERIOD: 'rear_hand',
+                SDLK_SLASH: 'uppercut'
+            }
+
+        # 6) 공격 입력 처리(오토리핏 방지 + 버퍼)
+        if event.key in attack_key_map:
+            attack_name = attack_key_map[event.key]
+
+            if event.type == SDL_KEYDOWN:
+                # 자동 반복 방지: 이미 눌려있으면 무시
+                if self.attack_key_down[attack_name]:
+                    return
+
+                self.attack_key_down[attack_name] = True
+                now = get_time()
+
+                # 이미 공격 상태라면 → 버퍼에 저장
+                if isinstance(self.state_machine.cur_state, AttackState):
+                    self.input_buffer.append(attack_name)
+                    self.last_input_time = now
+                    log(DEBUG_EVENT, print(
+                        f"[BUFFER-ADD] + {attack_name} | buffer={self.input_buffer}"
+                    ))
+                    return
+
+                # 공격 시작 시, 이동 중이었다면 복귀 방향 기억
+                if self.xdir != 0:
+                    self.resume_move_dir = self.xdir
+                else:
+                    self.resume_move_dir = 0
+
+                self.last_input_time = now
+                log(DEBUG_EVENT, print(f"[ATTACK] immediate → {attack_name}"))
+                self.state_machine.handle_state_event(('ATTACK', attack_name))
+                return
+
+            elif event.type == SDL_KEYUP:
+                # 눌림 상태 해제
+                self.attack_key_down[attack_name] = False
+                return
+
+        # 7) 공격 중일 때 이동키에 대한 STOP/WALK 이벤트 차단 (단, 플래그는 이미 위에서 갱신함)
+        if isinstance(self.state_machine.cur_state, AttackState):
+            if event.key in (left_key, right_key, up_key, down_key):
+                # 이동 방향 플래그는 위에서 이미 업데이트 했으므로,
+                # 여기서는 상태 이벤트만 막고 종료
+                return
+
+        # 8) 이동키 처리 (BlockExit/AttackState 예외 포함)
+        if event.type in (SDL_KEYDOWN, SDL_KEYUP):
+
+            # BlockExit 중에는 KEYUP 무시
+            if isinstance(self.state_machine.cur_state, BlockExit) and event.type == SDL_KEYUP:
+                return
+
+            # BlockExit 상태에서 이동키 아예 무시
+            if isinstance(self.state_machine.cur_state, BlockExit):
+                if event.key in (left_key, right_key, up_key, down_key):
+                    log(DEBUG_EVENT, print(
+                        f"[PATCH] BlockExit ignores move key: {event.key}"
+                    ))
+                    return
+
+            # BlockExit 직후 첫 KEYUP swallow
+            move_keys = {left_key, right_key, up_key, down_key}
+
+            if (event.type == SDL_KEYUP
+                    and self.ignore_next_move_keyup
+                    and event.key in move_keys):
+                log(DEBUG_EVENT, print(
+                    f"[BLOCK_EXIT] ignore first move KEYUP: key={event.key}"
+                ))
+                self.ignore_next_move_keyup = False
+                return
+
+            if event.key in move_keys:
+                log(DEBUG_EVENT, print(
+                    f"[MOVE_KEYS-BEFORE] state={self.state_machine.cur_state.__class__.__name__}, "
+                    f"event_type={event.type}, key={event.key}, "
+                    f"xdir={self.xdir}, ydir={self.ydir}"
+                ))
+
+                # KEYDOWN → 방향 설정
+                if event.type == SDL_KEYDOWN:
+                    if event.key == left_key:
+                        self.xdir = -1
+                    elif event.key == right_key:
+                        self.xdir = +1
+                    elif event.key == up_key:
+                        self.ydir = +1
+                    elif event.key == down_key:
+                        self.ydir = -1
+
+                # KEYUP → 해당 방향 해제
+                elif event.type == SDL_KEYUP:
+                    if self.controls == 'wasd':
+                        if event.key == left_key and self.xdir < 0:
+                            self.xdir = 0
+                        if event.key == right_key and self.xdir > 0:
+                            self.xdir = 0
+                        if event.key == up_key and self.ydir > 0:
+                            self.ydir = 0
+                        if event.key == down_key and self.ydir < 0:
+                            self.ydir = 0
+                    else:
+                        if event.key == left_key and self.xdir < 0:
+                            self.xdir = 0
+                        if event.key == right_key and self.xdir > 0:
+                            self.xdir = 0
+                        if event.key == up_key and self.ydir > 0:
+                            self.ydir = 0
+                        if event.key == down_key and self.ydir < 0:
+                            self.ydir = 0
+
+                log(DEBUG_EVENT, print(
+                    f"[MOVE_KEYS-AFTER]  state={self.state_machine.cur_state.__class__.__name__}, "
+                    f"event_type={event.type}, key={event.key}, "
+                    f"xdir={self.xdir}, ydir={self.ydir}"
+                ))
+
+                # 현재 눌려있는 이동키가 하나라도 있으면 WALK
+                any_move_pressed = any(self.move_key_down.values())
+                if any_move_pressed:
+                    self.state_machine.handle_state_event(('WALK', None))
+                else:
+                    self.state_machine.handle_state_event(('STOP', self.face_dir))
+
+                # xdir, ydir이 완전히 0이면 STOP 한 번 더
+                if self.xdir == 0 and self.ydir == 0:
+                    log(DEBUG_EVENT, print("[PATCH] => STOP"))
+                    self.state_machine.handle_state_event(('STOP', self.face_dir))
+                else:
+                    # KEYDOWN에서만 WALK 한 번 더
+                    if event.type == SDL_KEYDOWN:
+                        log(DEBUG_EVENT, print("[PATCH] => WALK"))
+                        self.state_machine.handle_state_event(('WALK', None))
+
+        # 9) 나머지 입력은 상태머신에 그대로 전달
+        self.state_machine.handle_state_event(('INPUT', event))
+
+    # ----------------------------
+    # 유틸리티 함수들
+    # ----------------------------
+    def _select_attack_state(self, attack_name):
+        if attack_name == 'front_hand':
+            return self.FRONT_HAND
+        elif attack_name == 'rear_hand':
+            return self.REAR_HAND
+        elif attack_name == 'uppercut':
+            return self.UPPERCUT
+
+    def get_bb(self):
+        bb_cfg = self.cfg["bb"]
+
+        frame_w = self.frame_w * self.scale
+        frame_h = self.frame_h * self.scale
+
+        bb_w = frame_w * bb_cfg["w"]
+        bb_h = frame_h * bb_cfg["h"]
+
+        x_offset = bb_cfg["x_offset"] * self.scale
+        y_offset = bb_cfg["y_offset"] * self.scale
+
+        flipped = (self.face_dir != self.base_face)
+        if flipped:
+            x_offset = -x_offset
+
+        cx = self.x + x_offset
+        cy = self.y + y_offset
+
+        left = cx - bb_w / 2
+        right = cx + bb_w / 2
+        bottom = cy - bb_h / 2
+        top = cy + bb_h / 2
+
+        return left, bottom, right, top
+
+    def spawn_hitbox(self):
+        attack_type = self.current_attack_type
+        if attack_type is None:
+            return
+
+        frame_offsets = HITBOX_DATA[self.controls][attack_type]
+
+        hitbox = HitBox(
+            owner=self,
+            frame_offsets=frame_offsets,
+            duration=0.15
+        )
+        game_world.add_object(hitbox, 1)
+
+        if self.controls == "wasd":
+            game_world.add_collision_pair('P1_attack:P2', hitbox, self.opponent)
+        else:
+            game_world.add_collision_pair('P2_attack:P1', hitbox, self.opponent)
+
+    def handle_collision(self, group, other):
+        now = get_time()
+
+        if now - self.last_hit_time > 1.0:
+            self.hits = 0
+
+        # KO, Dizzy는 충돌 무시
+        if isinstance(self.state_machine.cur_state, Ko):
+            return
+        if isinstance(self.state_machine.cur_state, Dizzy):
+            return
+
+        # 가드 중인 경우(BlockEnter, Block)
+        if isinstance(self.state_machine.cur_state, (BlockEnter, Block)):
+            if not hasattr(other, 'owner'):
+                return
+            sound_manager.play("blocking")
+            self.last_hit_time = now
+
+            attack_type = other.owner.current_attack_type
+            base_knock = Boxer.KNOCKBACK_POWER.get(attack_type, 20)
+            knock = self.adjust_knockback_based_on_distance(other.owner, base_knock * 0.5)
+
+            self.start_pushback(other.owner, amount=knock, duration=0.18)
+            return
+
+        # 넉백 중이면 모든 충돌 무시
+        if self.pushback_time > 0:
+            return
+
+        # 피격 직후 무적 시간
+        if now - self.last_hit_time < self.hit_cool:
+            return
+
+        if self.pushback_time > 0:
+            return
+
+        # 바디끼리 밀치기
+        if group == 'body:block' and other is self.opponent:
+            l1, b1, r1, t1 = self.get_bb()
+            l2, b2, r2, t2 = other.get_bb()
+
+            overlap_x1 = r1 - l2
+            overlap_x2 = r2 - l1
+            overlap_x = min(overlap_x1, overlap_x2)
+
+            overlap_y1 = t1 - b2
+            overlap_y2 = t2 - b1
+            overlap_y = min(overlap_y1, overlap_y2)
+
+            if overlap_x > 0 and overlap_y > 0:
+                if overlap_x < overlap_y:
+                    push = overlap_x / 2
+                    if self.x < other.x:
+                        self.x -= push
+                        other.x += push
+                    else:
+                        self.x += push
+                        other.x -= push
+                else:
+                    push = overlap_y / 2
+                    if self.y < other.y:
+                        self.y -= push
+                        other.y += push
+                    else:
+                        self.y += push
+                        other.y -= push
+
+            return
+
+        # 공격 히트
+        if group in ('P1_attack:P2', 'P2_attack:P1'):
+            if not hasattr(other, 'owner'):
+                print("[WARNING] attack collision but 'other' has no owner:", other)
+                return
+
+            attacker = other.owner
+            attack_type = attacker.current_attack_type
+
+            damage = Boxer.DAMAGE_TABLE.get(attack_type, 10)
+
+            old_hp = self.hp
+            self.hp = max(0, self.hp - damage)
+            self.last_hit_time = now
+
+            sound_manager.play(attack_type)
+
+            if self.hp <= 0:
+                self.state_machine.handle_state_event(('KO', None))
+                return
+
+            self.hits += 1
+
+            if self.hits >= 3:
+                self.hits = 0
+                self.state_machine.handle_state_event(('DIZZY', None))
+                return
+
+            base_knock = Boxer.KNOCKBACK_POWER.get(attack_type, 20)
+            knockback = self.adjust_knockback_based_on_distance(attacker, base_knock)
+
+            self.start_pushback(attacker, amount=knockback, duration=0.18)
+
+            self.state_machine.handle_state_event(('HURT', None))
+
+            if old_hp != self.hp:
+                if group == 'P1_attack:P2':
+                    print("P2 HP:", self.hp)
+                else:
+                    print("P1 HP:", self.hp)
 
     def adjust_knockback_based_on_distance(self, attacker, base_knockback):
         distance = abs(self.x - attacker.x)
@@ -570,7 +850,6 @@ class Boxer:
         length = max((dx * dx + dy * dy) ** 0.5, 0.001)
         nx, ny = dx / length, dy / length
 
-        # 넉백 속도 (y는 너무 튀지 않게 약하게)
         power = amount / duration
         self.pushback_velocity_x = nx * power
         self.pushback_velocity_y = ny * power * 0.25
@@ -580,581 +859,35 @@ class Boxer:
         self.pushback_duration = duration
 
         self.hit_floor_y = self.y
-        # 넉백 중 이동 입력 완전 무시
+
         self.xdir = 0
         self.ydir = 0
 
-        self.move_key_down = False
-
-    def use_sheet(self, sheet: dict):
-        path = sheet['image']
-        self.image = Boxer._img_cache.setdefault(path, load_image(path))
-
-        self.cols = sheet['cols']
-        self.frame_w = sheet['w']
-        self.frame_h = sheet['h']
-
-        self.scale = sheet.get('scale', 1.0)
-
-        self.base_face = sheet.get('base_face', 1)
-
-    def draw_current(self):
-        if not self.image:
-            return
-
-        # 1) frame index
-        frame = int(self.frame) % self.cols
-
-        # 2) 정확한 src 좌표 (프레임 시트는 가로 1줄)
-        src_x = frame * self.frame_w
-        src_y = 0
-        src_w = self.frame_w
-        src_h = self.frame_h
-
-        # 3) 출력 크기 (확대/축소)
-        draw_w = int(self.frame_w * self.scale)
-        draw_h = int(self.frame_h * self.scale)
-
-        # 4) 좌우 방향 반영
-        if self.face_dir == self.base_face:
-            self.image.clip_draw(src_x, src_y, src_w, src_h,
-                                 self.x, self.y,
-                                 draw_w, draw_h)
-        else:
-            self.image.clip_composite_draw(src_x, src_y, src_w, src_h,
-                                           0, 'h',
-                                           self.x, self.y,
-                                           draw_w, draw_h)
-
-    def update(self):
-        # 현재 상태와 위치 로그 출력
-        log(DEBUG_STATE,
-            f"[UPDATE] cur_state={self.state_machine.cur_state.__class__.__name__}, x={self.x}, y={self.y}")
-
-        dt = game_framework.frame_time             # 프레임 시간(delta time)
-
-        if self.pushback_time > 0:
-            dt = game_framework.frame_time         # 혹시 모를 안정성을 위해 다시 dt 저장
-
-            # X 넉백 이동
-            self.x += self.pushback_velocity_x * dt
-
-            # Y 넉백 + 중력
-            self.pushback_velocity_y += self.gravity * dt # 중력 적용
-            self.y += self.pushback_velocity_y * dt       # Y 위치 갱신
-
-            # ★ 피격 레벨 착지 처리
-            if self.y <= self.hit_floor_y:
-                self.y = self.hit_floor_y
-                self.pushback_velocity_y = 0
-                self.pushback_time = 0
-                self.pushback_velocity_x = 0
-                return
-
-            LEFT_WALL = 50
-            RIGHT_WALL = 750
-            CEILING_Y = 500
-
-            if self.x < LEFT_WALL:
-                self.x = LEFT_WALL
-                self.pushback_velocity_x = 0  # ★ 여기
-            elif self.x > RIGHT_WALL:
-                self.x = RIGHT_WALL
-                self.pushback_velocity_x = 0  # ★ 여기
-
-            if self.y > CEILING_Y:
-                self.y = CEILING_Y
-
-            # ★ 넉백 시간 감소
-            self.pushback_time -= dt
-            if self.pushback_time <= 0:
-                self.pushback_time = 0
-                self.pushback_velocity_x = 0
-                self.pushback_velocity_y = 0
-            return
-
-        self.state_machine.update()
-
-        if self.is_cpu and self.bt is not None:
-            self.bt.run()
-
-    def draw(self):
-        self.state_machine.draw()
-        draw_rectangle(*self.get_bb())
-
-    def handle_event(self, event):
-        # CPU 조작이면 사람 입력 무시
-        if self.is_cpu or self.controls == 'cpu':
-            return
-
-        # 키보드 입력이 아닌 이벤트는 처리하지 않음
-        if event.type not in (SDL_KEYDOWN, SDL_KEYUP):
-            return
-
-        # 현재 상태와 입력 정보 로그 출력
-        log(
-            DEBUG_STATE,
-            f"[EVENT] state={self.state_machine.cur_state.__class__.__name__}, " # 현재 상태
-            f"type={event.type}, key={getattr(event, 'key', None)}, "                  # 이벤트 타입 + 키코드
-            f"xdir={self.xdir}, ydir={self.ydir}"                                      # 현재 이동 방향
-        )
-
-        # 넉백 중에는 입력 무시
-        if self.pushback_time > 0:
-            return
-
-        # --------------------------------
-        # 2) 이 캐릭터가 담당하는 '키셋'만 허용
-        #    - P1: WASD + F/G/H + R
-        #    - P2: 방향키 + ,./ + ;
-        # --------------------------------
-        if self.controls == 'wasd':
-            # P1: 이동 + 공격 + 가드 키만
-            allowed_keys = {
-                SDLK_a, SDLK_d, SDLK_w, SDLK_s,    # 이동
-                SDLK_f, SDLK_g, SDLK_h,            # 공격
-                SDLK_r                             # 가드
-            }
-        else:
-            allowed_keys = {
-                SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN, # 이동
-                SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH,       # 공격
-                SDLK_SEMICOLON                             # 가드
-            }
-
-        # 자기 관할이 아닌 키(다른 플레이어/메뉴용 키 등)는 완전히 무시
-        if event.key not in allowed_keys:
-            return
-
-        # --------------------------------
-        # 3) 가드 관련 상태(BlockEnter / Block / BlockExit)일 때
-        #    이동/점프 등 불필요한 키를 추가 필터링
-        # --------------------------------
-        if isinstance(self.state_machine.cur_state, (BlockEnter, Block, BlockExit)):
-            if event.type == SDL_KEYDOWN:
-
-                # P1, P2 각각 공격키 모음
-                attack_keys_wasd = (SDLK_f, SDLK_g, SDLK_h)
-                attack_keys_arrow = (SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH)
-
-                if self.controls == 'wasd':
-                    # 가드 상태에서는 'R(가드키) + 공격키'만 허용
-                    if event.key not in (SDLK_r,) + attack_keys_wasd:
-                        log(DEBUG_STATE,print(f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
-                              f"IGNORED key={event.key}"))
-                        return
-                else:
-                    # 가드 상태에서는 ';(가드키) + 공격키'만 허용
-                    if event.key not in (SDLK_SEMICOLON,) + attack_keys_arrow:
-                        log(DEBUG_STATE,print(f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
-                              f"IGNORED key={event.key}"))
-                        return
-
-        # --------------------------------
-        # 4) KO / Dizzy 상태에서는 어떤 입력도 받지 않음
-        # --------------------------------
-        if isinstance(self.state_machine.cur_state, Ko):
-            return
-        if isinstance(self.state_machine.cur_state, Dizzy):
-            return
-
-        # --------------------------------
-        # 5) 이동키가 눌릴 때(face_dir, move_key_down 플래그 설정)
-        #    - 아직 xdir/ydir 계산은 아래 "이동키 처리"에서 따로 한다.
-        # --------------------------------
-        if event.type == SDL_KEYDOWN:
-            if self.controls == 'wasd':
-                if event.key == SDLK_a:
-                    self.face_dir = -1               # 왼쪽
-                    self.move_key_down['left'] = True
-                elif event.key == SDLK_d:
-                    self.face_dir = +1               # 오른쪽
-                    self.move_key_down['right'] = True
-                elif event.key == SDLK_w:
-                    self.move_key_down['up'] = True
-                elif event.key == SDLK_s:
-                    self.move_key_down['down'] = True
-            else:
-                if event.key == SDLK_LEFT:
-                    self.face_dir = -1
-                    self.move_key_down['left'] = True
-                elif event.key == SDLK_RIGHT:
-                    self.face_dir = +1
-                    self.move_key_down['right'] = True
-                elif event.key == SDLK_UP:
-                    self.move_key_down['up'] = True
-                elif event.key == SDLK_DOWN:
-                    self.move_key_down['down'] = True
-
-        # --------------------------------
-        # 6) 공격키 매핑 (키코드 → 공격 이름 문자열)
-        # --------------------------------
-        if self.controls == 'wasd':  # P1
-            attack_key_map = {
-                SDLK_f: 'front_hand',
-                SDLK_g: 'rear_hand',
-                SDLK_h: 'uppercut'
-            }
-        else:  # P2
-            attack_key_map = {
-                SDLK_COMMA: 'front_hand',
-                SDLK_PERIOD: 'rear_hand',
-                SDLK_SLASH: 'uppercut'
-            }
-
-        # --------------------------------
-        # 7) 공격 입력 처리
-        #    - 공격 중이면: 입력 버퍼에 저장
-        #    - 공격 중 아니면: 바로 AttackRouter로 이벤트 전달
-        # --------------------------------
-        # --------------------------------
-        # 7) 공격 입력 처리 (오토리핏 방지 포함)
-        # --------------------------------
-        if event.key in attack_key_map:
-
-            attack_name = attack_key_map[event.key]
-
-            # KEYDOWN이지만 이미 눌린 상태라면(오토리핏) 무시
-            if event.type == SDL_KEYDOWN:
-                if self.attack_key_down[attack_name]:
-                    return
-                # 눌림 시작 표시
-                self.attack_key_down[attack_name] = True
-
-                now = get_time()
-
-                # 공격 중이면 버퍼 넣기
-                if isinstance(self.state_machine.cur_state, AttackState):
-                    self.input_buffer.append(attack_name)
-                    self.last_input_time = now
-                    log(DEBUG_EVENT, print(f"[BUFFER-ADD] + {attack_name} | buffer={self.input_buffer}"))
-                    return
-
-                # 이동 중에 공격 눌렀다면 복귀 방향 저장
-                if self.xdir != 0:
-                    self.resume_move_dir = self.xdir
-                else:
-                    self.resume_move_dir = 0
-
-                # 즉시 AttackRouter로 전달
-                self.last_input_time = now
-                self.state_machine.handle_state_event(('ATTACK', attack_name))
-                return
-
-            # KEYUP이면 눌림 상태 해제
-            elif event.type == SDL_KEYUP:
-                self.attack_key_down[attack_name] = False
-                return
-
-        # --------------------------------
-        # 이동키 처리
-        # --------------------------------
-
-        # ★ 공격 중에는 이동키 DOWN/UP 모두 무시 (STOP/WALK 발생 방지)
-        if isinstance(self.state_machine.cur_state, AttackState):
-            if event.key in (SDLK_a, SDLK_d, SDLK_w, SDLK_s,
-                             SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN):
-                return
-
-        if event.type in (SDL_KEYDOWN, SDL_KEYUP):
-
-            # ★★★ AttackState에서는 이동키 KEYUP 무시 (STOP 방지)
-            if isinstance(self.state_machine.cur_state, AttackState):
-                if event.type == SDL_KEYUP:
-                    return
-            # === ★ BlockExit 중 KEYUP도 무시 ===
-            if isinstance(self.state_machine.cur_state, BlockExit):
-                if event.type == SDL_KEYUP:
-                    return
-
-            # BlockExit 직후, 첫 번째 이동 KEYUP은 무시하기 위한 패치
-            if self.controls == 'wasd':
-                move_keys = {SDLK_a, SDLK_d, SDLK_w, SDLK_s}
-            else:
-                move_keys = {SDLK_LEFT, SDLK_RIGHT, SDLK_UP, SDLK_DOWN}
-
-            if (event.type == SDL_KEYUP
-                    and self.ignore_next_move_keyup
-                    and event.key in move_keys):
-                log(DEBUG_EVENT,print(f"[BLOCK_EXIT] ignore first move KEYUP: key={event.key}"))
-                self.ignore_next_move_keyup = False
-                return
-
-            # 이동키가 맞는 경우에만 아래 처리
-            if event.key in move_keys:
-
-                log(DEBUG_EVENT,print(f"[MOVE_KEYS-BEFORE] state={self.state_machine.cur_state.__class__.__name__}, "
-                      f"event_type={event.type}, key={event.key}, "
-                      f"xdir={self.xdir}, ydir={self.ydir}"))
-
-                # 디버깅용으로 현재 방향 저장(필요시 비교용)
-                cur_xdir, cur_ydir = self.xdir, self.ydir
-
-                # BlockExit 상태에서는 이동키를 아예 무시 (가드 해제 모션 보존)
-                if isinstance(self.state_machine.cur_state, BlockExit):
-                    log(DEBUG_EVENT,print(f"[PATCH] BlockExit ignores move key: {event.key}"))
-                    return
-
-                # -----------------------------
-                # (1) KEYDOWN: 방향 설정
-                # -----------------------------
-                if event.type == SDL_KEYDOWN:
-                    if self.controls == 'wasd':
-                        if event.key == SDLK_a:   self.xdir = -1
-                        if event.key == SDLK_d:   self.xdir = +1
-                        if event.key == SDLK_w:   self.ydir = +1
-                        if event.key == SDLK_s:   self.ydir = -1
-                    else:
-                        if event.key == SDLK_LEFT:   self.xdir = -1
-                        if event.key == SDLK_RIGHT:  self.xdir = +1
-                        if event.key == SDLK_UP:     self.ydir = +1
-                        if event.key == SDLK_DOWN:   self.ydir = -1
-                elif event.type == SDL_KEYUP:
-                    if event.key in move_keys:
-
-                        if self.ignore_next_move_keyup:
-                            log(DEBUG_EVENT,print(f"[PATCH] swallow first keyup after BlockExit: {event.key}"))
-                            self.ignore_next_move_keyup = False
-                            return
-
-                    # -----------------------------
-                    # (2) KEYUP: 해당 방향 해제
-                    # -----------------------------
-                    if self.controls == 'wasd':
-                        if event.key == SDLK_a and self.xdir < 0:  self.xdir = 0
-                        if event.key == SDLK_d and self.xdir > 0:  self.xdir = 0
-                        if event.key == SDLK_w and self.ydir > 0:  self.ydir = 0
-                        if event.key == SDLK_s and self.ydir < 0:  self.ydir = 0
-                    else:
-                        if event.key == SDLK_LEFT and self.xdir < 0: self.xdir = 0
-                        if event.key == SDLK_RIGHT and self.xdir > 0: self.xdir = 0
-                        if event.key == SDLK_UP and self.ydir > 0: self.ydir = 0
-                        if event.key == SDLK_DOWN and self.ydir < 0: self.ydir = 0
-
-                log(DEBUG_EVENT,print(f"[MOVE_KEYS-AFTER]  state={self.state_machine.cur_state.__class__.__name__}, "
-                      f"event_type={event.type}, key={event.key}, "
-                      f"xdir={self.xdir}, ydir={self.ydir}"))
-
-                # 현재 눌려있는 이동키가 하나라도 있는지 확인
-                any_move_pressed = any(self.move_key_down.values())
-                if any_move_pressed:
-                    # 걷기 상태로 전환 이벤트
-                    self.state_machine.handle_state_event(('WALK', None))
-                else:
-                    # 이동키 다 떼면 STOP 이벤트
-                    self.state_machine.handle_state_event(('STOP', self.face_dir))
-                # xdir, ydir 둘 다 0이면 강제로 STOP 상태 이벤트 한 번 더 보냄
-                if self.xdir == 0 and self.ydir == 0:
-                    log(DEBUG_EVENT,print("[PATCH] => STOP"))
-                    self.state_machine.handle_state_event(('STOP', self.face_dir))
-                else:
-                    # KEYDOWN일 때만 WALK 한 번 더 발생시켜서 끊기지 않게 유지
-                    if event.type == SDL_KEYDOWN:
-                        log(DEBUG_EVENT,print("[PATCH] => WALK"))
-                        self.state_machine.handle_state_event(('WALK', None))
-
-        # --------------------------------
-        # 9) 나머지 입력은 그대로 상태머신에 통지
-        #    - 위에서 처리한 이동/공격 입력도 포함해서
-        #      '전체 입력'을 상태머신에 한 번 더 알려준다.
-        # --------------------------------
-        self.state_machine.handle_state_event(('INPUT', event))
-
-    def _select_attack_state(self, attack_name):
-        if attack_name == 'front_hand':
-            return self.FRONT_HAND
-        elif attack_name == 'rear_hand':
-            return self.REAR_HAND
-        elif attack_name == 'uppercut':
-            return self.UPPERCUT
-
-    def get_bb(self):
-        bb_cfg = self.cfg["bb"]
-
-        # 1) 한 프레임 이미지의 실제 픽셀 크기 (화면 기준)
-        frame_w = self.frame_w * self.scale
-        frame_h = self.frame_h * self.scale
-
-        # 2) 비율 기반 실제 박스 크기
-        bb_w = frame_w * bb_cfg["w"]
-        bb_h = frame_h * bb_cfg["h"]
-
-        # 3) 오프셋 (스케일 + 좌우 반전 모두 반영)
-        #    - x_offset, y_offset 은 "원본 스프라이트 기준" 거리라고 가정
-        x_offset = bb_cfg["x_offset"] * self.scale
-        y_offset = bb_cfg["y_offset"] * self.scale
-
-        # draw_current() 와 동일한 기준:
-        # base_face 방향으로 그릴 땐 flip 없음, 다를 땐 좌우 반전.
-        flipped = (self.face_dir != self.base_face)
-        if flipped:
-            x_offset = -x_offset  # 이미지가 좌우 반전되면 오프셋도 같이 반전
-
-        # 4) 박스 중심 좌표
-        cx = self.x + x_offset
-        cy = self.y + y_offset
-
-        left = cx - bb_w / 2
-        right = cx + bb_w / 2
-        bottom = cy - bb_h / 2
-        top = cy + bb_h / 2
-
-        return left, bottom, right, top
-
-    def spawn_hitbox(self):
-        attack_type = self.current_attack_type
-        if attack_type is None:
-            return
-
-        frame_offsets = HITBOX_DATA[self.controls][attack_type]
-
-        hitbox = HitBox(
-            owner=self,
-            frame_offsets=frame_offsets,
-            duration=0.15  # 또는 원하는 지속시간
-        )
-        game_world.add_object(hitbox, 1)
-
-        if self.controls == "wasd":  # P1
-            game_world.add_collision_pair('P1_attack:P2', hitbox, self.opponent)
-        else:  # P2
-            game_world.add_collision_pair('P2_attack:P1', hitbox, self.opponent)
-
-    def handle_collision(self, group, other):
-        now = get_time()
-        # 피격 쿨타임(1초) 지나면 연속 피격 카운트 초기화
-        if now - self.last_hit_time > 1.0:
-            self.hits = 0
-
-        # KO 상태 충돌 무시
-        if isinstance(self.state_machine.cur_state, Ko):
-            return
-        if isinstance(self.state_machine.cur_state, Dizzy):
-            return
-        if isinstance(self.state_machine.cur_state, (BlockEnter, Block)):
-            if not hasattr(other, 'owner'):
-                return
-            sound_manager.play("blocking")
-            self.last_hit_time = now
-
-            # 넉백 50% 적용
-            attack_type = other.owner.current_attack_type
-            base_knock = Boxer.KNOCKBACK_POWER.get(attack_type, 20)
-            knock = self.adjust_knockback_based_on_distance(other.owner, base_knock * 0.5)
-
-            self.start_pushback(other.owner, amount=knock, duration=0.18)
-            return
-
-        # 넉백 중 모든 충돌 무시 (body:block 포함)
-        if self.pushback_time > 0:
-            return
-
-        # 피격 직후 무적 시간
-        if now - self.last_hit_time < self.hit_cool:
-            return
-
-        if self.pushback_time > 0:
-            return
-
-        if group == 'body:block' and other is self.opponent:
-            l1, b1, r1, t1 = self.get_bb()
-            l2, b2, r2, t2 = other.get_bb()
-
-            # 수평 겹침량 (왼/오)
-            overlap_x1 = r1 - l2  # self의 오른쪽이 other의 왼쪽을 침범
-            overlap_x2 = r2 - l1  # other의 오른쪽이 self의 왼쪽을 침범
-            overlap_x = min(overlap_x1, overlap_x2)
-
-            # 수직 겹침량 (위/아래)
-            overlap_y1 = t1 - b2  # self의 위가 other의 아래를 침범
-            overlap_y2 = t2 - b1  # other의 위가 self의 아래를 침범
-            overlap_y = min(overlap_y1, overlap_y2)
-
-            # 겹침이 실제로 발생했는지 체크
-            if overlap_x > 0 and overlap_y > 0:
-
-                # 더 작은 축으로 밀어냄 (MTV 방식)
-                if overlap_x < overlap_y:
-                    # 좌/우로 밀기
-                    push = overlap_x / 2
-                    if self.x < other.x:
-                        self.x -= push
-                        other.x += push
-                    else:
-                        self.x += push
-                        other.x -= push
-                else:
-                    # 위/아래로 밀기
-                    push = overlap_y / 2
-                    if self.y < other.y:
-                        self.y -= push
-                        other.y += push
-                    else:
-                        self.y += push
-                        other.y -= push
-
-            return
-
-        if group in ('P1_attack:P2', 'P2_attack:P1'):
-            if not hasattr(other, 'owner'):
-                print("[WARNING] attack collision but 'other' has no owner:", other)
-                return
-
-            attacker = other.owner
-            attack_type = attacker.current_attack_type
-
-            # ★ 공격 타입별 피해량 계산
-            damage = Boxer.DAMAGE_TABLE.get(attack_type, 10)
-
-            # 체력 감소
-            old_hp = self.hp
-            self.hp = max(0, self.hp - damage)
-            self.last_hit_time = now
-
-            # 사운드: 공격 타입 이름으로 재생
-            sound_manager.play(attack_type)
-
-            # KO / DIZZY 판정
-            if self.hp <= 0:
-                self.state_machine.handle_state_event(('KO', None))
-                return
-            # === 연속 피격 카운트 증가 ===
-            self.hits += 1
-
-            # === 3번 연속 피격 → DIZZY ===
-            if self.hits >= 3:
-                self.hits = 0  # 초기화
-                self.state_machine.handle_state_event(('DIZZY', None))
-                return
-
-            # ====== 넉백 호출 (공격 타입 기반) ======
-            base_knock = Boxer.KNOCKBACK_POWER.get(attack_type, 20)
-            knockback = self.adjust_knockback_based_on_distance(attacker, base_knock)
-
-            self.start_pushback(attacker, amount=knockback, duration=0.18)
-
-            # 피격 상태로 전환
-            self.state_machine.handle_state_event(('HURT', None))
-
-            # 디버그용 HP 출력
-            if old_hp != self.hp:
-                if group == 'P1_attack:P2':
-                    print("P2 HP:", self.hp)
-                else:
-                    print("P1 HP:", self.hp)
+        self.move_key_down = {
+            'left': False,
+            'right': False,
+            'up': False,
+            'down': False
+        }
 
     def resume_move_after_action(self):
-        # move_key_down 정보를 기반으로 xdir/ydir 재구성
+        """
+        move_key_down 플래그를 기반으로 xdir/ydir를 재구성하고,
+        WALK 또는 STOP 이벤트를 발생시킨다.
+        """
         x, y = 0, 0
 
-        if self.move_key_down['left']:  x = -1
-        if self.move_key_down['right']: x = +1
-        if self.move_key_down['up']:    y = +1
-        if self.move_key_down['down']:  y = -1
+        if self.move_key_down['left']:
+            x = -1
+        if self.move_key_down['right']:
+            x = +1
+        if self.move_key_down['up']:
+            y = +1
+        if self.move_key_down['down']:
+            y = -1
 
         self.xdir, self.ydir = x, y
 
-        # 이동 방향이 있다면 WALK 이벤트 발생
         if x != 0 or y != 0:
             self.state_machine.handle_state_event(('WALK', None))
         else:
