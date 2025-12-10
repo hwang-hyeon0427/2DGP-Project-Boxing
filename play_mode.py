@@ -12,12 +12,26 @@ from boxing_ring import BoxingRing
 from button import Button, SpriteSheetButton
 from mouse import update as mouse_update
 from mouse import get_pos as mouse_get_pos
+from round_timer import RoundTimer
+from round_intro import RoundIntro
+from heart_ui import HeartUI
+from game_over_ui import GameOverUI
+
 
 p1_character = "P1"
 p2_character = "P2"
 cpu_mode = False
 cpu_level = None
 cpu_player = None
+
+round_timer = None
+current_round = 1
+
+game_over_ui = None
+
+p1_wins = 0
+p2_wins = 0
+
 
 P1 = {
     "face_map": {"left": -1, "right": 1},
@@ -65,10 +79,73 @@ gear_ui = []
 
 sound_level = 0
 
+def on_round_end(winner):
+    global p1_wins, p2_wins, current_round
+    global round_intro, round_timer
+    global game_over_ui, cpu_mode, cpu_player
+
+    # winner: 'p1', 'p2', None
+
+    # ---------------------------
+    # 승수 계산
+    # ---------------------------
+    if winner == 'p1':
+        p1_wins += 1
+    elif winner == 'p2':
+        p2_wins += 1
+    # 무승부일 때는 그냥 라운드만 증가
+    else:
+        current_round += 1
+        round_timer.reset()
+        is_final = (current_round == 3 and p1_wins == 1 and p2_wins == 1)
+        round_intro.start(current_round, is_final=is_final)
+        return
+
+    # ---------------------------
+    # 하트 UI 업데이트 (기존 구조 유지)
+    # ---------------------------
+    p1_hearts = 2 - p2_wins
+    p2_hearts = 2 - p1_wins
+    heart_ui.set_hearts(p1_hearts, p2_hearts)
+
+    # ---------------------------
+    # 경기 종료 조건: 하트 0
+    # ---------------------------
+    match_over = (p1_hearts == 0 or p2_hearts == 0)
+    if match_over:
+        if cpu_mode:
+            # CPU가 P1이라면 사용자는 P2
+            if cpu_player == "P1":
+                user_win = (winner == 'p2')
+            else:
+                user_win = (winner == 'p1')
+
+            result = 'win' if user_win else 'lose'
+            game_over_ui = GameOverUI(result=result, cpu_mode=True)
+        else:
+        # ---- PVP ----
+            result = 'P1' if winner == 'p1' else 'P2'
+            game_over_ui = GameOverUI(result=result, cpu_mode=False)
+        return
+
+    # ===========================
+    #     경기 진행 중 (라운드 이동)
+    # ===========================
+    current_round += 1
+    round_timer.reset()
+
+    # Final Round 조건
+    is_final = (current_round == 3 and p1_wins == 1 and p2_wins == 1)
+
+    # 라운드 인트로 시작
+    round_intro.start(current_round, is_final=is_final)
+
 def init():
     global p1, p2, hpui, boxing_ring
     global buttons, paused, pause_ui, gear_open, gear_ui
     global screen_w, screen_h
+    global round_timer, round_intro
+    global heart_ui
 
     screen_w = get_canvas_width()
     screen_h = get_canvas_height()
@@ -92,6 +169,11 @@ def init():
     p1.config_id = p1_character
     p2.config_id = p2_character
 
+    round_timer = RoundTimer()
+    round_timer.reset()
+    round_intro = RoundIntro(scale=0.5)
+    round_intro.start(current_round, is_final=False)
+
     print("[DEBUG SETUP] p1 config_id =", p1.config_id)
     print("[DEBUG SETUP] p2 config_id =", p2.config_id)
 
@@ -110,6 +192,12 @@ def init():
 
     hpui = HpUi(p1, p2, x = screen_w // 2, y = screen_h * 0.92, scale=4)
     game_world.add_object(hpui, 2)
+
+    heart_ui = HeartUI(x_p1=screen_w * 0.1,
+                       y_p1=screen_h * 0.15,
+                       x_p2=screen_w * 0.8,
+                       y_p2=screen_h * 0.15,
+                       scale=3.0)
 
     sheet = "resource/buttons_spritesheet_Photoroom.png"
 
@@ -271,6 +359,35 @@ def draw_gear_popup_panel():
     draw_rectangle(x1, y1, x2, y2)
 
 def update():
+    global round_timer, game_over_ui
+
+    # -------------------------------------
+    # 라운드 인트로(라운드걸 → fight → done)
+    # -------------------------------------
+    if not round_intro.is_done():
+        round_intro.update(game_framework.frame_time)
+        # round_intro가 끝나면 다음 라운드 준비 완료 상태
+        if round_intro.is_done():
+            p1.hp = p1.max_hp
+            p2.hp = p2.max_hp
+
+            # 만약 넉다운/기절 state가 끼어 있다면 idle로 초기화 필요
+            p1.state_machine.cur_state = p1.IDLE
+            p2.state_machine.cur_state = p2.IDLE
+
+            p1.x = p1.cfg["spawn"]["x"]
+            p1.y = p1.cfg["spawn"]["y"]
+
+            p2.x = p2.cfg["spawn"]["x"]
+            p2.y = p2.cfg["spawn"]["y"]
+
+            # UI도 라운드별로 정리 가능h
+            round_timer.reset()
+        return
+
+    # -------------------------------------
+    # 버튼 업데이트 / 기어 / 일시정지
+    # -------------------------------------
     mx, my = mouse_get_pos()
 
     if gear_open:
@@ -286,12 +403,31 @@ def update():
     for b in buttons:
         b.update(mx, my)
 
+    # -------------------------------------
+    # 게임오버 → 캐릭터 업데이트 중지
+    # -------------------------------------
+    if game_over_ui:
+        return
+
+    # -------------------------------------
+    # 평상시 게임 로직
+    # -------------------------------------
     game_world.update()
+    heart_ui.update(game_framework.frame_time)
+    round_timer.update(game_framework.frame_time)
 
     limit_boxer_in_boxing_ring(p1)
     limit_boxer_in_boxing_ring(p2)
-
     game_world.handle_collisions()
+
+    # 라운드 종료 조건 검사
+    if p1.hp <= 0:
+        on_round_end("p2")
+        return
+    if p2.hp <= 0:
+        on_round_end("p1")
+        return
+
     hpui.update()
 
 def finish():
@@ -301,10 +437,16 @@ def draw():
     clear_canvas()
     game_world.render()
 
+    round_timer.draw()
+    round_intro.draw()
+
     for b in buttons:
         b.draw()
 
     hpui.draw()
+    heart_ui.draw()
+    if game_over_ui:
+        game_over_ui.draw()
 
     if paused:
         for b in pause_ui:
@@ -324,10 +466,13 @@ def pause(): pass
 def resume(): pass
 
 def handle_events():
-    global paused, gear_open
+    global paused, gear_open, game_over_ui
 
     event_list = get_events()
     for event in event_list:
+        if game_over_ui:
+            game_over_ui.handle_event(event)
+            continue
         if event.type == SDL_QUIT:
             game_framework.quit()
             return
@@ -357,6 +502,7 @@ def handle_events():
                 for b in pause_ui:
                     b.click(mx, my)
             continue
+
         if event.type == SDL_MOUSEMOTION:
             mouse_update(event)
         elif event.type == SDL_MOUSEBUTTONDOWN:
@@ -367,7 +513,6 @@ def handle_events():
         if event.type == SDL_KEYDOWN and event.key == SDLK_F10:
             report_manager.print_report()
             continue
-
         if event.type == SDL_KEYDOWN and event.key == SDLK_F1:
             hitbox_edit.edit_mode = not hitbox_edit.edit_mode
             print(f"Hitbox Edit Mode: {hitbox_edit.edit_mode}")
