@@ -29,7 +29,12 @@ class AttackState:
 
     def exit(self, e):
         self.boxer.current_attack_type = None
-        self.boxer.is_attacking = False
+        self.boxer.is_attacking = False # 공격 상태 종료
+        # 공격키는 공격이 끝나면 무조건 눌리지 않은 것으로 간주
+        for k in self.boxer.attack_key_down:
+            self.boxer.attack_key_down[k] = False
+            
+        self.boxer.resume_move_after_action()
 
     def do(self):
         if self.done:
@@ -68,7 +73,7 @@ class AttackState:
                     self.boxer.state_machine.handle_state_event(('ATTACK', next_attack))
                     return
 
-            # 2) 버퍼가 없으면 Idle로 이동
+            # 3) 이동키도 없으면 Idle로 이동
             self.boxer.state_machine.handle_state_event(('ATTACK_END', None))
             return
 
