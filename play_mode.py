@@ -428,11 +428,11 @@ def update():
     game_world.handle_collisions()
 
     # 라운드 종료 조건 검사
-    if p1.hp <= 0:
-        on_round_end("p2")
+    if p1.hp <= 0 and not p1.on_ko_end:
+        p1.on_ko_end = lambda: on_round_end("p2")
         return
-    if p2.hp <= 0:
-        on_round_end("p1")
+    if p2.hp <= 0 and not p2.on_ko_end:
+        p2.on_ko_end = lambda: on_round_end("p1")
         return
 
     hpui.update()
