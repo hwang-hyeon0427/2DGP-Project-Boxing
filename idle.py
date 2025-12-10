@@ -12,6 +12,9 @@ class Idle:
         self.boxer = boxer
 
     def enter(self, e):
+        # idle 상태 진입 로그 출력
+        log(DEBUG_EVENT, f"[IDLE ENTER DEBUG] e={e}, move_keys={self.boxer.move_key_down}")
+
         # Idle 상태로 진입했을 때 로그 출력 (xdir, ydir 초기화 상태 확인용)
         log(DEBUG_EVENT,
             f"[ENTER] Idle: reset xdir/ydir from {self.boxer.xdir}, {self.boxer.ydir}")
@@ -44,6 +47,7 @@ class Idle:
                 if xdir != 0:
                     self.boxer.face_dir = xdir
 
+                self.boxer.ignore_next_move_keyup = True
                 # ✅ 상태머신에 WALK 상태 전이 요청
                 self.boxer.state_machine.handle_state_event(('WALK', None))
                 log(DEBUG_EVENT, f"[RESUME MOVE] Idle→Walk xdir={xdir}, ydir={ydir} after ATTACK_END")
