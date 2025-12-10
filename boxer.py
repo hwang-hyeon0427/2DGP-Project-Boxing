@@ -47,6 +47,7 @@ class Boxer:
     def __init__(self, cfg: dict):
         self.current_attack_type = None
         self.base_face = None
+        self.on_ko_end = None
         self.cfg = cfg
         self.resume_move_dir = 0
         # 넉백 상태 변수
@@ -1160,11 +1161,14 @@ class Ko:
         pass
 
     def do(self):
-        # KO는 마지막 프레임에서 멈춤
         max_frame = self.boxer.cols - 1
         self.boxer.frame += FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
         if self.boxer.frame > max_frame:
             self.boxer.frame = max_frame  # 프레임 고정
+
+            if self.boxer.on_ko_end:
+                self.boxer.on_ko_end()
+                self.boxer.on_ko_end = None
 
     def draw(self):
         self.boxer.draw_current()
