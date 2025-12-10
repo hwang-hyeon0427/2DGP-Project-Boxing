@@ -17,7 +17,6 @@ from round_intro import RoundIntro
 from heart_ui import HeartUI
 from game_over_ui import GameOverUI
 
-
 p1_character = "P1"
 p2_character = "P2"
 cpu_mode = False
@@ -25,13 +24,12 @@ cpu_level = None
 cpu_player = None
 
 round_timer = None
-current_round = 1
-
+round_intro = None
 game_over_ui = None
 
+current_round = 1
 p1_wins = 0
 p2_wins = 0
-
 
 P1 = {
     "face_map": {"left": -1, "right": 1},
@@ -96,9 +94,11 @@ def on_round_end(winner):
     # 무승부일 때는 그냥 라운드만 증가
     else:
         current_round += 1
-        round_timer.reset()
+        if round_timer:
+            round_timer.reset()
         is_final = (current_round == 3 and p1_wins == 1 and p2_wins == 1)
-        round_intro.start(current_round, is_final=is_final)
+        if round_intro:
+            round_intro.start(current_round, is_final=is_final)
         return
 
     # ---------------------------
@@ -132,19 +132,21 @@ def on_round_end(winner):
     #     경기 진행 중 (라운드 이동)
     # ===========================
     current_round += 1
-    round_timer.reset()
+    if round_timer:
+        round_timer.reset()
 
     # Final Round 조건
     is_final = (current_round == 3 and p1_wins == 1 and p2_wins == 1)
 
     # 라운드 인트로 시작
-    round_intro.start(current_round, is_final=is_final)
+    if round_intro:
+        round_intro.start(current_round, is_final=is_final)
 
 def init():
     global p1, p2, hpui, boxing_ring
     global buttons, paused, pause_ui, gear_open, gear_ui
     global screen_w, screen_h
-    global round_timer, round_intro
+    global round_timer, round_intro, game_over_ui
     global heart_ui
 
     screen_w = get_canvas_width()
@@ -152,6 +154,7 @@ def init():
 
     paused = False
     gear_open = False
+
     buttons = []
     pause_ui = []
     gear_ui = []
@@ -171,8 +174,11 @@ def init():
 
     round_timer = RoundTimer()
     round_timer.reset()
+
     round_intro = RoundIntro(scale=0.5)
     round_intro.start(current_round, is_final=False)
+
+    game_over_ui = None
 
     print("[DEBUG SETUP] p1 config_id =", p1.config_id)
     print("[DEBUG SETUP] p2 config_id =", p2.config_id)
@@ -371,9 +377,10 @@ def update():
             p1.hp = p1.max_hp
             p2.hp = p2.max_hp
 
-            # 만약 넉다운/기절 state가 끼어 있다면 idle로 초기화 필요
             p1.state_machine.cur_state = p1.IDLE
+            p1.IDLE.enter(None)
             p2.state_machine.cur_state = p2.IDLE
+            p2.IDLE.enter(None)
 
             p1.x = p1.cfg["spawn"]["x"]
             p1.y = p1.cfg["spawn"]["y"]
