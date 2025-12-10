@@ -1,5 +1,4 @@
 import game_framework
-
 # Boxer Action Speed
 TIME_PER_ACTION = 0.5
 ACTION_PER_TIME = 1.0 / TIME_PER_ACTION
@@ -17,8 +16,8 @@ class BlockExit:
         self.boxer.use_sheet(self.boxer.cfg['blocking'])
         self.boxer.frame = self.boxer.cols - 1
 
-    def exit(self, e):
-        pass
+    def exit(self, boxer, e):
+        boxer.resume_move_after_action()
 
     def do(self):
         self.boxer.frame -= FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
