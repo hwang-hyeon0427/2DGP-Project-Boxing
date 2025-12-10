@@ -619,6 +619,9 @@ class Boxer:
                                            draw_w, draw_h)
 
     def update(self):
+        log(DEBUG_STATE,
+            f"[UPDATE] cur_state={self.state_machine.cur_state.__class__.__name__}, x={self.x}, y={self.y}")
+
         dt = game_framework.frame_time
 
         if self.pushback_time > 0:
@@ -671,14 +674,6 @@ class Boxer:
         draw_rectangle(*self.get_bb())
 
     def handle_event(self, event):
-        # 디버그 로그: 현재 상태 + 들어온 이벤트
-        log(
-            DEBUG_STATE,
-            f"[EVENT] state={self.state_machine.cur_state.__class__.__name__}, "
-            f"type={event.type}, key={getattr(event, 'key', None)}, "
-            f"xdir={self.xdir}, ydir={self.ydir}"
-        )
-
         # CPU 조작이면 사람 입력 무시
         if self.is_cpu or self.controls == 'cpu':
             return
@@ -686,6 +681,14 @@ class Boxer:
         # 키보드 입력이 아니면 무시
         if event.type not in (SDL_KEYDOWN, SDL_KEYUP):
             return
+
+        # 현재 상태와 입력 정보 로그 출력
+        log(
+            DEBUG_STATE,
+            f"[EVENT] state={self.state_machine.cur_state.__class__.__name__}, "
+            f"type={event.type}, key={getattr(event, 'key', None)}, "
+            f"xdir={self.xdir}, ydir={self.ydir}"
+        )
 
         # 넉백 중에는 입력 무시
         if self.pushback_time > 0:
