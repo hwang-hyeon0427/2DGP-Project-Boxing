@@ -563,10 +563,25 @@ class Boxer:
                 return
 
         # 7) 공격 중일 때 이동키에 대한 STOP/WALK 이벤트 차단 (단, 플래그는 이미 위에서 갱신함)
+        # 공격 중 이동키 입력 처리
         if isinstance(self.state_machine.cur_state, AttackState):
             if event.key in (left_key, right_key, up_key, down_key):
-                # 이동 방향 플래그는 위에서 이미 업데이트 했으므로,
-                # 여기서는 상태 이벤트만 막고 종료
+
+                # KEYUP은 반드시 move_key_down 갱신해야 한다
+                if event.type == SDL_KEYUP:
+                    if event.key == left_key:   self.move_key_down['left'] = False
+                    if event.key == right_key:  self.move_key_down['right'] = False
+                    if event.key == up_key:     self.move_key_down['up'] = False
+                    if event.key == down_key:   self.move_key_down['down'] = False
+
+                # KEYDOWN은 플래그만 갱신하고 STOP/WALK 는 막는다
+                elif event.type == SDL_KEYDOWN:
+                    if event.key == left_key:   self.move_key_down['left'] = True
+                    if event.key == right_key:  self.move_key_down['right'] = True
+                    if event.key == up_key:     self.move_key_down['up'] = True
+                    if event.key == down_key:   self.move_key_down['down'] = True
+
+                # 이동 관련 상태 전환(STOP/WALK)은 차단
                 return
 
         # 8) 이동키 처리 (BlockExit/AttackState 예외 포함)
@@ -649,14 +664,23 @@ class Boxer:
                     self.state_machine.handle_state_event(('STOP', self.face_dir))
 
                 # xdir, ydir이 완전히 0이면 STOP 한 번 더
+                # xdir, ydir이 완전히 0이면 STOP 한 번 더
                 if self.xdir == 0 and self.ydir == 0:
                     log(DEBUG_EVENT, print("[PATCH] => STOP"))
                     self.state_machine.handle_state_event(('STOP', self.face_dir))
                 else:
-                    # KEYDOWN에서만 WALK 한 번 더
+                    # KEYDOWN → '해당 이동키가 새로 눌린 경우'에만 WALK 발생
                     if event.type == SDL_KEYDOWN:
-                        log(DEBUG_EVENT, print("[PATCH] => WALK"))
-                        self.state_machine.handle_state_event(('WALK', None))
+                        # 이 키가 기존엔 False였는지 확인
+                        if (
+                                (event.key == left_key and self.move_key_down['left'] == False) or
+                                (event.key == right_key and self.move_key_down['right'] == False) or
+                                (event.key == up_key and self.move_key_down['up'] == False) or
+                                (event.key == down_key and self.move_key_down['down'] == False)
+                        ):
+                            # 새로 눌린 키 → WALK 시작
+                            log(DEBUG_EVENT, f"[MOVE] WALK triggered by fresh KEYDOWN key={event.key}, move_key_down={self.move_key_down}")
+                            self.state_machine.handle_state_event(('WALK', None))
 
         # 9) 나머지 입력은 상태머신에 그대로 전달
         self.state_machine.handle_state_event(('INPUT', event))
@@ -886,9 +910,14 @@ class Boxer:
         if self.move_key_down['down']:
             y = -1
 
+        log(DEBUG_EVENT,
+            f"[RESUME] move_key_down={self.move_key_down}, new_dir=({x},{y}), old_dir=({self.xdir},{self.ydir})")
+
         self.xdir, self.ydir = x, y
 
         if x != 0 or y != 0:
+            log(DEBUG_EVENT, "[RESUME] send WALK from resume_move_after_action()")
             self.state_machine.handle_state_event(('WALK', None))
         else:
+            log(DEBUG_EVENT, "[RESUME] send STOP from resume_move_after_action()")
             self.state_machine.handle_state_event(('STOP', self.face_dir))
