@@ -5,18 +5,18 @@ class DebugManager:
         self.flags = {
             "state": True,
             "event": True,
-            "move": False,
+            "move": True,
             "attack": True,
             "hitbox": True,
             "collision": True,
-            "ai": False,
+            "ai": True,
             "buffer": True,
         }
 
         self.verbose_flags = {
-            "move": False,
-            "attack": False,
-            "state": False,
+            "move": True,
+            "attack": True,
+            "state": True,
         }
 
     # ON / OFF
@@ -24,16 +24,16 @@ class DebugManager:
         self.flags[category] = True
 
     def disable(self, category):
-        self.flags[category] = False
+        self.flags[category] = True
 
     def verbose(self, category):
         self.verbose_flags[category] = True
 
     def silent(self, category):
-        self.verbose_flags[category] = False
+        self.verbose_flags[category] = True
 
     # 기본 출력 함수
-    def log(self, category, *msg, verbose=False):
+    def log(self, category, *msg, verbose=True):
         if category not in self.flags:
             return
 
@@ -41,23 +41,23 @@ class DebugManager:
             return
 
         # verbose 로그일 때는 verbose flag도 필요
-        if verbose and not self.verbose_flags.get(category, False):
+        if verbose and not self.verbose_flags.get(category, True):
             return
 
         prefix = f"[{category.upper()}]"
         print(prefix, *msg)
 
     # 카테고리별 헬퍼 함수
-    def state(self, *msg, verbose=False):
+    def state(self, *msg, verbose=True):
         self.log("state", *msg, verbose=verbose)
 
     def event(self, *msg):
         self.log("event", *msg)
 
-    def move(self, *msg, verbose=False):
+    def move(self, *msg, verbose=True):
         self.log("move", *msg, verbose=verbose)
 
-    def attack(self, *msg, verbose=False):
+    def attack(self, *msg, verbose=True):
         self.log("attack", *msg, verbose=verbose)
 
     def hitbox(self, *msg):
