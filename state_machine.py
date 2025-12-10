@@ -1,5 +1,5 @@
 from event_to_string import event_to_string
-from debug_manager import log, DEBUG_STATE
+from debug_manager import log, DEBUG_STATE, DEBUG_EVENT
 
 
 class StateMachine:
@@ -15,10 +15,16 @@ class StateMachine:
         self.cur_state.draw()
 
     def handle_state_event(self, state_event):
+        log(DEBUG_EVENT,
+        f"[FSM] EVENT RECEIVED: {state_event}, cur_state={self.cur_state.__class__.__name__}")
+
         if state_event[0] == 'ATTACK':
             attack_name = state_event[1]
             next_state = self.cur_state.boxer.ATTACK_ROUTER.route(attack_name)
             if next_state:
+                log(DEBUG_EVENT,
+                    f"[FSM] TRANSITION (ATTACK): "
+                    f"{self.cur_state.__class__.__name__} → {next_state.__class__.__name__}")
                 self.cur_state.exit(state_event)
                 next_state.enter(state_event)
                 self.cur_state = next_state
@@ -26,10 +32,17 @@ class StateMachine:
         for check_event in self.rules[self.cur_state].keys():
             if check_event(state_event):
                 self.next_state = self.rules[self.cur_state][check_event]
+                log(DEBUG_EVENT,
+                    f"[FSM] TRANSITION: "
+                    f"{self.cur_state.__class__.__name__} → {self.next_state.__class__.__name__} "
+                    f"by event={state_event}")
                 self.cur_state.exit(state_event)
                 self.next_state.enter(state_event)
                 log(DEBUG_STATE,f'State Change: {self.cur_state.__class__.__name__} ======= {event_to_string(state_event)}======= {self.next_state.__class__.__name__}')
                 self.cur_state = self.next_state
+                log(DEBUG_STATE,
+                    f"State Change: {self.cur_state.__class__.__name__} "
+                    f"==={event_to_string(state_event)}=== {self.next_state.__class__.__name__}")
                 return
 
         if state_event[0] == 'INPUT':
