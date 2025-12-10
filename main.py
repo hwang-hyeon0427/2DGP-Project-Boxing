@@ -1,7 +1,7 @@
 from pico2d import *
 from ctypes import windll
 
-import play_mode as start_mode
+import logo_mode as start_mode
 import game_framework
 import sound_manager
 
