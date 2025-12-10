@@ -1,4 +1,4 @@
-from sdl2 import*
+from pico2d import *
 # ===================
 # player1 이동 (wasd 키)
 # ===================
@@ -99,21 +99,18 @@ def semicolon_up(e):
 # ===================
 # 게임 상태 이벤트
 # ===================
+def event_walk(e):
+    return e[0] == 'WALK'
 def event_stop(e):
     return e[0] == 'STOP'
 
-def event_walk(e):
-    return e[0] == 'WALK'
-
 def event_hurt(e):
     return e[0] == 'HURT'
-
 def event_hurt_done(e):
     return e[0] == 'HURT_DONE'
 
 def event_dizzy(e):
     return e[0] == 'DIZZY'
-
 def event_dizzy_done(e):
     return e[0] == 'DIZZY_DONE'
 
@@ -122,12 +119,10 @@ def event_ko(e):
 
 def block_enter_done(e):
     return e[0] == 'BLOCK_ENTER_DONE'
-
 def block_exit_done(e):
     return e[0] == 'BLOCK_EXIT_DONE'
 
 def event_attack(e):
     return e[0] == 'ATTACK'
-
 def event_attack_end(e):
     return e[0] == 'ATTACK_END'
