@@ -8,6 +8,13 @@ from behavior_tree import BehaviorTree, Selector, Sequence, Condition, Action
 from attack_router import AttackRouter
 from debug_manager import log, DEBUG_EVENT, DEBUG_STATE
 
+from hurt import Hurt
+from dizzy import Dizzy
+from ko import Ko
+from block_enter import BlockEnter
+from block import Block
+from block_exit import BlockExit
+from walk import Walk
 # from walk_backward import WalkBackward
 
 import game_framework
@@ -1057,211 +1064,48 @@ class Idle:
         log(DEBUG_EVENT,
             f"[ENTER] Idle: reset xdir/ydir from {self.boxer.xdir}, {self.boxer.ydir}")
 
-        # e는 ('ATTACK_END', None) 같은 튜플 형태
         from_attack = (isinstance(e, tuple) and e[0] == 'ATTACK_END')
 
-        # 공격 끝나고 들어온 Idle이고, 이동키가 눌려 있다면
         if from_attack:
             key_map = self.boxer.move_key_down
+
+            xdir = 0
+            ydir = 0
             if key_map['left'] and not key_map['right']:
-                dir = -1
+                xdir = -1
             elif key_map['right'] and not key_map['left']:
-                dir = 1
-            else:
-                dir = 0
+                xdir = 1
 
-            if dir != 0:
-                self.boxer.resume_move_dir = 0  # 한 번 쓰고 초기화
-                self.boxer.use_sheet(self.boxer.cfg['walk_forward'])
-                self.boxer.xdir = dir
-                self.boxer.ydir = 0
-                self.boxer.face_dir = dir
+            if key_map['up'] and not key_map['down']:
+                ydir = 1
+            elif key_map['down'] and not key_map['up']:
+                ydir = -1
 
-                self.boxer.state_machine.cur_state = self.boxer.WALK
-                self.boxer.WALK.enter(('RESUME_MOVE', None))
-                log(DEBUG_EVENT, f"[RESUME MOVE] Idle→Walk dir={dir} after ATTACK_END")
+            if xdir != 0 or ydir != 0:
+                self.boxer.xdir = xdir
+                self.boxer.ydir = ydir
+                if xdir != 0:
+                    self.boxer.face_dir = xdir
+
+                log(DEBUG_EVENT, f"[RESUME MOVE] Idle → WALK xdir={xdir}, ydir={ydir} after ATTACK_END")
+                self.boxer.state_machine.handle_state_event(('WALK', None))
                 return
 
-        # 그 외의 경우에는 일반 Idle 진입
-        self.boxer.use_sheet(self.boxer.cfg['idle'])
         self.boxer.xdir = 0
         self.boxer.ydir = 0
         self.boxer.input_buffer.clear()
+        self.boxer.use_sheet(self.boxer.cfg['idle'])
 
     def exit(self, e):
         pass
 
     def do(self):
         self.boxer.frame = ( self.boxer.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 10
+        log(DEBUG_STATE,f"[WALK DO] xdir={self.boxer.xdir}, ydir={self.boxer.ydir}, x={self.boxer.x}, y={self.boxer.y}")
 
-    def draw(self):
-        self.boxer.draw_current()
-
-class Walk:
-    def __init__(self, boxer):
-        self.boxer = boxer
-
-    def enter(self, e):
-        self.boxer.frame = 0
-
-        sheet = self.boxer.cfg.get('walk_forward')
-        self.boxer.use_sheet(sheet)
-
-    def exit(self, e):
-        self.boxer.dir = 0
-
-    def do(self):
-        self.boxer.frame = (self.boxer.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % 10
-        self.boxer.x += self.boxer.xdir * WALK_SPEED_PPS * game_framework.frame_time
-        self.boxer.y += self.boxer.ydir * WALK_SPEED_PPS * game_framework.frame_time
-
-    def draw(self):
-        self.boxer.draw_current()
-
-class Hurt:
-    DURATION = 0.25  # 피격 모션 길이
-
-    def __init__(self, boxer):
-        self.boxer = boxer
-        self.start_time = 0
-
-    def enter(self, e):
-        self.start_time = get_time()
-        self.boxer.frame = 0
-        self.boxer.use_sheet(self.boxer.cfg['hurt'])
-
-    def exit(self, e):
-        pass
-
-    def do(self):
-        self.boxer.frame += FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
-
-        # 모션 끝나면 Idle로 자동 복귀
-        if get_time() - self.start_time >= Hurt.DURATION:
-            self.boxer.state_machine.handle_state_event(('HURT_DONE', None))
-
-    def draw(self):
-        self.boxer.draw_current()
-
-class Dizzy:
-    DURATION = 0.8  # 어지러움 유지 시간
-
-    def __init__(self, boxer):
-        self.boxer = boxer
-        self.start_time = 0
-
-    def enter(self, e):
-        self.start_time = get_time()
-        self.boxer.frame = 0
-        self.boxer.use_sheet(self.boxer.cfg['dizzy'])
-
-    def exit(self, e):
-        pass
-
-    def do(self):
-        self.boxer.frame += FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
-
-        # 자동 복귀
-        if get_time() - self.start_time >= Dizzy.DURATION:
-            self.boxer.state_machine.handle_state_event(('DIZZY_DONE', None))
-
-    def draw(self):
-        self.boxer.draw_current()
-
-class Ko:
-    def __init__(self, boxer):
-        self.boxer = boxer
-
-    def enter(self, e):
-        self.boxer.frame = 0
-        self.boxer.use_sheet(self.boxer.cfg['ko'])
-
-        self.boxer.pushback_time = 0
-        self.boxer.pushback_velocity_x = 0
-        self.boxer.pushback_velocity_y = 0
-
-    def exit(self, e):
-        pass
-
-    def do(self):
-        max_frame = self.boxer.cols - 1
-        self.boxer.frame += FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
-        if self.boxer.frame > max_frame:
-            self.boxer.frame = max_frame  # 프레임 고정
-
-            if self.boxer.on_ko_end:
-                self.boxer.on_ko_end()
-                self.boxer.on_ko_end = None
-
-    def draw(self):
-        self.boxer.draw_current()
-
-class BlockEnter:
-    def __init__(self, boxer):
-        self.boxer = boxer
-
-    def enter(self, e):
-        self.boxer.frame = 0
-        self.boxer.use_sheet(self.boxer.cfg['blocking'])
-
-        # 이동 금지
-        self.boxer.xdir = 0
-        self.boxer.ydir = 0
-
-    def exit(self, e):
-        pass
-
-    def do(self):
-        # 프레임 증가
-        self.boxer.frame += FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
-
-        if self.boxer.frame >= self.boxer.cols - 1:
-            self.boxer.frame = self.boxer.cols - 1
-            self.boxer.state_machine.handle_state_event(('BLOCK_ENTER_DONE', None))
-
-    def draw(self):
-        self.boxer.draw_current()
-
-class Block:
-    def __init__(self, boxer):
-        self.boxer = boxer
-
-    def enter(self, e):
-        self.boxer.use_sheet(self.boxer.cfg['blocking'])  # 가드 유지 포즈
-        self.boxer.frame = self.boxer.cols - 1  # 마지막 프레임 고정
-        self.boxer.xdir = 0
-        self.boxer.ydir = 0
-
-    def exit(self, e):
-        pass
-
-    def do(self):
-        self.boxer.frame = self.boxer.cols - 1
-
-    def draw(self):
-        self.boxer.draw_current()
-
-class BlockExit:
-    def __init__(self, boxer):
-        self.boxer = boxer
-
-    def enter(self, e):
-        print("[ENTER] BlockExit: force stop movement")
-        self.boxer.xdir = 0
-        self.boxer.ydir = 0
-        self.boxer.ignore_next_move_keyup = True
-        self.boxer.use_sheet(self.boxer.cfg['blocking'])
-        self.boxer.frame = self.boxer.cols - 1
-
-    def exit(self, e):
-        pass
-
-    def do(self):
-        self.boxer.frame -= FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time
-
-        if self.boxer.frame <= 0:
-            self.boxer.frame = 0
-            self.boxer.state_machine.handle_state_event(('BLOCK_EXIT_DONE', None))
+    def handle_event(self, e):
+        if isinstance(e, tuple) and e[0] == 'WALK':
+            return self.boxer.WALK
 
     def draw(self):
         self.boxer.draw_current()
