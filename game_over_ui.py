@@ -21,8 +21,8 @@ class GameOverUI:
 
         # -------- CPU 모드 전용 이미지 --------
         if cpu_mode:
-            self.player_win_img  = load_image('resource/image/player_win.png')
-            self.player_lose_img = load_image('resource/image/player_lose.png')
+            self.player_win_img  = load_image('resource/image/win_txt.png')
+            self.player_lose_img = load_image('resource/image/lose_txt.png')
             self.font = None
 
         else:
