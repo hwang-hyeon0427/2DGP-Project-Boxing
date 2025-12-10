@@ -12,51 +12,14 @@ class Idle:
         self.boxer = boxer
 
     def enter(self, e):
-        # idle 상태 진입 로그 출력
-        log(DEBUG_EVENT, f"[IDLE ENTER DEBUG] e={e}, move_keys={self.boxer.move_key_down}")
+        log(DEBUG_EVENT, f"[IDLE ENTER] e={e}, move_keys={self.boxer.move_key_down}")
+        log(DEBUG_EVENT, f"[ENTER] Idle: reset xdir/ydir from {self.boxer.xdir}, {self.boxer.ydir}")
 
-        # Idle 상태로 진입했을 때 로그 출력 (xdir, ydir 초기화 상태 확인용)
-        log(DEBUG_EVENT,
-            f"[ENTER] Idle: reset xdir/ydir from {self.boxer.xdir}, {self.boxer.ydir}")
+        # Idle 은 절대 자동으로 WALK 로 복귀하지 않는다.
+        # (공격 후 이동 복귀는 resume_move_after_action() 이 단독으로 수행)
 
-        # ATTACK_END 이벤트로 진입한 경우만 이동 재개 로직 수행
-        from_attack = (isinstance(e, tuple) and e[0] == 'ATTACK_END')
-
-        if from_attack:
-            key_map = self.boxer.move_key_down # 현재 눌린 방향키 상태 조회
-
-            xdir = 0
-            ydir = 0
-            # 좌우 이동 방향 결정
-            if key_map['left'] and not key_map['right']:
-                xdir = -1
-            elif key_map['right'] and not key_map['left']:
-                xdir = 1
-
-            # 상하 이동 방향 결정
-            if key_map['up'] and not key_map['down']:
-                ydir = 1
-            elif key_map['down'] and not key_map['up']:
-                ydir = -1
-
-            # 눌린 이동키가 있다면 WALK 상태로 전이
-            if xdir != 0 or ydir != 0:
-                self.boxer.xdir = xdir
-                self.boxer.ydir = ydir
-                # 좌우 이동이면 face_dir도 같이 설정
-                if xdir != 0:
-                    self.boxer.face_dir = xdir
-
-                self.boxer.ignore_next_move_keyup = True
-                # ✅ 상태머신에 WALK 상태 전이 요청
-                self.boxer.state_machine.handle_state_event(('WALK', None))
-                log(DEBUG_EVENT, f"[RESUME MOVE] Idle→Walk xdir={xdir}, ydir={ydir} after ATTACK_END")
-                return
-
-        # 기본 Idle 진입 로직: 방향 초기화 + 공격 입력 초기화 + idle 이미지 사용
         self.boxer.xdir = 0
         self.boxer.ydir = 0
-        self.boxer.input_buffer.clear()
         self.boxer.use_sheet(self.boxer.cfg['idle'])
 
     def exit(self, e):
