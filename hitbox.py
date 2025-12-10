@@ -74,7 +74,7 @@ class HitBox:
     # ----------------------------
     def draw(self):
         l, b, r, t = self.get_bb()
-        draw_rectangle(l, b, r, t)
+        # draw_rectangle(l, b, r, t)
 
         owner_x = self.owner.x
         owner_y = self.owner.y
