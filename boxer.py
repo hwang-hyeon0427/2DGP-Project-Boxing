@@ -420,7 +420,7 @@ class Boxer:
 
     def draw(self):
         self.state_machine.draw()
-        draw_rectangle(*self.get_bb())
+        # draw_rectangle(*self.get_bb())
 
     # ----------------------------
     # 입력 처리
@@ -749,7 +749,7 @@ class Boxer:
         hitbox = HitBox(
             owner=self,
             frame_offsets=frame_offsets,
-            duration=0.15
+            duration=0.1
         )
         game_world.add_object(hitbox, 1)
 
