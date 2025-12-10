@@ -84,20 +84,16 @@ class RoundIntro:
                 # 숫자 이미지 크기 적용
                 w = int(num_img.w * self.number_scale)
                 h = int(num_img.h * self.number_scale)
-
                 num_img.draw(num_x, num_y, w, h)
-
 
         elif self.state == self.SHOW_FINAL:
             fw = int(self.final_round_img.w * self.final_scale)
             fh = int(self.final_round_img.h * self.final_scale)
-
             self.final_round_img.draw(cx, cy, fw, fh)
 
         elif self.state == self.SHOW_FIGHT:
             fw = int(self.fight_img.w * self.fight_scale)
             fh = int(self.fight_img.h * self.fight_scale)
-
             self.fight_img.draw(cx, cy, fw, fh)
 
     def is_done(self):
