@@ -1,3 +1,5 @@
+# boxer.py — DebugManager 적용 버전
+
 from pico2d import *
 from key_events import *
 from state_machine import StateMachine
@@ -5,7 +7,7 @@ from hitbox_data import HITBOX_DATA
 from hitbox import HitBox
 from attack_state import AttackState
 from attack_router import AttackRouter
-from debug_manager import log, DEBUG_EVENT, DEBUG_STATE
+from debug_manager import debug  # ★ 변경: log, DEBUG_* 대신 debug 사용
 
 from hurt import Hurt
 from dizzy import Dizzy
@@ -357,24 +359,28 @@ class Boxer:
     # 매 프레임 업데이트
     # ----------------------------
     def update(self):
-        log(
-            DEBUG_STATE,
-            f"[UPDATE] cur_state={self.state_machine.cur_state.__class__.__name__}, "
-            f"x={self.x}, y={self.y}"
+        debug.state(
+            f"BOXER UPDATE: state={self.state_machine.cur_state.__class__.__name__}, "
+            f"x={self.x:.2f}, y={self.y:.2f}",
+            verbose=True
         )
 
         dt = game_framework.frame_time
 
         # 넉백 처리
         if self.pushback_time > 0:
-            dt = game_framework.frame_time
-
             # X 넉백 이동
             self.x += self.pushback_velocity_x * dt
 
             # Y 넉백 + 중력
             self.pushback_velocity_y += self.gravity * dt
             self.y += self.pushback_velocity_y * dt
+
+            debug.move(
+                f"PUSHBACK: x={self.x:.2f}, y={self.y:.2f}, "
+                f"vx={self.pushback_velocity_x:.2f}, vy={self.pushback_velocity_y:.2f}",
+                verbose=True
+            )
 
             # 착지 처리
             if self.y <= self.hit_floor_y:
@@ -428,9 +434,8 @@ class Boxer:
         if event.type not in (SDL_KEYDOWN, SDL_KEYUP):
             return
 
-        log(
-            DEBUG_STATE,
-            f"[EVENT] state={self.state_machine.cur_state.__class__.__name__}, "
+        debug.event(
+            f"INPUT EVENT: state={self.state_machine.cur_state.__class__.__name__}, "
             f"type={event.type}, key={getattr(event, 'key', None)}, "
             f"xdir={self.xdir}, ydir={self.ydir}"
         )
@@ -464,17 +469,17 @@ class Boxer:
 
                 if self.controls == 'wasd':
                     if event.key not in (SDLK_r,) + attack_keys_wasd:
-                        log(DEBUG_STATE, print(
+                        debug.event(
                             f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
                             f"IGNORED key={event.key}"
-                        ))
+                        )
                         return
                 else:
                     if event.key not in (SDLK_SEMICOLON,) + attack_keys_arrow:
-                        log(DEBUG_STATE, print(
+                        debug.event(
                             f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
                             f"IGNORED key={event.key}"
-                        ))
+                        )
                         return
 
         # 3) KO / Dizzy 입력 무시
@@ -541,9 +546,9 @@ class Boxer:
                 if isinstance(self.state_machine.cur_state, AttackState):
                     self.input_buffer.append(attack_name)
                     self.last_input_time = now
-                    log(DEBUG_EVENT, print(
+                    debug.buffer(
                         f"[BUFFER-ADD] + {attack_name} | buffer={self.input_buffer}"
-                    ))
+                    )
                     return
 
                 # 공격 시작 시, 이동 중이었다면 복귀 방향 기억
@@ -553,7 +558,9 @@ class Boxer:
                     self.resume_move_dir = 0
 
                 self.last_input_time = now
-                log(DEBUG_EVENT, print(f"[ATTACK] immediate → {attack_name}"))
+                debug.attack(
+                    f"[ATTACK] immediate → {attack_name}"
+                )
                 self.state_machine.handle_state_event(('ATTACK', attack_name))
                 return
 
@@ -569,17 +576,25 @@ class Boxer:
 
                 # KEYUP은 반드시 move_key_down 갱신해야 한다
                 if event.type == SDL_KEYUP:
-                    if event.key == left_key:   self.move_key_down['left'] = False
-                    if event.key == right_key:  self.move_key_down['right'] = False
-                    if event.key == up_key:     self.move_key_down['up'] = False
-                    if event.key == down_key:   self.move_key_down['down'] = False
+                    if event.key == left_key:
+                        self.move_key_down['left'] = False
+                    if event.key == right_key:
+                        self.move_key_down['right'] = False
+                    if event.key == up_key:
+                        self.move_key_down['up'] = False
+                    if event.key == down_key:
+                        self.move_key_down['down'] = False
 
                 # KEYDOWN은 플래그만 갱신하고 STOP/WALK 는 막는다
                 elif event.type == SDL_KEYDOWN:
-                    if event.key == left_key:   self.move_key_down['left'] = True
-                    if event.key == right_key:  self.move_key_down['right'] = True
-                    if event.key == up_key:     self.move_key_down['up'] = True
-                    if event.key == down_key:   self.move_key_down['down'] = True
+                    if event.key == left_key:
+                        self.move_key_down['left'] = True
+                    if event.key == right_key:
+                        self.move_key_down['right'] = True
+                    if event.key == up_key:
+                        self.move_key_down['up'] = True
+                    if event.key == down_key:
+                        self.move_key_down['down'] = True
 
                 # 이동 관련 상태 전환(STOP/WALK)은 차단
                 return
@@ -594,9 +609,9 @@ class Boxer:
             # BlockExit 상태에서 이동키 아예 무시
             if isinstance(self.state_machine.cur_state, BlockExit):
                 if event.key in (left_key, right_key, up_key, down_key):
-                    log(DEBUG_EVENT, print(
+                    debug.state(
                         f"[PATCH] BlockExit ignores move key: {event.key}"
-                    ))
+                    )
                     return
 
             # BlockExit 직후 첫 KEYUP swallow
@@ -605,18 +620,19 @@ class Boxer:
             if (event.type == SDL_KEYUP
                     and self.ignore_next_move_keyup
                     and event.key in move_keys):
-                log(DEBUG_EVENT, print(
+                debug.state(
                     f"[BLOCK_EXIT] ignore first move KEYUP: key={event.key}"
-                ))
+                )
                 self.ignore_next_move_keyup = False
                 return
 
             if event.key in move_keys:
-                log(DEBUG_EVENT, print(
+                debug.move(
                     f"[MOVE_KEYS-BEFORE] state={self.state_machine.cur_state.__class__.__name__}, "
                     f"event_type={event.type}, key={event.key}, "
-                    f"xdir={self.xdir}, ydir={self.ydir}"
-                ))
+                    f"xdir={self.xdir}, ydir={self.ydir}",
+                    verbose=True
+                )
 
                 # KEYDOWN → 방향 설정
                 if event.type == SDL_KEYDOWN:
@@ -650,11 +666,12 @@ class Boxer:
                         if event.key == down_key and self.ydir < 0:
                             self.ydir = 0
 
-                log(DEBUG_EVENT, print(
+                debug.move(
                     f"[MOVE_KEYS-AFTER]  state={self.state_machine.cur_state.__class__.__name__}, "
                     f"event_type={event.type}, key={event.key}, "
-                    f"xdir={self.xdir}, ydir={self.ydir}"
-                ))
+                    f"xdir={self.xdir}, ydir={self.ydir}",
+                    verbose=True
+                )
 
                 # 현재 눌려있는 이동키가 하나라도 있으면 WALK
                 any_move_pressed = any(self.move_key_down.values())
@@ -664,22 +681,22 @@ class Boxer:
                     self.state_machine.handle_state_event(('STOP', self.face_dir))
 
                 # xdir, ydir이 완전히 0이면 STOP 한 번 더
-                # xdir, ydir이 완전히 0이면 STOP 한 번 더
                 if self.xdir == 0 and self.ydir == 0:
-                    log(DEBUG_EVENT, print("[PATCH] => STOP"))
+                    debug.state("[PATCH] => STOP (xdir/ydir = 0)")
                     self.state_machine.handle_state_event(('STOP', self.face_dir))
                 else:
                     # KEYDOWN → '해당 이동키가 새로 눌린 경우'에만 WALK 발생
                     if event.type == SDL_KEYDOWN:
-                        # 이 키가 기존엔 False였는지 확인
                         if (
-                                (event.key == left_key and self.move_key_down['left'] == False) or
-                                (event.key == right_key and self.move_key_down['right'] == False) or
-                                (event.key == up_key and self.move_key_down['up'] == False) or
-                                (event.key == down_key and self.move_key_down['down'] == False)
+                            (event.key == left_key and self.move_key_down['left'] is False) or
+                            (event.key == right_key and self.move_key_down['right'] is False) or
+                            (event.key == up_key and self.move_key_down['up'] is False) or
+                            (event.key == down_key and self.move_key_down['down'] is False)
                         ):
-                            # 새로 눌린 키 → WALK 시작
-                            log(DEBUG_EVENT, f"[MOVE] WALK triggered by fresh KEYDOWN key={event.key}, move_key_down={self.move_key_down}")
+                            debug.state(
+                                f"[MOVE] WALK triggered by fresh KEYDOWN key={event.key}, "
+                                f"move_key_down={self.move_key_down}"
+                            )
                             self.state_machine.handle_state_event(('WALK', None))
 
         # 9) 나머지 입력은 상태머신에 그대로 전달
@@ -736,6 +753,10 @@ class Boxer:
         )
         game_world.add_object(hitbox, 1)
 
+        debug.hitbox(
+            f"SPAWN HITBOX: owner={self.controls}, attack_type={attack_type}"
+        )
+
         if self.controls == "wasd":
             game_world.add_collision_pair('P1_attack:P2', hitbox, self.opponent)
         else:
@@ -763,6 +784,10 @@ class Boxer:
             attack_type = other.owner.current_attack_type
             base_knock = Boxer.KNOCKBACK_POWER.get(attack_type, 20)
             knock = self.adjust_knockback_based_on_distance(other.owner, base_knock * 0.5)
+
+            debug.collision(
+                f"BLOCK HIT: attacker={attack_type}, knock={knock:.2f}"
+            )
 
             self.start_pushback(other.owner, amount=knock, duration=0.18)
             return
@@ -809,12 +834,18 @@ class Boxer:
                         self.y += push
                         other.y -= push
 
+            debug.collision(
+                f"BODY PUSH: self=({self.x:.2f},{self.y:.2f}), "
+                f"other=({other.x:.2f},{other.y:.2f})",
+            )
             return
 
         # 공격 히트
         if group in ('P1_attack:P2', 'P2_attack:P1'):
             if not hasattr(other, 'owner'):
-                print("[WARNING] attack collision but 'other' has no owner:", other)
+                debug.collision(
+                    f"[WARNING] attack collision but 'other' has no owner: {other}"
+                )
                 return
 
             attacker = other.owner
@@ -825,6 +856,11 @@ class Boxer:
             old_hp = self.hp
             self.hp = max(0, self.hp - damage)
             self.last_hit_time = now
+
+            debug.collision(
+                f"HIT: group={group}, attack_type={attack_type}, "
+                f"damage={damage}, hp {old_hp}→{self.hp}"
+            )
 
             sound_manager.play(attack_type)
 
@@ -845,12 +881,6 @@ class Boxer:
             self.start_pushback(attacker, amount=knockback, duration=0.18)
 
             self.state_machine.handle_state_event(('HURT', None))
-
-            if old_hp != self.hp:
-                if group == 'P1_attack:P2':
-                    print("P2 HP:", self.hp)
-                else:
-                    print("P1 HP:", self.hp)
 
     def adjust_knockback_based_on_distance(self, attacker, base_knockback):
         distance = abs(self.x - attacker.x)
@@ -894,6 +924,11 @@ class Boxer:
             'down': False
         }
 
+        debug.collision(
+            f"START PUSHBACK: amount={amount}, duration={duration}, "
+            f"vx={self.pushback_velocity_x:.2f}, vy={self.pushback_velocity_y:.2f}"
+        )
+
     def resume_move_after_action(self):
         """
         move_key_down 플래그를 기반으로 xdir/ydir를 재구성하고,
@@ -910,14 +945,16 @@ class Boxer:
         if self.move_key_down['down']:
             y = -1
 
-        log(DEBUG_EVENT,
-            f"[RESUME] move_key_down={self.move_key_down}, new_dir=({x},{y}), old_dir=({self.xdir},{self.ydir})")
+        debug.move(
+            f"[RESUME] move_key_down={self.move_key_down}, "
+            f"new_dir=({x},{y}), old_dir=({self.xdir},{self.ydir})"
+        )
 
         self.xdir, self.ydir = x, y
 
         if x != 0 or y != 0:
-            log(DEBUG_EVENT, "[RESUME] send WALK from resume_move_after_action()")
+            debug.state("[RESUME] send WALK from resume_move_after_action()")
             self.state_machine.handle_state_event(('WALK', None))
         else:
-            log(DEBUG_EVENT, "[RESUME] send STOP from resume_move_after_action()")
+            debug.state("[RESUME] send STOP from resume_move_after_action()")
             self.state_machine.handle_state_event(('STOP', self.face_dir))
