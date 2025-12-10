@@ -33,7 +33,7 @@ class AttackState:
         # 공격키는 공격이 끝나면 무조건 눌리지 않은 것으로 간주
         for k in self.boxer.attack_key_down:
             self.boxer.attack_key_down[k] = False
-            
+
         self.boxer.resume_move_after_action()
 
     def do(self):
