@@ -57,7 +57,12 @@ class Boxer:
         self.pushback_duration = 0
 
         self.ignore_next_move_keyup = False
-        self.move_key_down = False
+        self.move_key_down = {
+            'left': False,
+            'right': False,
+            'up': False,
+            'down': False
+        }
 
         # 중력 계수
         self.gravity = -600  # 튕김 후 아래로 떨어지는 힘
@@ -720,14 +725,26 @@ class Boxer:
         if event.type == SDL_KEYDOWN:
             if self.controls == 'wasd':
                 if event.key == SDLK_a:
-                    self.face_dir = -1  # 왼쪽
+                    self.face_dir = -1
+                    self.move_key_down['left'] = True
                 elif event.key == SDLK_d:
-                    self.face_dir = +1  # 오른쪽
-            else:  # arrows
+                    self.face_dir = +1
+                    self.move_key_down['right'] = True
+                elif event.key == SDLK_w:
+                    self.move_key_down['up'] = True
+                elif event.key == SDLK_s:
+                    self.move_key_down['down'] = True
+            else:
                 if event.key == SDLK_LEFT:
-                    self.face_dir = -1  # 왼쪽
+                    self.face_dir = -1
+                    self.move_key_down['left'] = True
                 elif event.key == SDLK_RIGHT:
-                    self.face_dir = +1  # 오른쪽
+                    self.face_dir = +1
+                    self.move_key_down['right'] = True
+                elif event.key == SDLK_UP:
+                    self.move_key_down['up'] = True
+                elif event.key == SDLK_DOWN:
+                    self.move_key_down['down'] = True
 
         if self.controls == 'wasd':  # P1
             attack_key_map = {
@@ -828,7 +845,11 @@ class Boxer:
                       f"event_type={event.type}, key={event.key}, "
                       f"xdir={self.xdir}, ydir={self.ydir}"))
 
-                self.move_key_down = (self.xdir != 0 or self.ydir != 0)
+                any_move_pressed = any(self.move_key_down.values())
+                if any_move_pressed:
+                    self.state_machine.handle_state_event(('WALK', None))
+                else:
+                    self.state_machine.handle_state_event(('STOP', self.face_dir))
 
                 if self.xdir == 0 and self.ydir == 0:
                     log(DEBUG_EVENT,print("[PATCH] => STOP"))
@@ -1036,34 +1057,36 @@ class Idle:
         log(DEBUG_EVENT,
             f"[ENTER] Idle: reset xdir/ydir from {self.boxer.xdir}, {self.boxer.ydir}")
 
-        # e 는 ('ATTACK_END', None) 같은 튜플 형태
+        # e는 ('ATTACK_END', None) 같은 튜플 형태
         from_attack = (isinstance(e, tuple) and e[0] == 'ATTACK_END')
 
-        # 공격 끝나고 들어온 Idle이고, 그 전에 걷고 있었다면
-        if from_attack and self.boxer.resume_move_dir != 0:
-            dir = self.boxer.resume_move_dir
+        # 공격 끝나고 들어온 Idle이고, 이동키가 눌려 있다면
+        if from_attack:
+            key_map = self.boxer.move_key_down
+            if key_map['left'] and not key_map['right']:
+                dir = -1
+            elif key_map['right'] and not key_map['left']:
+                dir = 1
+            else:
+                dir = 0
 
-            # 한 번 쓰고 초기화
-            self.boxer.resume_move_dir = 0
+            if dir != 0:
+                self.boxer.resume_move_dir = 0  # 한 번 쓰고 초기화
+                self.boxer.use_sheet(self.boxer.cfg['walk_forward'])
+                self.boxer.xdir = dir
+                self.boxer.ydir = 0
+                self.boxer.face_dir = dir
 
-            # 걷기 애니메이션으로 전환
-            self.boxer.use_sheet(self.boxer.cfg['walk_forward'])
-            self.boxer.xdir = dir
-            self.boxer.ydir = 0
-            self.boxer.face_dir = dir
+                self.boxer.state_machine.cur_state = self.boxer.WALK
+                self.boxer.WALK.enter(('RESUME_MOVE', None))
+                log(DEBUG_EVENT, f"[RESUME MOVE] Idle→Walk dir={dir} after ATTACK_END")
+                return
 
-            # ★ Idle로 왔다가 바로 Walk 상태로 강제 전환
-            self.boxer.state_machine.cur_state = self.boxer.WALK
-            self.boxer.WALK.enter(('RESUME_MOVE', None))
-            log(DEBUG_EVENT, f"[RESUME MOVE] Idle→Walk dir={dir} after ATTACK_END")
-            return
-
-        # 그 외(진짜로 멈춘 Idle, STOP, HURT_DONE 등) 은 기존 Idle 로직
+        # 그 외의 경우에는 일반 Idle 진입
         self.boxer.use_sheet(self.boxer.cfg['idle'])
         self.boxer.xdir = 0
         self.boxer.ydir = 0
         self.boxer.input_buffer.clear()
-
 
     def exit(self, e):
         pass
