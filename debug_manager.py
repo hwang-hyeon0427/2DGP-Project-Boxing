@@ -3,14 +3,14 @@ import time
 class DebugManager:
     def __init__(self):
         self.flags = {
-            "state": True,
-            "event": True,
-            "move": True,
-            "attack": True,
-            "hitbox": True,
-            "collision": True,
-            "ai": True,
-            "buffer": True,
+            "state": False,
+            "event": False,
+            "move": False,
+            "attack": False,
+            "hitbox": False,
+            "collision": False,
+            "ai": False,
+            "buffer": False,
         }
 
         self.verbose_flags = {
