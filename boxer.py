@@ -697,13 +697,15 @@ class Boxer:
 
         if isinstance(self.state_machine.cur_state, (BlockEnter, Block, BlockExit)):
             if event.type == SDL_KEYDOWN:
+                attack_keys_wasd = (SDLK_f, SDLK_g, SDLK_h)
+                attack_keys_arrow = (SDLK_COMMA, SDLK_PERIOD, SDLK_SLASH)
                 if self.controls == 'wasd':
-                    if event.key != SDLK_r:
+                    if event.key not in (SDLK_r,) + attack_keys_wasd:
                         log(DEBUG_STATE,print(f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
                               f"IGNORED key={event.key}"))
                         return
                 else:
-                    if event.key != SDLK_SEMICOLON:
+                    if event.key not in (SDLK_SEMICOLON,) + attack_keys_arrow:
                         log(DEBUG_STATE,print(f"[FILTER] BlockState={self.state_machine.cur_state.__class__.__name__} / "
                               f"IGNORED key={event.key}"))
                         return
